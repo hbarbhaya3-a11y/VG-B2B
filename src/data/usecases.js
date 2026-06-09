@@ -98,7 +98,7 @@ const UC_ADVISORY_READINESS = {
   outcomeDetail: 'Advisory conversion, incremental AUM, appointment booking',
   duration: '30-day intervention window',
   variants: '3 content variants · 6 behavioral segments',
-  agentChain: ['Market Sentinel', 'Context Decoder', 'Content Architect', 'Quant Bridge', 'Guardrail Guardian', 'Journey Executor', 'Learning System'],
+  agentChain: ['Market Sentinel', 'Context Decoder', 'Content Architect', 'TwinX Simulation', 'Guardrail Guardian', 'Journey Executor', 'Learning System'],
   steps: [
     {
       id: 'step-1',
@@ -357,7 +357,7 @@ const UC_ADVISORY_READINESS = {
       page: 'simulate-dashboard',
       panelType: 'simulation',
       actor: 'agent',
-      headline: 'Monte Carlo simulation — 1,000 iterations · P5/P50/P95 confidence intervals',
+      headline: 'TwinX simulation — 1,000 iterations · P5/P50/P95 confidence intervals',
       panelData: {
         scenarios: [
           {
@@ -547,7 +547,7 @@ const UC_IDLE_CASH = {
   outcomeDetail: 'Net new invested assets, Cash Plus deepening, AUM per account',
   duration: '60-day intervention window',
   variants: '3 content variants · 2 behavioral segments',
-  agentChain: ['Market Sentinel', 'Context Decoder', 'Content Architect', 'Quant Bridge', 'Guardrail Guardian', 'Journey Executor', 'Learning System'],
+  agentChain: ['Market Sentinel', 'Context Decoder', 'Content Architect', 'TwinX Simulation', 'Guardrail Guardian', 'Journey Executor', 'Learning System'],
   steps: [
     {
       id: 'step-1',
@@ -649,7 +649,7 @@ const UC_IDLE_CASH = {
       page: 'simulate-dashboard',
       panelType: 'simulation',
       actor: 'agent',
-      headline: 'Monte Carlo simulation — cash activation scenarios',
+      headline: 'TwinX simulation — cash activation scenarios',
       panelData: {
         scenarios: [
           { id: 'A', tag: 'Education + scenario calculator — recommended', recommended: true, engagement: 0.094, aum: 310, cost: 190, confidence: 0.88, ci: 0.07 },
@@ -715,7 +715,7 @@ const UC_DIVERSIFICATION = {
   outcomeDetail: 'Portfolio review starts, advisor consult requests, retention',
   duration: '45-day intervention window',
   variants: '2 content variants · 3 behavioral segments',
-  agentChain: ['Market Sentinel', 'Context Decoder', 'Content Architect', 'Quant Bridge', 'Guardrail Guardian', 'Journey Executor', 'Learning System'],
+  agentChain: ['Market Sentinel', 'Context Decoder', 'Content Architect', 'TwinX Simulation', 'Guardrail Guardian', 'Journey Executor', 'Learning System'],
   steps: [
     {
       id: 'step-1', label: 'Signal Detection', stage: 'SENSE', page: 'market-signals',
@@ -762,7 +762,7 @@ const UC_DIVERSIFICATION = {
     {
       id: 'step-3', label: 'Simulation', stage: 'SIMULATE', page: 'simulate-dashboard',
       panelType: 'simulation', actor: 'agent',
-      headline: 'Monte Carlo simulation — diversification intervention scenarios',
+      headline: 'TwinX simulation — diversification intervention scenarios',
       panelData: {
         scenarios: [
           { id: 'A', tag: 'Portfolio health check + optional advisor invite — recommended', recommended: true, engagement: 0.104, aum: 280, cost: 170, confidence: 0.86, ci: 0.08 },
@@ -829,7 +829,7 @@ const UC_VOLATILITY = {
   outcomeDetail: 'Reduced account closure risk, improved retention, advice uptake',
   duration: '72-hour urgency window',
   variants: '3 content variants · 2 behavioral segments',
-  agentChain: ['Market Sentinel', 'Context Decoder', 'Content Architect', 'Quant Bridge', 'Guardrail Guardian', 'Journey Executor', 'Learning System'],
+  agentChain: ['Market Sentinel', 'Context Decoder', 'Content Architect', 'TwinX Simulation', 'Guardrail Guardian', 'Journey Executor', 'Learning System'],
   steps: [
     {
       id: 'step-1', label: 'Signal Detection', stage: 'SENSE', page: 'market-signals',
@@ -875,7 +875,7 @@ const UC_VOLATILITY = {
     {
       id: 'step-3', label: 'Simulation', stage: 'SIMULATE', page: 'simulate-dashboard',
       panelType: 'simulation', actor: 'agent',
-      headline: 'Monte Carlo simulation — volatility reassurance scenarios',
+      headline: 'TwinX simulation — volatility reassurance scenarios',
       panelData: {
         scenarios: [
           { id: 'A', tag: 'Reassurance + stay-the-course education — recommended', recommended: true, engagement: 0.142, aum: 890, cost: 340, confidence: 0.89, ci: 0.07 },
@@ -941,7 +941,7 @@ const UC_ROLLOVER = {
   outcomeDetail: 'Education engagement, advice appointment, AUM retained',
   duration: '45-day decision window',
   variants: '2 content variants · 2 behavioral segments',
-  agentChain: ['Market Sentinel', 'Context Decoder', 'Content Architect', 'Quant Bridge', 'Guardrail Guardian', 'Journey Executor', 'Learning System'],
+  agentChain: ['Market Sentinel', 'Context Decoder', 'Content Architect', 'TwinX Simulation', 'Guardrail Guardian', 'Journey Executor', 'Learning System'],
   steps: [
     {
       id: 'step-1', label: 'Signal Detection', stage: 'SENSE', page: 'market-signals',
@@ -987,7 +987,7 @@ const UC_ROLLOVER = {
     {
       id: 'step-3', label: 'Simulation', stage: 'SIMULATE', page: 'simulate-dashboard',
       panelType: 'simulation', actor: 'agent',
-      headline: 'Monte Carlo simulation — rollover decision support scenarios',
+      headline: 'TwinX simulation — rollover decision support scenarios',
       panelData: {
         scenarios: [
           { id: 'A', tag: 'Neutral path education + optional advisor — recommended', recommended: true, engagement: 0.088, aum: 340, cost: 140, confidence: 0.87, ci: 0.08 },

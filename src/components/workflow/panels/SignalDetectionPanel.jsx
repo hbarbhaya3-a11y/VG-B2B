@@ -238,39 +238,20 @@ export default function SignalDetectionPanel({ step, onContinue }) {
         <PrecedentConfigCard precedent={pd.precedents[expandedPrecedent]} />
       )}
 
-      {/* Next Best Action */}
-      {pd.nba && (
-        <Paper withBorder radius="md" p="md">
-          <Stack gap="sm">
-            <Group gap="xs">
-              <ThemeIcon size={24} radius="md" variant="gradient" gradient={{ from: 'indigo', to: 'cyan', deg: 135 }}>
-                <IconSparkles size={14} color="white" />
-              </ThemeIcon>
-              <Text fw={700} size="sm">Next Best Action</Text>
-            </Group>
-            <Paper withBorder radius="sm" p="sm" style={{ background: 'var(--mantine-color-indigo-light)' }}>
-              <Text fw={700} size="sm">{pd.nba.recommendation}</Text>
-              <Text size="xs" c="dimmed" mt={4}>{pd.nba.rationale}</Text>
-            </Paper>
-            <SimpleGrid cols={2} spacing="xs">
-              <Paper withBorder radius="sm" p="sm">
-                <Text size="10px" c="dimmed" fw={600} tt="uppercase" style={{ letterSpacing: '0.06em' }}>Expected lift</Text>
-                <Text fw={800} size="sm" c="indigo">{pd.nba.expectedLift}</Text>
-              </Paper>
-              <Paper withBorder radius="sm" p="sm">
-                <Text size="10px" c="dimmed" fw={600} tt="uppercase" style={{ letterSpacing: '0.06em' }}>AUM impact (90d)</Text>
-                <Text fw={800} size="sm" c="teal">{pd.nba.aumImpact}</Text>
-              </Paper>
-            </SimpleGrid>
-            <Group gap="xs">
-              <Text size="xs" c="dimmed" fw={600}>Alternatives considered:</Text>
-              {pd.nba.alternatives.map((alt, i) => (
-                <Badge key={i} size="xs" variant="outline" color="gray">{alt.action} — {alt.expectedLift}</Badge>
-              ))}
-            </Group>
-          </Stack>
-        </Paper>
-      )}
+      {/* Recommended Hypothesis */}
+      <Paper withBorder radius="md" p="md" style={{ borderLeft: '3px solid var(--mantine-color-indigo-5)', background: 'var(--mantine-color-indigo-light)' }}>
+        <Stack gap="sm">
+          <Group gap="xs">
+            <ThemeIcon size={24} radius="md" variant="gradient" gradient={{ from: 'indigo', to: 'cyan', deg: 135 }}>
+              <IconSparkles size={14} color="white" />
+            </ThemeIcon>
+            <Text fw={700} size="sm">Recommended Hypothesis</Text>
+          </Group>
+          <Text size="sm" style={{ lineHeight: 1.7 }}>
+            If planning-intent, unadvised investors receive behavior-matched education, portfolio review prompts, and appropriate advice pathways within a 30-day window, then Vanguard can increase advisory appointment starts and portfolio review completion versus no action, while preserving education/advice boundaries and brand trust.
+          </Text>
+        </Stack>
+      </Paper>
 
       <Button
         size="md"

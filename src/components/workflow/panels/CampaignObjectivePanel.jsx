@@ -56,8 +56,8 @@ export default function CampaignObjectivePanel({ panelData: pd, onContinue }) {
   const [selectedKpis, setSelectedKpis] = useState(DEFAULT_KPIS[pd.defaultObjective] ?? [])
 
   const [budget,    setBudget]    = useState(pd.defaultBudget)
-  const [startDate, setStartDate] = useState(null)
-  const [endDate,   setEndDate]   = useState(null)
+  const [startDate, setStartDate] = useState(new Date('2026-06-15'))
+  const [endDate,   setEndDate]   = useState(new Date('2026-07-14'))
 
   const handlePrimaryObjChange = (val) => {
     setPrimaryObj(val)

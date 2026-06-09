@@ -142,8 +142,8 @@ export const agentScripts = {
   },
 
   simulation: {
-    agentId: 'quant-bridge',
-    agentName: 'Quant Bridge',
+    agentId: 'twinx-simulation',
+    agentName: 'TwinX Simulation',
     color: 'violet',
     messages: [
       { type: 'narrative', text: 'Received content variants from Content Architect. Preparing simulation with all inputs: 7,900 advisors, 3 tiers, 212 personalized outputs, 8 channels.' },
@@ -163,7 +163,7 @@ export const agentScripts = {
     postRunMessages: [
       { type: 'progress', label: 'Loading 18 episode priors from TwinX...', duration: 800 },
       { type: 'progress', label: 'Fitting Bayesian hierarchical response curves...', duration: 1200 },
-      { type: 'progress', label: 'Running 1,000 Monte Carlo iterations...', duration: 2500 },
+      { type: 'progress', label: 'Running 1,000 TwinX simulation iterations...', duration: 2500 },
       { type: 'progress', label: 'Ranking scenarios by cost-efficiency...', duration: 600 },
       {
         type: 'narrative',

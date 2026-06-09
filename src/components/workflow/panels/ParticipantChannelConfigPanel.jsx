@@ -1,12 +1,25 @@
 import { useState } from 'react'
 import {
   Paper, Stack, Group, Text, Badge, Checkbox, Button, ThemeIcon, Alert,
-  Progress, Divider, SimpleGrid, Box
+  Progress, Divider, SimpleGrid, Box, Select
 } from '@mantine/core'
 import {
-  IconChevronRight, IconInfoCircle, IconUsers, IconGift, IconSparkles,
-  IconChartBar, IconSend
+  IconChevronRight, IconInfoCircle, IconGift, IconSparkles,
+  IconChartBar, IconSend, IconWifi
 } from '@tabler/icons-react'
+
+const CHANNEL_OPTIONS = [
+  { value: 'Secure-site card + email',   label: 'Secure-site card + email' },
+  { value: 'App push + secure site',     label: 'App push + secure site' },
+  { value: 'Secure-site insight + email',label: 'Secure-site insight + email' },
+  { value: 'App push + article',         label: 'App push + article' },
+  { value: 'Email + advisor task',       label: 'Email + advisor task' },
+  { value: 'Email + secure-site module', label: 'Email + secure-site module' },
+  { value: 'Secure site + CRM task',     label: 'Secure site + CRM task' },
+  { value: 'In-app notification + email',label: 'In-app notification + email' },
+  { value: 'Email only',                 label: 'Email only' },
+  { value: 'App push only',              label: 'App push only' },
+]
 
 function RangeBar({ range, color }) {
   if (!range) return <Text size="xs" c="dimmed">—</Text>
@@ -30,15 +43,20 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
 
   const [selectedOffers, setSelectedOffers] = useState(() => offers.map(o => o.id))
   const [selectedSegs, setSelectedSegs] = useState(() => segments.map(s => s.id))
+  // channel per segment: default from panelData
+  const [segChannels, setSegChannels] = useState(() =>
+    Object.fromEntries(segments.map(s => [s.id, s.channel]))
+  )
 
   const toggleOffer = (id) => setSelectedOffers(ids => ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id])
   const toggleSeg = (id) => setSelectedSegs(ids => ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id])
+  const setChannel = (segId, val) => setSegChannels(prev => ({ ...prev, [segId]: val }))
 
   const totalVariants = segments.filter(s => selectedSegs.includes(s.id)).reduce((sum, s) => sum + s.variants, 0)
   const totalReach = segments.filter(s => selectedSegs.includes(s.id)).reduce((sum, s) => sum + s.count, 0)
 
   const handleContinue = () => {
-    setWorkflowState(s => ({ ...s, selectedOffers, selectedSegments: selectedSegs }))
+    setWorkflowState(s => ({ ...s, selectedOffers, selectedSegments: selectedSegs, segChannels }))
     onContinue()
   }
 
@@ -55,7 +73,7 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
           </Group>
         </Group>
         <Text size="sm" c="dimmed">
-          Select offers and confirm channel configuration per audience segment. Engagement rates are historical estimates.
+          Select offers, assign channels per segment, and confirm configuration. Engagement rates are historical estimates.
         </Text>
       </Paper>
 
@@ -119,13 +137,48 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
         </SimpleGrid>
       </Stack>
 
-      {/* Segment channel table */}
+      {/* Channel selection per segment */}
+      <Stack gap="xs">
+        <Group gap="xs">
+          <ThemeIcon size={20} radius="md" variant="light" color="teal">
+            <IconWifi size={12} stroke={1.5} />
+          </ThemeIcon>
+          <Text size="sm" fw={700}>Channel Selection</Text>
+          <Badge size="xs" color="teal" variant="light">one channel per segment</Badge>
+        </Group>
+        <Paper withBorder radius="md" p="md">
+          <Stack gap="sm">
+            {segments.map(seg => {
+              const isActive = selectedSegs.includes(seg.id)
+              return (
+                <Group key={seg.id} gap="md" wrap="nowrap" align="center" style={{ opacity: isActive ? 1 : 0.4 }}>
+                  <div style={{ width: 3, height: 28, borderRadius: 2, background: `var(--mantine-color-${seg.color}-5)`, flexShrink: 0 }} />
+                  <Text size="xs" fw={600} style={{ flex: 1, minWidth: 160 }}>{seg.label}</Text>
+                  <Box style={{ flex: 1 }}>
+                    <Select
+                      data={CHANNEL_OPTIONS}
+                      value={segChannels[seg.id] || seg.channel}
+                      onChange={val => setChannel(seg.id, val)}
+                      size="xs"
+                      radius="md"
+                      disabled={!isActive}
+                      allowDeselect={false}
+                    />
+                  </Box>
+                </Group>
+              )
+            })}
+          </Stack>
+        </Paper>
+      </Stack>
+
+      {/* Segment engagement table */}
       <Stack gap="xs">
         <Group gap="xs">
           <ThemeIcon size={20} radius="md" variant="light" color="blue">
             <IconSend size={12} stroke={1.5} />
           </ThemeIcon>
-          <Text size="sm" fw={700}>Channel Configuration by Segment</Text>
+          <Text size="sm" fw={700}>Segment Configuration</Text>
           <Badge size="xs" color="blue" variant="light">{totalReach.toLocaleString()} participants · {totalVariants} variants</Badge>
         </Group>
 
@@ -136,7 +189,6 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
               <Box style={{ width: 28 }} />
               <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ flex: 1, letterSpacing: '0.05em' }}>Segment</Text>
               <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ width: 80, textAlign: 'right', letterSpacing: '0.05em' }}>Count</Text>
-              <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ width: 180, paddingLeft: 16, letterSpacing: '0.05em' }}>Channel</Text>
               <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ width: 60, textAlign: 'center', letterSpacing: '0.05em' }}>Variants</Text>
               <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ width: 130, textAlign: 'right', letterSpacing: '0.05em' }}>Open rate</Text>
               <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ width: 130, textAlign: 'right', letterSpacing: '0.05em' }}>Click rate</Text>
@@ -175,9 +227,6 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
                   <Text size="sm" fw={700} c={seg.color} style={{ width: 80, textAlign: 'right' }}>
                     {seg.count.toLocaleString()}
                   </Text>
-                  <Box style={{ width: 180, paddingLeft: 16 }}>
-                    <Badge size="xs" variant="light" color={seg.color}>{seg.channel}</Badge>
-                  </Box>
                   <Text size="sm" fw={600} c="dimmed" style={{ width: 60, textAlign: 'center' }}>{seg.variants}</Text>
                   <Box style={{ width: 130, display: 'flex', justifyContent: 'flex-end' }}>
                     <RangeBar range={seg.openRate} color={seg.color} />

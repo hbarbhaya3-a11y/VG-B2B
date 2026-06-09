@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Paper, Stack, Group, Text, Badge, SimpleGrid, Progress, Button, Alert, Divider, ThemeIcon, Loader, NumberInput, Select, Table, Modal } from '@mantine/core'
-import { IconChartBar, IconChevronRight, IconAlertTriangle, IconCheck, IconPlayerPlay, IconPencil, IconLock, IconAdjustments, IconGift, IconSend, IconSparkles, IconFileText, IconVideo, IconMail, IconDeviceMobile, IconPhone, IconShield, IconChevronDown, IconChevronUp } from '@tabler/icons-react'
+import { Paper, Stack, Group, Text, Badge, SimpleGrid, Progress, Button, Alert, Divider, ThemeIcon, Loader, NumberInput, Select, Table, Modal, ActionIcon } from '@mantine/core'
+import { IconChartBar, IconChevronRight, IconAlertTriangle, IconCheck, IconPlayerPlay, IconPencil, IconLock, IconAdjustments, IconGift, IconSend, IconSparkles, IconFileText, IconVideo, IconMail, IconDeviceMobile, IconPhone, IconShield, IconChevronDown, IconChevronUp, IconEye } from '@tabler/icons-react'
 import { useUseCase } from '../../../contexts/UseCaseContext'
 
 // ── Content type registry ──────────────────────────────────────────────────
@@ -218,6 +218,61 @@ function OfferChannelSummary({ workflowState, activeUseCase }) {
   )
 }
 
+// ── Variant preview modal ─────────────────────────────────────────────────
+function VariantPreviewModal({ variant, seg, onClose }) {
+  if (!variant || !seg) return null
+  const typeId = variant === 'A'
+    ? getContentTypesForChannel(seg.channel)[0]
+    : getContentTypesForChannel(seg.channel)[1] || getContentTypesForChannel(seg.channel)[0]
+  const ct = CONTENT_TYPES.find(c => c.id === typeId) || CONTENT_TYPES[0]
+  const Icon = ct.icon
+  const headline = generateHeadline(typeId, variant === 'A' ? 0 : 1)
+  const body = generateBody(typeId, seg.label)
+  return (
+    <Modal
+      opened
+      onClose={onClose}
+      size="lg"
+      radius="md"
+      title={
+        <Group gap="xs">
+          <ThemeIcon size={28} radius="md" variant="light" color={ct.color}>
+            <Icon size={14} stroke={1.5} />
+          </ThemeIcon>
+          <Stack gap={0}>
+            <Text size="sm" fw={700}>Content Variant {variant} — {ct.label}</Text>
+            <Text size="xs" c="dimmed">{seg.label}</Text>
+          </Stack>
+        </Group>
+      }
+    >
+      <Stack gap="md">
+        <Group gap="xs" wrap="wrap">
+          <Badge size="sm" variant="light" color={seg.color}>Segment: {seg.label}</Badge>
+          <Badge size="sm" variant="light" color="gray">Channel: {seg.channel}</Badge>
+          <Badge size="sm" variant="light" color="orange">Offer: {seg.offer}</Badge>
+        </Group>
+        <Paper withBorder p="md" radius="md" style={{ borderLeft: `3px solid var(--mantine-color-${ct.color}-5)` }}>
+          <Stack gap="sm">
+            <Text size="md" fw={700}>{headline}</Text>
+            <Divider />
+            <Text size="sm" style={{ lineHeight: 1.7 }}>{body}</Text>
+          </Stack>
+        </Paper>
+        <Group gap="xs">
+          <Badge size="xs" variant="light" color={ct.color}>{ct.label}</Badge>
+          <Badge size="xs" variant="light" color="teal">Education-classified</Badge>
+          <Badge size="xs" variant="light" color="gray">Disclosure auto-attaches</Badge>
+        </Group>
+        <Group gap="xs" justify="flex-end">
+          <Button size="xs" variant="light" color="gray" onClick={onClose}>Close</Button>
+          <Button size="xs" variant="light" color={ct.color}>Approve variant</Button>
+        </Group>
+      </Stack>
+    </Modal>
+  )
+}
+
 // ── Simulation loading lines ───────────────────────────────────────────────
 const RUNNING_LINES = [
   'Loading episode priors from TwinX…',
@@ -373,6 +428,7 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
   const [phase, setPhase] = useState('config')
   const [runLine, setRunLine] = useState(0)
   const [editMode, setEditMode] = useState(false)
+  const [variantPreview, setVariantPreview] = useState(null) // { seg, variant: 'A'|'B' }
   const [params, setParams] = useState({
     confidenceThreshold: 80,
     minEngagement: 15,
@@ -430,11 +486,6 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
             </Button>
           </Group>
         </Paper>
-
-        {/* Content variants — shown before summary */}
-        {contentVariants.length > 0 && (
-          <ContentVariantGrid variants={contentVariants} />
-        )}
 
         {/* Step 5 configuration summary */}
         <OfferChannelSummary workflowState={workflowState} activeUseCase={activeUseCase} />
@@ -523,6 +574,13 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
   // ── Results phase ─────────────────────────────────────────────────────────
   return (
     <Stack gap="md">
+      {variantPreview && (
+        <VariantPreviewModal
+          variant={variantPreview.variant}
+          seg={variantPreview.seg}
+          onClose={() => setVariantPreview(null)}
+        />
+      )}
       {/* Header */}
       <Paper withBorder p="md" radius="md" style={{ background: 'var(--mantine-color-violet-light)', borderLeft: '3px solid var(--mantine-color-violet-5)' }}>
         <Stack gap="xs">
@@ -569,8 +627,22 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
                 <Table.Td><Text size="xs" c="dimmed">{seg.signal}</Text></Table.Td>
                 <Table.Td><Badge size="xs" variant="light" color={seg.color}>{seg.offer}</Badge></Table.Td>
                 <Table.Td><Text size="xs">{seg.channel}</Text></Table.Td>
-                <Table.Td><Text size="xs" fs="italic">{seg.variantA}</Text></Table.Td>
-                <Table.Td><Text size="xs" fs="italic">{seg.variantB}</Text></Table.Td>
+                <Table.Td>
+                  <Group gap={6} wrap="nowrap">
+                    <ActionIcon size="sm" variant="light" color={seg.color} radius="sm" onClick={() => setVariantPreview({ seg, variant: 'A' })}>
+                      <IconEye size={12} stroke={1.5} />
+                    </ActionIcon>
+                    <Text size="xs" fs="italic" c="dimmed" style={{ lineHeight: 1.3 }}>{seg.variantA}</Text>
+                  </Group>
+                </Table.Td>
+                <Table.Td>
+                  <Group gap={6} wrap="nowrap">
+                    <ActionIcon size="sm" variant="light" color="gray" radius="sm" onClick={() => setVariantPreview({ seg, variant: 'B' })}>
+                      <IconEye size={12} stroke={1.5} />
+                    </ActionIcon>
+                    <Text size="xs" fs="italic" c="dimmed" style={{ lineHeight: 1.3 }}>{seg.variantB}</Text>
+                  </Group>
+                </Table.Td>
                 <Table.Td><Text size="xs" c="dimmed" style={{ lineHeight: 1.5 }}>{seg.why}</Text></Table.Td>
               </Table.Tr>
             ))}

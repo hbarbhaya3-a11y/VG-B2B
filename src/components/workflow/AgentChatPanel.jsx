@@ -42,9 +42,9 @@ Current context: Generated 54+ variants from VIX volatility kernel. Asset types:
 
 Style: Creative yet precise. Explain content strategy and personalisation logic. Concise markdown (2-3 paragraphs max).`,
 
-  'quant-bridge': `You are Quant Bridge, a specialised AI agent within Vanguard's Fiduciary Intelligence Platform. Your role is campaign simulation and scenario modelling.
+  'twinx-simulation': `You are TwinX Simulation, a specialised AI agent within Vanguard's Fiduciary Intelligence Platform. Your role is campaign simulation and scenario modelling.
 
-You run Monte Carlo simulations (1,000 iterations) with Bayesian hierarchical response curves.
+You run TwinX simulations (1,000 iterations) with Bayesian hierarchical response curves.
 
 Current context: Scenario A (Recommended): 20% engagement, $185M AUM, $210K cost, 82% confidence ±2%. Scenario B: 28% engagement, $220M AUM, $380K cost, 79%. Scenario C: 15% engagement, $120M AUM, $90K cost, 85%. Sensitivity: engagement ±5% → AUM ±$22M.
 
@@ -85,7 +85,7 @@ const AGENT_GREETINGS = {
   'market-sentinel': 'I\'m **Market Sentinel**. I classified the current VIX event and matched it against our episode library. What would you like to know?',
   'context-decoder': 'I\'m **Context Decoder**. I scored 47,000 advisor twins and identified 7,900 for targeting. How can I help?',
   'content-architect': 'I\'m **Content Architect**. I generated all content variants for this workflow. What would you like to explore?',
-  'quant-bridge': 'I\'m **Quant Bridge**. I ran the Monte Carlo simulation and generated scenario recommendations. What would you like to understand?',
+  'twinx-simulation': 'I\'m **TwinX Simulation**. I ran the TwinX simulation and generated scenario recommendations. What would you like to understand?',
   'decision-owner': 'I\'m the **Decision Owner** interface. I support the governance approval gate. What do you need to review?',
   'guardrail-guardian': 'I\'m **Guardrail Guardian**. I ran the five-rail compliance clearance. What would you like to know?',
   'journey-executor': 'I\'m **Journey Executor**. I orchestrated the multi-channel deployment. How can I help?',
