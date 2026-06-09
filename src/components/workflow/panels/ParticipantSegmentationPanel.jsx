@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   Paper, Stack, Group, Text, Badge, SimpleGrid, ThemeIcon, Divider, Button,
-  Alert, NumberInput, Select, Slider, Modal, ScrollArea, Loader, Progress, Textarea, Card, Checkbox, Table, Box
+  Alert, NumberInput, Select, Slider, Modal, ScrollArea, Loader, Progress, Textarea, Card, Checkbox
 } from '@mantine/core'
 import {
   IconUsers, IconPhone, IconMail, IconBell, IconShieldCheck, IconChevronRight,
@@ -338,67 +338,52 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
         </Stack>
       </Paper>
 
-      {/* Audience table */}
-      <Paper withBorder radius="md" style={{ overflow: 'hidden' }}>
-        <Box p="sm" style={{ background: 'var(--mantine-color-default-hover)', borderBottom: '1px solid var(--mantine-color-default-border)' }}>
-          <Group gap="xs">
-            <IconUsers size={14} stroke={1.5} />
-            <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>
-              Audiences · {tiersToRender.length} identified · {tiersToRender.filter(t => selectedTierIds.includes(t.id)).reduce((s, t) => s + t.count, 0).toLocaleString()} selected
-            </Text>
-          </Group>
-        </Box>
-        <Table striped highlightOnHover withColumnBorders={false} verticalSpacing="sm" horizontalSpacing="md">
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th style={{ width: 32 }}></Table.Th>
-              <Table.Th style={{ width: 28 }}>#</Table.Th>
-              <Table.Th>Audience name</Table.Th>
-              <Table.Th style={{ width: 90, textAlign: 'right' }}>Count</Table.Th>
-              <Table.Th>Behavioral signal</Table.Th>
-              <Table.Th>Recommendation</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {tiersToRender.map((tier, idx) => {
-              const isSelected = selectedTierIds.includes(tier.id)
-              return (
-                <Table.Tr
-                  key={tier.id}
-                  style={{ opacity: isSelected ? 1 : 0.45, transition: 'opacity 150ms ease' }}
-                >
-                  <Table.Td>
-                    <Checkbox
-                      size="xs"
-                      checked={isSelected}
-                      onChange={() => setSelectedTierIds(ids => ids.includes(tier.id) ? ids.filter(i => i !== tier.id) : [...ids, tier.id])}
-                      color={tier.color}
-                    />
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="xs" c="dimmed" fw={600}>{idx + 1}</Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Group gap={6}>
-                      <div style={{ width: 3, height: 32, borderRadius: 2, background: `var(--mantine-color-${tier.color}-5)`, flexShrink: 0 }} />
-                      <Text size="sm" fw={600}>{tier.label}</Text>
-                    </Group>
-                  </Table.Td>
-                  <Table.Td style={{ textAlign: 'right' }}>
-                    <Text size="sm" fw={700} c={tier.color}>{tier.count.toLocaleString()}</Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="xs" c="dimmed" style={{ lineHeight: 1.5 }}>{tier.behavioralSignal || tier.description}</Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="xs" style={{ lineHeight: 1.5 }}>{tier.recommendation || tier.contentType}</Text>
-                  </Table.Td>
-                </Table.Tr>
-              )
-            })}
-          </Table.Tbody>
-        </Table>
-      </Paper>
+      {/* Audience tiles */}
+      <SimpleGrid cols={3} spacing="md">
+        {tiersToRender.map((tier) => {
+          const isSelected = selectedTierIds.includes(tier.id)
+          return (
+            <Paper
+              key={tier.id}
+              withBorder p="md" radius="md"
+              style={{
+                borderLeft: `3px solid var(--mantine-color-${tier.color}-5)`,
+                opacity: isSelected ? 1 : 0.5,
+                transition: 'opacity 150ms ease',
+              }}
+            >
+              <Stack gap="sm">
+                <Group justify="space-between">
+                  <Checkbox
+                    size="xs"
+                    checked={isSelected}
+                    onChange={() => setSelectedTierIds(ids => ids.includes(tier.id) ? ids.filter(i => i !== tier.id) : [...ids, tier.id])}
+                    color={tier.color}
+                  />
+                  <ThemeIcon size="sm" variant="light" color={tier.color} radius="sm">
+                    <IconUsers size={12} stroke={1.5} />
+                  </ThemeIcon>
+                </Group>
+
+                <Stack gap={0}>
+                  <Text style={{ fontSize: 34, fontWeight: 900, lineHeight: 1, color: `var(--mantine-color-${tier.color}-7)` }}>
+                    {tier.count.toLocaleString()}
+                  </Text>
+                  <Text size="xs" c="dimmed">participants</Text>
+                </Stack>
+
+                <Text size="sm" fw={700} style={{ lineHeight: 1.3 }}>{tier.label}</Text>
+
+                <Divider label="Behavioral signal" labelPosition="left" />
+                <Text size="xs" c="dimmed">{tier.behavioralSignal || tier.description}</Text>
+
+                <Divider label="Recommendation" labelPosition="left" />
+                <Text size="xs">{tier.recommendation || tier.contentType}</Text>
+              </Stack>
+            </Paper>
+          )
+        })}
+      </SimpleGrid>
 
       {/* Conversational Segment Builder */}
       <Card withBorder radius="md" p="md" style={{ cursor: 'pointer', borderStyle: convMode ? 'solid' : 'dashed' }} onClick={() => !convMode && setConvMode(true)}>
