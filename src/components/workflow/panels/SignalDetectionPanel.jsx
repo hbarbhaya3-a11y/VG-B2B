@@ -248,14 +248,10 @@ export default function SignalDetectionPanel({ step, onContinue }) {
             <Text fw={700} size="sm">Conversational Intelligence — Participant Cohort</Text>
             <Badge size="xs" color="teal" variant="filled">42,000 in scope</Badge>
           </Group>
-          <SimpleGrid cols={3} spacing="xs">
+          <SimpleGrid cols={2} spacing="xs">
             <Stack gap={1}>
               <Text size="xs" c="dimmed">Participants in cohort</Text>
               <Text size="lg" fw={800} c="teal">42,000</Text>
-            </Stack>
-            <Stack gap={1}>
-              <Text size="xs" c="dimmed">Holdout (causal)</Text>
-              <Text size="lg" fw={800} c="dimmed">4,200</Text>
             </Stack>
             <Stack gap={1}>
               <Text size="xs" c="dimmed">Treatment group</Text>

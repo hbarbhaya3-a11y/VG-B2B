@@ -217,68 +217,72 @@ export default function AttributionPanel({ step, onExit }) {
         {/* Tab 2 — Outcome KPIs */}
         <Tabs.Panel value="outcomes" pt="md">
           <Stack gap="md">
-            {/* Hero AUM stat */}
-            <Paper withBorder p="xl" radius="md" style={{ background: 'var(--mantine-color-green-light)', textAlign: 'center' }}>
-              <Stack gap="xs" align="center">
-                <Badge size="sm" color="green" variant="light">Days 30–90 · Causal measurement</Badge>
-                <Group gap="md" justify="center" align="flex-end">
-                  <Stack gap={0} align="center">
-                    <Text style={{ fontSize: 56, fontWeight: 900, lineHeight: 1, color: 'var(--mantine-color-green-7)' }}>
-                      $49M
-                    </Text>
-                    <Text size="sm" c="dimmed">Incremental AUM</Text>
-                  </Stack>
-                  <Stack gap={0} align="center">
-                    <Text size="3xl" fw={900} c="teal">+90</Text>
-                    <Text size="xs" c="dimmed">basis points vs. holdout</Text>
-                  </Stack>
-                </Group>
-                <Text size="xs" c="dimmed">
-                  95% CI: {aum.ciLow}–{aum.ciHigh} bps · {Math.round(engagement.holdout * 100)}% holdout organic baseline · {aum.holdoutSize} advisors
-                </Text>
-              </Stack>
+            {/* Hero banner */}
+            <Paper withBorder p="md" radius="md" style={{ background: 'var(--mantine-color-green-light)', borderLeft: '3px solid var(--mantine-color-green-5)' }}>
+              <Group justify="space-between" align="center">
+                <Stack gap={2}>
+                  <Group gap="xs">
+                    <Badge size="sm" color="green" variant="filled">Causal measurement</Badge>
+                    <Badge size="sm" color="teal" variant="light">Treatment vs holdout · 30–90 days</Badge>
+                  </Group>
+                  <Text size="sm" fw={600}>Advisory Readiness Gap — Episode #1 · 42,000 participants · 4,200 holdout</Text>
+                </Stack>
+                <Text size="xs" c="dimmed">95% CI: {aum.ciLow}–{aum.ciHigh} bps vs holdout</Text>
+              </Group>
             </Paper>
 
-            {/* Financial vs Marketing side-by-side */}
+            {/* Primary KPI tiles — matches simulation results */}
+            <SimpleGrid cols={4} spacing="sm">
+              {[
+                { label: 'Advisor appointment starts', value: '+440', sub: 'vs do-nothing baseline', color: 'green' },
+                { label: 'AUM retained / protected',   value: '+$31.8M', sub: 'reduced leakage risk', color: 'violet' },
+                { label: 'Idle cash activated',         value: '+$24.3M', sub: 'cash-to-investment', color: 'teal' },
+                { label: 'Annual advisory revenue',     value: '+$391K', sub: 'annualized proxy', color: 'orange' },
+              ].map(kpi => (
+                <Paper key={kpi.label} withBorder p="md" radius="md" style={{ borderTop: `3px solid var(--mantine-color-${kpi.color}-5)` }}>
+                  <Stack gap={4}>
+                    <Text size="xs" c="dimmed" style={{ lineHeight: 1.3 }}>{kpi.label}</Text>
+                    <Text size="xl" fw={900} c={kpi.color} style={{ lineHeight: 1 }}>{kpi.value}</Text>
+                    <Text size="xs" c="dimmed">{kpi.sub}</Text>
+                  </Stack>
+                </Paper>
+              ))}
+            </SimpleGrid>
+
+            {/* Secondary KPIs */}
             <SimpleGrid cols={2} spacing="md">
-              {/* Financial KPIs */}
               <Paper withBorder p="md" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-green-5)' }}>
                 <Stack gap="sm">
-                  <Badge size="sm" color="green" variant="light">Financial outcomes</Badge>
+                  <Badge size="sm" color="green" variant="light">Business KPIs — actual vs projected</Badge>
                   <Divider />
                   <SimpleGrid cols={2} spacing="xs">
                     <Stack gap={2}>
-                      <Text size="xs" c="dimmed">Incremental AUM</Text>
-                      <Text size="xl" fw={800} c="green" style={{ lineHeight: 1 }}>
-                        ${(aum.incrementalAUM / 1000000).toFixed(0)}M
-                      </Text>
+                      <Text size="xs" c="dimmed">Portfolio review starts</Text>
+                      <Text size="xl" fw={800} c="teal" style={{ lineHeight: 1 }}>4,973</Text>
+                      <Text size="xs" c="dimmed">vs 1,928 baseline</Text>
                     </Stack>
                     <Stack gap={2}>
-                      <Text size="xs" c="dimmed">AUM vs holdout</Text>
-                      <Text size="xl" fw={800} c="teal" style={{ lineHeight: 1 }}>+{aum.bpsVsHoldout} bps</Text>
-                      <Text size="xs" c="dimmed">CI: {aum.ciLow}–{aum.ciHigh} bps</Text>
-                      <Progress value={(aum.bpsVsHoldout / 120) * 100} color="teal" size="xs" />
+                      <Text size="xs" c="dimmed">Digital Advisor assessment starts</Text>
+                      <Text size="xl" fw={800} c="blue" style={{ lineHeight: 1 }}>851</Text>
+                      <Text size="xs" c="dimmed">vs 293 baseline</Text>
                     </Stack>
                     <Stack gap={2}>
-                      <Text size="xs" c="dimmed">Quarterly revenue</Text>
-                      <Text size="xl" fw={800} c="orange" style={{ lineHeight: 1 }}>
-                        ${(pnl.quarterlyRevenue / 1000).toFixed(0)}K
-                      </Text>
-                      <Text size="xs" c="dimmed">{(pnl.takeRate * 100).toFixed(2)}% take rate</Text>
+                      <Text size="xs" c="dimmed">AUM into advice path</Text>
+                      <Text size="xl" fw={800} c="green" style={{ lineHeight: 1 }}>$191M</Text>
+                      <Text size="xs" c="dimmed">vs $60.7M baseline</Text>
                     </Stack>
                     <Stack gap={2}>
-                      <Text size="xs" c="dimmed">Campaign ROI</Text>
-                      <Text size="xl" fw={800} c="green" style={{ lineHeight: 1 }}>~880×</Text>
-                      <Text size="xs" c="dimmed">$185M ÷ $210K cost</Text>
+                      <Text size="xs" c="dimmed">Complaint / opt-out rate</Text>
+                      <Text size="xl" fw={800} c="gray" style={{ lineHeight: 1 }}>0.11%</Text>
+                      <Text size="xs" c="dimmed">Within guardrail (&lt;0.20%)</Text>
                     </Stack>
                   </SimpleGrid>
                 </Stack>
               </Paper>
 
-              {/* Marketing KPIs */}
               <Paper withBorder p="md" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-blue-5)' }}>
                 <Stack gap="sm">
-                  <Badge size="sm" color="blue" variant="light">Marketing outcomes</Badge>
+                  <Badge size="sm" color="blue" variant="light">Engagement outcomes</Badge>
                   <Divider />
                   <SimpleGrid cols={2} spacing="xs">
                     <Stack gap={2}>
@@ -289,19 +293,18 @@ export default function AttributionPanel({ step, onExit }) {
                       <Text size="xs" c="dimmed">{ot.accepted.toLocaleString()} of {ot.totalPushed.toLocaleString()}</Text>
                     </Stack>
                     <Stack gap={2}>
-                      <Text size="xs" c="dimmed">Articles read</Text>
+                      <Text size="xs" c="dimmed">Emails opened</Text>
                       <Text size="xl" fw={800} c="violet" style={{ lineHeight: 1 }}>
-                        {(ca.articlesRead ?? 0).toLocaleString()}
+                        {(ca.emailsOpened ?? 0).toLocaleString()}
                       </Text>
                     </Stack>
                     <Stack gap={2}>
                       <Text size="xs" c="dimmed">Tool interactions</Text>
-                      <Text size="xl" fw={800} c="indigo" style={{ lineHeight: 1 }}>{ca.toolInteractions ?? 0}</Text>
+                      <Text size="xl" fw={800} c="indigo" style={{ lineHeight: 1 }}>{(ca.toolInteractions ?? 0).toLocaleString()}</Text>
                     </Stack>
                     <Stack gap={2}>
-                      <Text size="xs" c="dimmed">PDF redistribution</Text>
-                      <Text size="xl" fw={800} c="green" style={{ lineHeight: 1 }}>{ca.pdfsRedistributed ?? 0}</Text>
-                      <Text size="xs" c="dimmed">→ ~{(engagement.redistributionEndClients ?? 0).toLocaleString()} end-clients</Text>
+                      <Text size="xs" c="dimmed">Portal clicks</Text>
+                      <Text size="xl" fw={800} c="green" style={{ lineHeight: 1 }}>{(ca.portalClicks ?? 0).toLocaleString()}</Text>
                     </Stack>
                   </SimpleGrid>
                 </Stack>

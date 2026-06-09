@@ -338,6 +338,75 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
         </Stack>
       </Paper>
 
+      {/* Conversational Segment Builder */}
+      <Card withBorder radius="md" p="md" style={{ cursor: 'pointer', borderStyle: convMode ? 'solid' : 'dashed' }} onClick={() => !convMode && setConvMode(true)}>
+        <Group gap="sm">
+          <ThemeIcon size={36} radius="md" variant="gradient" gradient={{ from: 'violet', to: 'grape', deg: 135 }}>
+            <IconSparkles size={20} stroke={1.5} />
+          </ThemeIcon>
+          <Stack gap={2} style={{ flex: 1 }}>
+            <Group gap="xs">
+              <Text size="sm" fw={700}>Conversational Segment Builder</Text>
+              <Badge size="xs" color="violet" variant="light">AI</Badge>
+            </Group>
+            <Text size="xs" c="dimmed">Describe your target audience in plain language — TwinX will generate behavioral segments automatically.</Text>
+          </Stack>
+          {convMode && (
+            <Button size="xs" variant="subtle" color="gray" onClick={(e) => { e.stopPropagation(); setConvMode(false); setConvSegments(null) }}>
+              Close
+            </Button>
+          )}
+        </Group>
+
+        {convMode && (
+          <Stack gap="sm" mt="md" onClick={(e) => e.stopPropagation()}>
+            <Textarea
+              placeholder="e.g. 'Find me investors over 55 with >$250K in assets who haven't spoken to an advisor in the last 12 months but have been actively using our retirement calculator'"
+              minRows={3}
+              value={convInput}
+              onChange={(e) => setConvInput(e.currentTarget.value)}
+              radius="md"
+            />
+            <Group>
+              <Button
+                size="sm"
+                variant="gradient"
+                gradient={{ from: 'violet', to: 'grape', deg: 135 }}
+                leftSection={<IconWand size={14} />}
+                onClick={handleGenerateSegments}
+                loading={convLoading}
+                disabled={convLoading}
+              >
+                Generate segments
+              </Button>
+              {convLoading && (
+                <Text size="xs" c="dimmed">Analyzing behavioral patterns…</Text>
+              )}
+            </Group>
+
+            {convSegments && (
+              <Stack gap="xs">
+                <Text size="xs" fw={600} c="violet">Generated segment:</Text>
+                {convSegments.map(seg => (
+                  <Paper key={seg.id} withBorder p="sm" radius="md" style={{ borderLeft: `3px solid var(--mantine-color-${seg.color}-5)` }}>
+                    <Group justify="space-between">
+                      <Stack gap={2}>
+                        <Text size="sm" fw={700}>{seg.label}</Text>
+                        <Text size="xs" c="dimmed">{seg.description}</Text>
+                      </Stack>
+                      <Text size="lg" fw={800} c={seg.color}>{seg.count.toLocaleString()}</Text>
+                    </Group>
+                  </Paper>
+                ))}
+                <Button size="xs" variant="light" color="violet" onClick={handleApplySegments}>
+                  Add to audience
+                </Button>
+              </Stack>
+            )}
+          </Stack>
+        )}
+      </Card>
+
       {/* Audience tiles */}
       <SimpleGrid cols={3} spacing="md">
         {tiersToRender.map((tier) => {
@@ -382,91 +451,6 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
           )
         })}
       </SimpleGrid>
-
-      {/* Conversational Segment Builder */}
-      <Card withBorder radius="md" p="md" style={{ cursor: 'pointer', borderStyle: convMode ? 'solid' : 'dashed' }} onClick={() => !convMode && setConvMode(true)}>
-        <Group gap="sm">
-          <ThemeIcon size={36} radius="md" variant="gradient" gradient={{ from: 'violet', to: 'grape', deg: 135 }}>
-            <IconSparkles size={20} stroke={1.5} />
-          </ThemeIcon>
-          <Stack gap={2} style={{ flex: 1 }}>
-            <Group gap="xs">
-              <Text size="sm" fw={700}>Conversational Segment Builder</Text>
-              <Badge size="xs" color="violet" variant="light">AI</Badge>
-            </Group>
-            <Text size="xs" c="dimmed">Describe your target audience in plain language — TwinX will generate behavioral segments automatically.</Text>
-          </Stack>
-          {convMode && (
-            <Button size="xs" variant="subtle" color="gray" onClick={(e) => { e.stopPropagation(); setConvMode(false); setConvSegments(null) }}>
-              Close
-            </Button>
-          )}
-        </Group>
-
-        {convMode && (
-          <Stack gap="sm" mt="md" onClick={(e) => e.stopPropagation()}>
-            <Textarea
-              placeholder="e.g. 'Find me investors over 55 with >$250K in assets who haven't spoken to an advisor in the last 12 months but have been actively using our retirement calculator'"
-              minRows={3}
-              value={convInput}
-              onChange={(e) => setConvInput(e.currentTarget.value)}
-              radius="md"
-            />
-            <Group>
-              <Button
-                size="sm"
-                variant="gradient"
-                gradient={{ from: 'violet', to: 'grape', deg: 135 }}
-                leftSection={<IconWand size={14} />}
-                onClick={handleGenerateSegments}
-                loading={convLoading}
-                disabled={convLoading}
-              >
-                Generate segments
-              </Button>
-              {convLoading && (
-                <Group gap="xs">
-                  <Loader size="xs" color="violet" />
-                  <Text size="xs" c="dimmed">Analyzing behavioral patterns across 42,000 twins…</Text>
-                </Group>
-              )}
-            </Group>
-
-            {convSegments && (
-              <Stack gap="sm">
-                <Text size="xs" fw={700} c="violet" tt="uppercase" style={{ letterSpacing: '0.06em' }}>Generated segments</Text>
-                <SimpleGrid cols={2} spacing="sm">
-                  {convSegments.map((seg) => (
-                    <Paper key={seg.id} withBorder p="md" radius="md" style={{ borderLeft: `3px solid var(--mantine-color-${seg.color}-5)` }}>
-                      <Stack gap="xs">
-                        <Badge size="sm" color={seg.color} variant="filled">Tier {seg.tier}</Badge>
-                        <Text size="sm" fw={700}>{seg.label}</Text>
-                        <Text size="xs" c="dimmed">{seg.description}</Text>
-                        <Badge size="xs" variant="light" color={seg.color}>{seg.channel}</Badge>
-                        <Text size="xs" c="dimmed" fw={600}>KPI: {seg.kpi}</Text>
-                        <Text style={{ fontSize: 28, fontWeight: 900, lineHeight: 1, color: `var(--mantine-color-${seg.color}-7)` }}>
-                          {seg.count.toLocaleString()}
-                        </Text>
-                      </Stack>
-                    </Paper>
-                  ))}
-                </SimpleGrid>
-                <Button
-                  size="sm"
-                  variant="light"
-                  color="violet"
-                  leftSection={<IconCheck size={14} />}
-                  onClick={handleApplySegments}
-                  style={{ alignSelf: 'flex-start' }}
-                >
-                  Add to audience
-                </Button>
-              </Stack>
-            )}
-          </Stack>
-        )}
-      </Card>
-
 
       {/* Model insight */}
       <Paper withBorder p="md" radius="md">
