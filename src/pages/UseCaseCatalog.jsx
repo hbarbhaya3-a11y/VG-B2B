@@ -251,7 +251,6 @@ function SignalTrendChart({ data, color }) {
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function UseCaseCatalog({ onRunScenario }) {
   const { launch } = useUseCase()
-  const [tab, setTab] = useState('scenarios')
   const [selectedSignalIdx, setSelectedSignalIdx] = useState(0)
   const [signalFilter, setSignalFilter] = useState('All')
 
@@ -299,125 +298,8 @@ export default function UseCaseCatalog({ onRunScenario }) {
         </Group>
       </Card>
 
-      {/* ── Tab bar ────────────────────────────────────────────────────── */}
-      <Group gap={0}>
-        {[
-          { key: 'scenarios', label: 'All scenarios' },
-          { key: 'signals',   label: 'Live signals', count: LIVE_SIGNALS.length },
-        ].map(t => (
-          <Button
-            key={t.key}
-            variant={tab === t.key ? 'filled' : 'subtle'}
-            color={tab === t.key ? 'vanguardRed' : 'gray'}
-            size="xs"
-            radius="md"
-            mr="xs"
-            rightSection={t.count != null
-              ? <Badge size="xs" variant={tab === t.key ? 'white' : 'light'} color={tab === t.key ? 'vanguardRed' : 'gray'}>{t.count}</Badge>
-              : null}
-            onClick={() => setTab(t.key)}
-          >
-            {t.label}
-          </Button>
-        ))}
-        <Text size="xs" c="dimmed" ml="auto">
-          {useCases.length} scenarios · Personal Wealth
-        </Text>
-      </Group>
-
-      {/* ════════════════ ALL SCENARIOS TAB ════════════════════════════ */}
-      {tab === 'scenarios' && (
-        <Stack gap="md">
-          {/* Section header */}
-          <Group gap="sm" align="center">
-            <ThemeIcon size={32} radius="xl" variant="light" color="vanguardRed">
-              <IconUsers size={16} stroke={1.8} />
-            </ThemeIcon>
-            <Box>
-              <Group gap="xs" align="center">
-                <Text fw={700} size="sm">For Personal Wealth Investors</Text>
-                <Badge variant="light" color="vanguardRed" size="sm">{useCases.length} SCENARIOS</Badge>
-                <Badge variant="outline" color="gray" size="sm">ADVISORY · WEALTH ACCUMULATION · RETENTION</Badge>
-              </Group>
-              <Text size="xs" c="dimmed" mt={2}>
-                End-to-end signal scenarios — each traces a behavioral moment through the full TwinX agent pipeline
-                and produces a closed-loop attribution result.
-              </Text>
-            </Box>
-          </Group>
-
-          {/* Scenario cards — 3-col on wide, 1-col on narrow */}
-          <Box
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: 12,
-            }}
-          >
-            {useCases.map((uc) => (
-              <Card
-                key={uc.id}
-                withBorder
-                radius="md"
-                p="md"
-                style={{
-                  borderTop: `3px solid var(--mantine-color-${uc.color}-6)`,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 10,
-                }}
-              >
-                {/* Title row */}
-                <Group justify="space-between" align="flex-start" gap="xs">
-                  <Text fw={700} size="sm" style={{ flex: 1, lineHeight: 1.3 }}>{uc.title}</Text>
-                  <Badge
-                    size="xs"
-                    variant="light"
-                    color={uc.color}
-                    style={{ whiteSpace: 'nowrap', letterSpacing: '0.04em', fontWeight: 700 }}
-                  >
-                    {uc.duration?.toUpperCase()}
-                  </Badge>
-                </Group>
-
-                {/* Subtitle */}
-                <Text size="xs" c="dimmed" style={{ lineHeight: 1.4 }}>
-                  {uc.subtitle}
-                </Text>
-
-                {/* Step icon chain */}
-                <Box pt={2} pb={2}>
-                  <StepChain steps={uc.steps} color={uc.color} />
-                </Box>
-
-                {/* Outcome */}
-                <Box>
-                  <Text size="10px" c="dimmed" fw={600} tt="uppercase" style={{ letterSpacing: '0.08em' }}>
-                    Projected Outcome
-                  </Text>
-                  <Text fw={800} size="sm" c={uc.color} mt={2}>{uc.outcomeDetail}</Text>
-                </Box>
-
-                {/* CTA */}
-                <Button
-                  size="xs"
-                  color={uc.color}
-                  radius="md"
-                  rightSection={<IconRoute2 size={12} stroke={1.5} />}
-                  onClick={() => handleRun(uc)}
-                  mt="auto"
-                >
-                  Run scenario
-                </Button>
-              </Card>
-            ))}
-          </Box>
-        </Stack>
-      )}
-
-      {/* ════════════════ LIVE SIGNALS TAB ════════════════════════════ */}
-      {tab === 'signals' && (
-        <Group align="flex-start" gap="md" wrap="nowrap" style={{ minHeight: 480 }}>
+      {/* ════════════════ LIVE SIGNALS ════════════════════════════════ */}
+      <Group align="flex-start" gap="md" wrap="nowrap" style={{ minHeight: 480 }}>
           {/* ── Signal list ───────────────────────────────── */}
           <Stack gap="xs" style={{ width: 320, flexShrink: 0 }}>
             {/* Search + filter */}
@@ -458,9 +340,8 @@ export default function UseCaseCatalog({ onRunScenario }) {
                         background: isSelected ? `var(--mantine-color-${sig.severityColor}-light)` : undefined,
                       }}
                     >
-                      <Group justify="space-between" mb={4} gap="xs">
+                      <Group mb={4} gap="xs">
                         <SeverityBadge severity={sig.severity} color={sig.severityColor} />
-                        <Badge size="xs" variant="outline" color="gray">{sig.stage}</Badge>
                       </Group>
                       <Text fw={600} size="xs" style={{ lineHeight: 1.35 }} mb={4}>
                         {sig.title}
@@ -477,10 +358,7 @@ export default function UseCaseCatalog({ onRunScenario }) {
                         <Text size="10px">{sig.precedents} precedents</Text>
                       </Group>
                       <Group justify="space-between" align="center">
-                        <Group gap={4}>
-                          <Badge size="xs" variant="outline" color="teal" style={{ fontSize: 9 }}>{sig.stage}</Badge>
-                          <Text size="9px" c="dimmed">{sig.sourceChip.split('·')[0].trim()}</Text>
-                        </Group>
+                        <Text size="9px" c="dimmed">{sig.sourceChip.split('·')[0].trim()}</Text>
                         <Text size="9px" c="dimmed">{sig.window}</Text>
                       </Group>
                     </Card>
@@ -504,7 +382,6 @@ export default function UseCaseCatalog({ onRunScenario }) {
                   </Group>
                   <Group gap="xs">
                     <SeverityBadge severity={selectedSignal.severity} color={selectedSignal.severityColor} />
-                    <Badge size="xs" variant="light" color="teal">{selectedSignal.stage}</Badge>
                   </Group>
                 </Box>
               </Group>
@@ -591,8 +468,7 @@ export default function UseCaseCatalog({ onRunScenario }) {
               </Box>
             </Card>
           )}
-        </Group>
-      )}
+      </Group>
     </Stack>
   )
 }
