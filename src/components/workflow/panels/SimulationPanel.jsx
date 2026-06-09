@@ -592,11 +592,6 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
         </Stack>
       </Stack>
 
-      {/* Generated content variants */}
-      {contentVariants.length > 0 && (
-        <ContentVariantGrid variants={contentVariants} />
-      )}
-
       <Alert icon={<IconAlertTriangle size={16} stroke={1.5} />} color="yellow" variant="light">
         <Text size="xs">Engagement rates and AUM estimates are simulation outputs based on prior episode data. Actual results depend on population fit, timing, and execution quality. Holdout design ensures causal attribution.</Text>
       </Alert>

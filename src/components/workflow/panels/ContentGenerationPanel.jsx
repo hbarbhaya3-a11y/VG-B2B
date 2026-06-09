@@ -1147,6 +1147,39 @@ export default function ContentGenerationPanel({ step, workflowState, onContinue
         ))}
       </SimpleGrid>
 
+      {/* Content variants by segment */}
+      {pd.segmentVariants && (
+        <Paper withBorder p="md" radius="md">
+          <Text size="xs" fw={700} tt="uppercase" c="dimmed" mb="sm" style={{ letterSpacing: '0.05em' }}>Content variants by audience segment</Text>
+          <Table striped highlightOnHover fz="xs" verticalSpacing="sm" horizontalSpacing="md">
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Segment</Table.Th>
+                <Table.Th>Channel</Table.Th>
+                <Table.Th>Variant A</Table.Th>
+                <Table.Th>Variant B</Table.Th>
+                <Table.Th style={{ width: 70, textAlign: 'center' }}>Count</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {pd.segmentVariants.map((sv) => (
+                <Table.Tr key={sv.id}>
+                  <Table.Td>
+                    <Group gap={6} wrap="nowrap">
+                      <div style={{ width: 3, height: 24, borderRadius: 2, background: `var(--mantine-color-${sv.color}-5)`, flexShrink: 0 }} />
+                      <Text size="xs" fw={600}>{sv.label}</Text>
+                    </Group>
+                  </Table.Td>
+                  <Table.Td><Badge size="xs" variant="light" color={sv.color}>{sv.channel}</Badge></Table.Td>
+                  <Table.Td><Text size="xs" fs="italic">{sv.variantA}</Text></Table.Td>
+                  <Table.Td><Text size="xs" fs="italic">{sv.variantB}</Text></Table.Td>
+                  <Table.Td style={{ textAlign: 'center' }}><Badge size="xs" variant="outline" color="gray">{sv.variants}</Badge></Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Paper>
+      )}
 
       {/* Tier-specific content breakdown */}
       {pd.tierBreakdown && (

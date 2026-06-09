@@ -1,35 +1,38 @@
 import { useState } from 'react'
-import { Paper, Stack, Group, Text, Badge, SimpleGrid, Textarea, Button, Alert, Divider, ThemeIcon, Progress, Collapse } from '@mantine/core'
-import { useDisclosure } from '@mantine/hooks'
-import { IconUserCheck, IconAlertTriangle, IconCheck, IconX, IconTrendingUp, IconChevronDown, IconChevronRight, IconSettings } from '@tabler/icons-react'
+import { Paper, Stack, Group, Text, Badge, SimpleGrid, Textarea, Button, Alert, Divider, ThemeIcon, Progress, Table } from '@mantine/core'
+import { IconUserCheck, IconAlertTriangle, IconCheck, IconChevronDown, IconChevronRight } from '@tabler/icons-react'
+
+const KPI_ROWS = [
+  { metric: 'Portfolio review starts',            baseline: '1,928',   recommended: '4,973',    incremental: '+3,046',            color: 'teal'   },
+  { metric: 'Advisor appointment starts',         baseline: '211',     recommended: '652',      incremental: '+440',              color: 'green'  },
+  { metric: 'Digital Advisor assessment starts',  baseline: '293',     recommended: '851',      incremental: '+558',              color: 'blue'   },
+  { metric: 'Estimated new advisory relationships',baseline: '211',    recommended: '652',      incremental: '+440',              color: 'green'  },
+  { metric: 'AUM moving into advice path',        baseline: '$60.7M',  recommended: '$191.0M',  incremental: '+$130.2M',          color: 'green'  },
+  { metric: 'Idle cash activated',                baseline: '$13.8M',  recommended: '$38.1M',   incremental: '+$24.3M',           color: 'teal'   },
+  { metric: 'AUM retained / protected',           baseline: 'Baseline leakage risk', recommended: 'Reduced leakage risk', incremental: '+$31.8M protected', color: 'violet' },
+  { metric: 'Annual advisory revenue proxy',      baseline: '$182K',   recommended: '$573K',    incremental: '+$391K annualized', color: 'green'  },
+  { metric: 'Complaint / opt-out rate',           baseline: '0.08%',   recommended: '0.11%',    incremental: 'Within guardrail',  color: 'gray'   },
+]
+
+const SEG_CONTRIBUTIONS = [
+  { label: 'Planning-active, advice-undecided',     pct: 34, note: '% of incremental advisor appointments',  color: 'orange' },
+  { label: 'High-cash, low-conviction',             pct: 22, note: '% of cash-to-investment actions',        color: 'orange' },
+  { label: 'Portfolio complexity builders',          pct: 18, note: '% of portfolio review starts',           color: 'blue'   },
+  { label: 'Retirement income / transition planners',pct: 14, note: '% of advisor consultation starts',       color: 'teal'   },
+  { label: 'Volatility-sensitive recheckers',        pct:  8, note: '% of retention / reduced reactive actions', color: 'blue' },
+  { label: 'Tax-efficiency seekers',                 pct:  3, note: '% of strategy education completions',    color: 'teal'   },
+  { label: 'Service-frustrated digital users',       pct:  1, note: '% of advisory conversion (high service-deflection impact)', color: 'grape' },
+]
 
 export default function DecisionApprovalPanel({ step, workflowState, onApprove }) {
   const pd = step.panelData
   const [overrideText, setOverrideText] = useState(workflowState.overrideText || pd.defaultOverride)
-  const scenarioId = workflowState.selectedScenarioId ?? 'A'
-  const [configOpened, { toggle: toggleConfig }] = useDisclosure(false)
-
-  const scenarioData = {
-    A: { engagement: 22, aum: 185, cost: 145, confidence: 84, ci: '±2%', advisors: 7900 },
-    B: { engagement: 28, aum: 240, cost: 380, confidence: 64, ci: '±6%', advisors: 7900 },
-    C: { engagement: 14, aum: 105, cost: 75,  confidence: 87, ci: '±3%', advisors: 7900 },
-  }[scenarioId] ?? { engagement: 22, aum: 185, cost: 145, confidence: 84, ci: '±2%', advisors: 7900 }
-
-  const rationale = pd.scenarioRationale[scenarioId] ?? pd.scenarioRationale.A
-  const dn = pd.doNothing
-
-  const engagementLift = scenarioData.engagement - Math.round(dn.engagement * 100)
-  const aumLift = scenarioData.aum
-  const roi = Math.round(scenarioData.aum * 1000000 / (scenarioData.cost * 1000))
-  const advisorsUnreached = scenarioData.advisors - dn.advisorsReached
+  const [segOpen, setSegOpen] = useState(false)
 
   return (
     <Stack gap="md">
       {/* Header */}
-      <Paper
-        withBorder p="md" radius="md"
-        style={{ borderLeft: '4px solid var(--mantine-color-yellow-5)', background: 'var(--mantine-color-yellow-light)' }}
-      >
+      <Paper withBorder p="md" radius="md" style={{ borderLeft: '4px solid var(--mantine-color-yellow-5)', background: 'var(--mantine-color-yellow-light)' }}>
         <Group gap="sm">
           <ThemeIcon size={40} radius="xl" color="yellow" variant="filled">
             <IconUserCheck size={20} stroke={1.5} />
@@ -39,155 +42,130 @@ export default function DecisionApprovalPanel({ step, workflowState, onApprove }
               <Text size="md" fw={800}>Decision Owner Approval Required</Text>
               <Badge size="sm" color="yellow" variant="filled">APPROVAL GATE</Badge>
             </Group>
-            <Text size="xs" c="dimmed">
-              Scenario <strong>{scenarioId}</strong> selected in simulation · Review the comparison and approve to proceed
-            </Text>
+            <Text size="xs" c="dimmed">Simulation Results — Recommended Action vs Do Nothing</Text>
           </Stack>
         </Group>
       </Paper>
 
-      {/* Side-by-side comparison */}
-      <SimpleGrid cols={2} spacing="md">
-        {/* Recommended — KPIs + collapsible config */}
-        <Paper withBorder p="md" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-teal-5)' }}>
-          <Stack gap="sm">
+      {/* Assumptions */}
+      <Paper withBorder p="md" radius="md">
+        <Stack gap="sm">
+          <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Simulation Assumptions</Text>
+          <SimpleGrid cols={3} spacing="xs">
+            {[
+              { label: 'Audience',         value: '42,000 eligible investors' },
+              { label: 'Treatment',        value: '37,800' },
+              { label: 'Holdout',          value: '4,200' },
+              { label: 'Test period',      value: '30 days' },
+              { label: 'Simulation method',value: 'Digital-twin response simulation + historical precedent matching' },
+              { label: 'Confidence',       value: '89%' },
+            ].map(item => (
+              <Stack key={item.label} gap={1}>
+                <Text size="xs" c="dimmed">{item.label}</Text>
+                <Text size="xs" fw={600}>{item.value}</Text>
+              </Stack>
+            ))}
+          </SimpleGrid>
+          <Alert variant="light" color="teal" p="xs">
             <Group gap="xs">
-              <Badge size="sm" color="teal" variant="filled">Recommended</Badge>
-              <Badge size="sm" color="blue" variant="light">Scenario {scenarioId}</Badge>
+              <IconCheck size={14} stroke={2} />
+              <Text size="xs" fw={600}>Recommendation: Proceed to guardrail clearance</Text>
             </Group>
-            <Divider />
-            <SimpleGrid cols={2} spacing="xs">
-              <Stack gap={2}>
-                <Text size="xs" c="dimmed">Engagement</Text>
-                <Text size="xl" fw={800} c="teal" style={{ lineHeight: 1 }}>{scenarioData.engagement}%</Text>
-              </Stack>
-              <Stack gap={2}>
-                <Text size="xs" c="dimmed">Est. AUM</Text>
-                <Text size="xl" fw={800} c="green" style={{ lineHeight: 1 }}>${scenarioData.aum}M</Text>
-              </Stack>
-              <Stack gap={2}>
-                <Text size="xs" c="dimmed">Campaign cost</Text>
-                <Text size="xl" fw={800} style={{ lineHeight: 1 }}>${scenarioData.cost}K</Text>
-              </Stack>
-              <Stack gap={2}>
-                <Text size="xs" c="dimmed">Confidence</Text>
-                <Text size="xl" fw={800} c="teal" style={{ lineHeight: 1 }}>{scenarioData.confidence}%</Text>
-                <Progress value={scenarioData.confidence} color="teal" size="xs" />
-              </Stack>
-            </SimpleGrid>
-            <Group gap="xs">
-              <Badge size="xs" color="teal" variant="light">7,900 advisors</Badge>
-              <Badge size="xs" color="violet" variant="light">400 holdout</Badge>
-              <Badge size="xs" color="gray" variant="outline">{scenarioData.ci} CI</Badge>
-            </Group>
-
-            {/* Collapsible configuration details */}
-            <Divider />
-            <Group
-              gap="xs"
-              style={{ cursor: 'pointer' }}
-              onClick={toggleConfig}
-            >
-              {configOpened ? <IconChevronDown size={14} stroke={1.5} /> : <IconChevronRight size={14} stroke={1.5} />}
-              <IconSettings size={12} stroke={1.5} style={{ color: 'var(--mantine-color-dimmed)' }} />
-              <Text size="xs" fw={600}>Configuration details</Text>
-              {!configOpened && (
-                <Badge size="xs" variant="light" color="teal" ml="auto">
-                  7,900 adv · 11 types · 3 ch · 97% cleared
-                </Badge>
-              )}
-            </Group>
-            <Collapse in={configOpened}>
-              <Stack gap="xs" mt="xs">
-                <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.04em' }}>Pipeline</Text>
-                <Group gap="xs"><Text size="xs" c="dimmed">Advisors:</Text><Text size="xs" fw={600}>7,900 (3 tiers + 400 holdout)</Text></Group>
-                <Group gap="xs"><Text size="xs" c="dimmed">Content:</Text><Text size="xs" fw={600}>12 types, 212 outputs</Text></Group>
-                <Group gap="xs"><Text size="xs" c="dimmed">Clearance:</Text><Text size="xs" fw={600}>97% — 4 corrected, 2 on hold</Text></Group>
-                <Group gap="xs"><Text size="xs" c="dimmed">Simulation:</Text><Text size="xs" fw={600}>1,000 iterations</Text></Group>
-                <Divider my={4} />
-                <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.04em' }}>Channel mix</Text>
-                <Group gap="xs"><Text size="xs" c="dimmed">Tier 1 (150):</Text><Text size="xs" fw={600}>Wholesaler call + brief</Text></Group>
-                <Group gap="xs"><Text size="xs" c="dimmed">Tier 2 (1,200):</Text><Text size="xs" fw={600}>Email A/B + portal</Text></Group>
-                <Group gap="xs"><Text size="xs" c="dimmed">Tier 3 (6,550):</Text><Text size="xs" fw={600}>Portal notification</Text></Group>
-              </Stack>
-            </Collapse>
-          </Stack>
-        </Paper>
-
-        {/* Do Nothing */}
-        <Paper withBorder p="md" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-gray-4)' }}>
-          <Stack gap="sm">
-            <Group gap="xs">
-              <Badge size="sm" color="gray" variant="light">Alternative</Badge>
-              <Badge size="sm" color="gray" variant="outline">Do Nothing</Badge>
-            </Group>
-            <Divider />
-            <SimpleGrid cols={2} spacing="xs">
-              <Stack gap={2}>
-                <Text size="xs" c="dimmed">Engagement</Text>
-                <Text size="xl" fw={800} c="dimmed" style={{ lineHeight: 1 }}>6%</Text>
-                <Text size="xs" c="dimmed">organic only</Text>
-              </Stack>
-              <Stack gap={2}>
-                <Text size="xs" c="dimmed">Est. AUM</Text>
-                <Text size="xl" fw={800} c="dimmed" style={{ lineHeight: 1 }}>$0</Text>
-                <Text size="xs" c="dimmed">no incremental</Text>
-              </Stack>
-              <Stack gap={2}>
-                <Text size="xs" c="dimmed">Campaign cost</Text>
-                <Text size="xl" fw={800} c="dimmed" style={{ lineHeight: 1 }}>$0</Text>
-              </Stack>
-              <Stack gap={2}>
-                <Text size="xs" c="dimmed">Advisors reached</Text>
-                <Text size="xl" fw={800} c="dimmed" style={{ lineHeight: 1 }}>0</Text>
-                <Text size="xs" c="dimmed">proactively</Text>
-              </Stack>
-            </SimpleGrid>
-            <Text size="xs" c="dimmed" style={{ fontStyle: 'italic' }}>{dn.description}</Text>
-          </Stack>
-        </Paper>
-      </SimpleGrid>
-
-      {/* Delta callout */}
-      <Paper withBorder p="md" radius="md" style={{ background: 'var(--mantine-color-teal-light)', borderLeft: '3px solid var(--mantine-color-teal-5)' }}>
-        <SimpleGrid cols={4} spacing="md">
-          <Stack gap={2} align="center">
-            <Text size="xl" fw={900} c="teal" style={{ lineHeight: 1 }}>+{engagementLift}pp</Text>
-            <Text size="xs" c="dimmed" ta="center">Engagement lift</Text>
-          </Stack>
-          <Stack gap={2} align="center">
-            <Text size="xl" fw={900} c="green" style={{ lineHeight: 1 }}>+${aumLift}M</Text>
-            <Text size="xs" c="dimmed" ta="center">Incremental AUM</Text>
-          </Stack>
-          <Stack gap={2} align="center">
-            <Group gap={4} align="center">
-              <ThemeIcon size="sm" variant="filled" color="blue" radius="sm">
-                <IconTrendingUp size={12} stroke={1.5} />
-              </ThemeIcon>
-              <Text size="xl" fw={900} c="blue" style={{ lineHeight: 1 }}>{roi}×</Text>
-            </Group>
-            <Text size="xs" c="dimmed" ta="center">ROI</Text>
-          </Stack>
-          <Stack gap={2} align="center">
-            <Text size="xl" fw={900} c="red" style={{ lineHeight: 1 }}>{advisorsUnreached.toLocaleString()}</Text>
-            <Text size="xs" c="dimmed" ta="center">advisors unsupported if no action</Text>
-          </Stack>
-        </SimpleGrid>
-        <Divider my="xs" />
-        <Group gap={4}>
-          <IconAlertTriangle size={12} stroke={1.5} style={{ color: 'var(--mantine-color-red-5)', flexShrink: 0 }} />
-          <Text size="xs" c="red">
-            {advisorsUnreached.toLocaleString()} advisors receive no proactive support during this volatility window.
-          </Text>
-        </Group>
+          </Alert>
+        </Stack>
       </Paper>
 
-      {/* System rationale */}
-      <Alert icon={<IconAlertTriangle size={16} stroke={1.5} />} color="yellow" variant="light" title="System rationale">
-        <Text size="xs">{rationale}</Text>
-      </Alert>
+      {/* Business KPI table */}
+      <Stack gap="xs">
+        <Text size="sm" fw={700}>Business KPI Simulation</Text>
+        <Paper withBorder radius="md" style={{ overflow: 'auto' }}>
+          <Table striped highlightOnHover fz="xs" verticalSpacing="sm" horizontalSpacing="md">
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Metric</Table.Th>
+                <Table.Th style={{ textAlign: 'right' }}>Do nothing baseline</Table.Th>
+                <Table.Th style={{ textAlign: 'right' }}>Recommended outreach</Table.Th>
+                <Table.Th style={{ textAlign: 'right' }}>Incremental impact</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {KPI_ROWS.map(row => (
+                <Table.Tr key={row.metric}>
+                  <Table.Td fw={500}>{row.metric}</Table.Td>
+                  <Table.Td style={{ textAlign: 'right' }} c="dimmed">{row.baseline}</Table.Td>
+                  <Table.Td style={{ textAlign: 'right' }} fw={600} c={row.color}>{row.recommended}</Table.Td>
+                  <Table.Td style={{ textAlign: 'right' }}>
+                    <Badge size="xs" variant="light" color={row.color}>{row.incremental}</Badge>
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Paper>
+      </Stack>
 
-      <Divider label="Field override" labelPosition="left" />
+      {/* Outcome summary */}
+      <Paper withBorder p="md" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-teal-5)', background: 'var(--mantine-color-teal-light)' }}>
+        <Stack gap="sm">
+          <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Outcome Summary</Text>
+          <Stack gap={4}>
+            <Text size="xs" fw={700} c="dimmed">Recommended strategy</Text>
+            <Text size="sm" fw={600}>Behavior-matched, education-first advisory readiness journey.</Text>
+          </Stack>
+          <Stack gap={4}>
+            <Text size="xs" fw={700} c="dimmed">Predicted lift</Text>
+            <Group gap="xs" wrap="wrap">
+              {[
+                '3.3× advisor appointment starts',
+                '2.6× portfolio review starts',
+                '2.7× Digital Advisor assessment starts',
+                'Complaint / opt-out rate within guardrail',
+              ].map(item => (
+                <Badge key={item} size="sm" variant="light" color="teal">{item}</Badge>
+              ))}
+            </Group>
+          </Stack>
+        </Stack>
+      </Paper>
+
+      {/* Segment contribution */}
+      <Paper withBorder p="md" radius="md">
+        <Group
+          gap="xs"
+          justify="space-between"
+          style={{ cursor: 'pointer' }}
+          onClick={() => setSegOpen(o => !o)}
+          mb={segOpen ? 'sm' : 0}
+        >
+          <Group gap="xs">
+            {segOpen ? <IconChevronDown size={14} /> : <IconChevronRight size={14} />}
+            <Text size="sm" fw={700}>Segment Contribution to Incremental Impact</Text>
+          </Group>
+          <Badge size="xs" variant="light" color="violet">7 segments</Badge>
+        </Group>
+        {segOpen && (
+          <Stack gap="xs">
+            {SEG_CONTRIBUTIONS.map((seg, i) => (
+              <Stack key={seg.label} gap={4}>
+                <Group justify="space-between" wrap="nowrap">
+                  <Group gap={6} wrap="nowrap">
+                    <Text size="xs" c="dimmed" fw={600} style={{ minWidth: 16 }}>{i + 1}.</Text>
+                    <div style={{ width: 3, height: 16, borderRadius: 2, background: `var(--mantine-color-${seg.color}-5)`, flexShrink: 0 }} />
+                    <Text size="xs" fw={600}>{seg.label}</Text>
+                  </Group>
+                  <Group gap="xs" wrap="nowrap">
+                    <Text size="xs" fw={700} c={seg.color}>{seg.pct}%</Text>
+                    <Text size="xs" c="dimmed">{seg.note}</Text>
+                  </Group>
+                </Group>
+                <Progress value={seg.pct} color={seg.color} size="xs" ml={22} />
+              </Stack>
+            ))}
+          </Stack>
+        )}
+      </Paper>
+
+      <Divider label="Decision" labelPosition="left" />
 
       {/* Override input */}
       <Stack gap="xs">
@@ -199,16 +177,11 @@ export default function DecisionApprovalPanel({ step, workflowState, onApprove }
           minRows={2}
           radius="md"
         />
-        <Alert icon={<IconAlertTriangle size={14} stroke={1.5} />} color="yellow" variant="light" p="xs">
-          <Text size="xs">{pd.overrideRationale}</Text>
-        </Alert>
       </Stack>
 
       {/* Approve / Decline */}
       <Group justify="flex-end" gap="md">
-        <Button size="md" variant="light" color="red">
-          Decline
-        </Button>
+        <Button size="md" variant="light" color="red">Decline</Button>
         <Button
           size="md"
           variant="gradient"
