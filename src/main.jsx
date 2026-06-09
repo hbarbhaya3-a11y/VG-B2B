@@ -1,5 +1,25 @@
-import React from 'react'
+import React, { Component } from 'react'
 import { createRoot } from 'react-dom/client'
+
+class ErrorBoundary extends Component {
+  state = { error: null }
+  static getDerivedStateFromError(e) { return { error: e } }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 32, fontFamily: 'monospace', color: '#c0392b' }}>
+          <h2>Runtime Error</h2>
+          <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+            {this.state.error?.message}
+            {'\n\n'}
+            {this.state.error?.stack}
+          </pre>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 import { MantineProvider } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
 import { ModalsProvider } from '@mantine/modals'
@@ -16,6 +36,7 @@ import { ToastProvider } from './contexts/ToastContext'
 import { AuthProvider } from './contexts/AuthContext'
 
 createRoot(document.getElementById('root')).render(
+  <ErrorBoundary>
   <React.StrictMode>
     <MantineProvider theme={theme} defaultColorScheme="light">
       <ModalsProvider>
@@ -32,4 +53,5 @@ createRoot(document.getElementById('root')).render(
       </ModalsProvider>
     </MantineProvider>
   </React.StrictMode>
+  </ErrorBoundary>
 )
