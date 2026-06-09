@@ -247,7 +247,6 @@ export default function SignalDetectionPanel({ step, onContinue }) {
                 <IconSparkles size={14} color="white" />
               </ThemeIcon>
               <Text fw={700} size="sm">Next Best Action</Text>
-              <Badge size="xs" variant="light" color="indigo">Aligned to cross-sell objective</Badge>
             </Group>
             <Paper withBorder radius="sm" p="sm" style={{ background: 'var(--mantine-color-indigo-light)' }}>
               <Text fw={700} size="sm">{pd.nba.recommendation}</Text>
