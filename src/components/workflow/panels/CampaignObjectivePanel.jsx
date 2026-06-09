@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   Stack, Group, Text, Badge, Button, Select, Paper, Divider, Box,
-  ThemeIcon, SimpleGrid, ActionIcon,
+  ThemeIcon, SimpleGrid, ActionIcon, NumberInput,
 } from '@mantine/core'
 import { DatePickerInput } from '@mantine/dates'
 import {
@@ -50,7 +50,7 @@ export default function CampaignObjectivePanel({ panelData: pd, onContinue }) {
   const [primaryKpi,   setPrimaryKpi]   = useState(getKpis(pd.defaultObjective).primary)
   const [secondaryKpi, setSecondaryKpi] = useState(getKpis(pd.defaultObjective).secondary)
 
-  const [budget,    setBudget]    = useState(String(pd.defaultBudget))
+  const [budget,    setBudget]    = useState(pd.defaultBudget)
   const [startDate, setStartDate] = useState(null)
   const [endDate,   setEndDate]   = useState(null)
 
@@ -76,7 +76,7 @@ export default function CampaignObjectivePanel({ panelData: pd, onContinue }) {
 
   const primaryObjData = pd.objectives.find(o => o.id === primaryObj)
   const secondaryObjData = pd.objectives.find(o => o.id === secondaryObj)
-  const selectedBudgetLabel = pd.budgetOptions.find(b => String(b.value) === String(budget))?.label || budget
+  const formattedBudget = budget ? `$${Number(budget).toLocaleString()}` : 'unset'
 
   const durationDays = startDate && endDate
     ? Math.max(1, Math.round((endDate - startDate) / (1000 * 60 * 60 * 24)))
@@ -154,13 +154,17 @@ export default function CampaignObjectivePanel({ panelData: pd, onContinue }) {
       {/* Budget + Dates */}
       <SimpleGrid cols={3} spacing="md">
         <Stack gap="xs">
-          <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Budget</Text>
-          <Select
-            data={pd.budgetOptions.map(b => ({ value: String(b.value), label: b.label }))}
-            value={String(budget)}
+          <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Budget ($)</Text>
+          <NumberInput
+            value={budget}
             onChange={setBudget}
             radius="md"
+            min={0}
+            step={10000}
+            thousandSeparator=","
             leftSection={<IconCurrencyDollar size={14} />}
+            placeholder="e.g. 150000"
+            hideControls={false}
           />
         </Stack>
         <Stack gap="xs">
@@ -237,8 +241,8 @@ export default function CampaignObjectivePanel({ panelData: pd, onContinue }) {
             : null}
           <strong>{primaryObjData?.label}</strong>
           {secondaryObjData ? <> + <strong>{secondaryObjData.label}</strong></> : null}
-          {' '}campaign · <strong>{selectedBudgetLabel.split(' —')[0]}</strong> budget ·
-          measuring <strong>{kpiLabel(primaryKpi)}</strong> and <strong>{kpiLabel(secondaryKpi)}</strong>.
+          {' '}campaign ·
+          budget <strong>{formattedBudget}</strong> · measuring <strong>{kpiLabel(primaryKpi)}</strong> and <strong>{kpiLabel(secondaryKpi)}</strong>.
         </Text>
       </Paper>
 

@@ -151,10 +151,11 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
   const [sampleTier, setSampleTier] = useState(null)
   const { activeUseCase } = useUseCase()
   const [convMode, setConvMode] = useState(false)
-  const [convInput, setConvInput] = useState('')
+  const [convInput, setConvInput] = useState('Find self-directed investors with $250K+ investable assets, 3+ planning-tool visits, no advisor, and rising cash balance.')
   const [convSegments, setConvSegments] = useState(null)
   const [convLoading, setConvLoading] = useState(false)
   const [activeTiers, setActiveTiers] = useState(null)
+  const [selectedTierIds, setSelectedTierIds] = useState(() => pd.tiers.map(t => t.id))
 
   useEffect(() => {
     if (phase !== 'scoring') return
@@ -219,6 +220,15 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
       setConvLoading(false)
       setConvSegments(AI_SEGMENTS)
     }, 1800)
+  }
+
+  const handleApplySegments = () => {
+    const base = activeTiers || pd.tiers
+    const newTiers = [...base, ...AI_SEGMENTS.filter(s => !base.find(t => t.id === s.id))]
+    setActiveTiers(newTiers)
+    setSelectedTierIds(ids => [...ids, ...AI_SEGMENTS.map(s => s.id).filter(id => !ids.includes(id))])
+    setConvSegments(null)
+    setConvMode(false)
   }
 
   const tiersToRender = activeTiers || pd.tiers
@@ -330,10 +340,10 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
                   variant="light"
                   color="violet"
                   leftSection={<IconCheck size={14} />}
-                  onClick={() => setActiveTiers(convSegments)}
+                  onClick={handleApplySegments}
                   style={{ alignSelf: 'flex-start' }}
                 >
-                  Apply segments
+                  Add to audience
                 </Button>
               </Stack>
             )}
@@ -369,6 +379,33 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
             {editMode ? 'Lock configuration' : 'Edit configuration'}
           </Button>
         </Group>
+      </Paper>
+
+      {/* Test Hypothesis */}
+      <Paper withBorder radius="md" p="md" style={{ borderLeft: '3px solid var(--mantine-color-indigo-6)' }}>
+        <Stack gap="sm">
+          <Group gap="xs">
+            <ThemeIcon size={22} radius="md" variant="light" color="indigo">
+              <IconTargetArrow size={13} stroke={1.8} />
+            </ThemeIcon>
+            <Text fw={700} size="sm">Test Hypothesis — Advisory Readiness Gap</Text>
+          </Group>
+          <Stack gap={6}>
+            <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Pre-selected Objective</Text>
+            <Badge size="sm" variant="light" color="vanguardRed" style={{ alignSelf: 'flex-start' }}>
+              Cross-sell to advisory
+            </Badge>
+            <Text size="xs" c="dimmed">Increase advisory journey conversion among planning-intent, unadvised investors.</Text>
+          </Stack>
+          <Stack gap={6}>
+            <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Pre-selected Hypothesis</Text>
+            <Paper p="sm" radius="sm" style={{ background: 'var(--mantine-color-indigo-light)', borderLeft: '2px solid var(--mantine-color-indigo-4)' }}>
+              <Text size="xs" fs="italic" style={{ lineHeight: 1.6 }}>
+                "When self-directed investors show repeated planning intent but do not start an advisory relationship, a behavior-matched sequence of education, portfolio review, and optional advice access will increase advisory appointment starts versus no action."
+              </Text>
+            </Paper>
+          </Stack>
+        </Stack>
       </Paper>
 
       {/* Tier cards — merge panelData with workflowState overrides */}
