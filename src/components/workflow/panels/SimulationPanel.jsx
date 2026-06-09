@@ -539,7 +539,7 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
 
       {/* Recommendation table */}
       <Paper withBorder radius="md" style={{ overflow: 'auto' }}>
-        <Table striped highlightOnHover fz="xs" verticalSpacing="sm" horizontalSpacing="md" style={{ minWidth: 900 }}>
+        <Table striped highlightOnHover fz="xs" verticalSpacing="sm" horizontalSpacing="md" style={{ minWidth: 1100 }}>
           <Table.Thead>
             <Table.Tr>
               <Table.Th style={{ width: 28 }}>#</Table.Th>
@@ -550,6 +550,7 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
               <Table.Th>Best channel</Table.Th>
               <Table.Th>Content variant A</Table.Th>
               <Table.Th>Content variant B</Table.Th>
+              <Table.Th>Why this segment matters</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -567,30 +568,20 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
                 </Table.Td>
                 <Table.Td><Text size="xs" c="dimmed">{seg.signal}</Text></Table.Td>
                 <Table.Td><Badge size="xs" variant="light" color={seg.color}>{seg.offer}</Badge></Table.Td>
-                <Table.Td><Badge size="xs" variant="outline" color="gray">{seg.channel}</Badge></Table.Td>
+                <Table.Td><Text size="xs">{seg.channel}</Text></Table.Td>
                 <Table.Td><Text size="xs" fs="italic">{seg.variantA}</Text></Table.Td>
                 <Table.Td><Text size="xs" fs="italic">{seg.variantB}</Text></Table.Td>
+                <Table.Td><Text size="xs" c="dimmed" style={{ lineHeight: 1.5 }}>{seg.why}</Text></Table.Td>
               </Table.Tr>
             ))}
             <Table.Tr>
               <Table.Td colSpan={2}><Text size="xs" fw={700}>Total</Text></Table.Td>
               <Table.Td style={{ textAlign: 'right' }}><Text size="xs" fw={800} c="violet">42,000</Text></Table.Td>
-              <Table.Td colSpan={5} />
+              <Table.Td colSpan={6} />
             </Table.Tr>
           </Table.Tbody>
         </Table>
       </Paper>
-
-      {/* Segment-level recommendation detail */}
-      <Stack gap="xs">
-        <Group gap="xs">
-          <Text size="sm" fw={700}>Segment-level recommendation detail</Text>
-          <Badge size="xs" color="gray" variant="light">click to expand</Badge>
-        </Group>
-        <Stack gap="xs">
-          {SEG_DETAIL.map(seg => <SegmentDetailCard key={seg.id} seg={seg} />)}
-        </Stack>
-      </Stack>
 
       <Alert icon={<IconAlertTriangle size={16} stroke={1.5} />} color="yellow" variant="light">
         <Text size="xs">Engagement rates and AUM estimates are simulation outputs based on prior episode data. Actual results depend on population fit, timing, and execution quality. Holdout design ensures causal attribution.</Text>
