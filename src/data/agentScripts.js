@@ -20,35 +20,35 @@ export const agentScripts = {
     agentName: 'Market Sentinel',
     color: 'teal',
     messages: [
-      { type: 'narrative', text: 'I\'ve detected a significant market event. Analyzing Bloomberg MCP feed...' },
-      { type: 'progress', label: 'Classifying signal type...', duration: 1500 },
+      { type: 'narrative', text: 'Ingesting behavioral signals from Vanguard secure site, Adobe Analytics, and CRM engagement feed…' },
+      { type: 'progress', label: 'Classifying investor behavioral signal type...', duration: 1500 },
       {
         type: 'narrative',
-        text: 'VIX has spiked +36% intraday — a 2-sigma deviation from the 90-day baseline. My LSTM autoencoder assigns 94% confidence to this classification: Market Volatility — Broad Equity.',
+        text: 'Behavior Radar has detected a rising Advisory Readiness Gap — 42,000 self-directed investors showing planning intent (retirement calculator usage, portfolio review visits, repeated advice-content engagement) with no advisory relationship started. Model confidence: 91%.',
         embed: 'signal_dashboard',
       },
       {
         type: 'narrative',
-        text: 'I found 4 matching precedent episodes in the last 6 months. Best match: Mar 2026 Fed rate pivot (92% similarity, $22M retained).',
+        text: 'I matched 3 historical precedents. Best match: Market Volatility Advisory Outreach (Mar 2024, 88% similarity) — education-first reassurance + optional portfolio review drove +22% advice consultation starts vs holdout.',
         embed: 'precedent_table',
       },
       {
         type: 'narrative',
-        text: 'Based on these precedents, timely advisor outreach within 72 hours has historically generated +18% AUM retention. The urgency window is 4 hours.',
+        text: 'Based on these precedents, a 30-day intervention window is optimal. Planning tool usage is 3.4× baseline — the readiness signal is strong but time-sensitive.',
       },
     ],
     guidedQuestion: {
-      text: 'Should I proceed with advisor targeting based on this signal?',
+      text: 'Advisory Readiness Gap confirmed — 42,000 investors in scope, 91% confidence. Proceed to behavioral segmentation?',
       quickReplies: [
-        { label: 'Proceed to targeting', action: 'advance' },
-        { label: 'Show Mar 2026 config', action: 'expand_precedent' },
+        { label: 'Proceed to segmentation', action: 'advance' },
+        { label: 'Show Mar 2024 precedent config', action: 'expand_precedent' },
         { label: 'Adjust parameters', action: 'show_params' },
       ],
     },
     handoff: {
       toAgent: 'Context Decoder',
       toColor: 'cyan',
-      context: 'VIX +36%, 94% confidence, 4 precedents matched, 4-hour urgency window',
+      context: 'Advisory Readiness Gap — 42,000 investors, 91% confidence, 3 precedents matched, 30-day window',
     },
   },
 
@@ -57,23 +57,23 @@ export const agentScripts = {
     agentName: 'Context Decoder',
     color: 'cyan',
     messages: [
-      { type: 'narrative', text: 'Received the VIX spike signal from Market Sentinel. Now scoring 47,000 advisor digital twins against this event...' },
-      { type: 'progress', label: 'Scoring advisor twins via XGBoost (47 features)...', duration: 2000 },
+      { type: 'narrative', text: 'Received Advisory Readiness Gap signal from Market Sentinel. Now scoring 42,000 investor behavioral twins across 6 need-state dimensions…' },
+      { type: 'progress', label: 'Scoring investor twins via XGBoost behavioral model (47 features)...', duration: 2000 },
       {
         type: 'narrative',
-        text: '7,900 advisors identified with elevated large-cap exposure and confidence-under-pressure propensity. Segmented into 3 tiers with holdout control.',
+        text: '42,000 investors segmented into 6 behavioral need-states: Planning-Active Advice-Undecided, High-Cash Low-Conviction, Portfolio Complexity Builders, Volatility-Sensitive Watchers, Rollover/Transition Explorers, and Digitally Engaged Service-Frustrated. 4,200 holdout preserved for causal measurement.',
         embed: 'tier_breakdown',
       },
       {
         type: 'narrative',
-        text: 'Tier 1 (150): High-touch wholesaler calls. Tier 2 (1,200): Digital email + portal. Tier 3 (6,550): Portal notification. 400 holdout for causal measurement.',
+        text: 'Segment 1 (8,400): Secure site card + email — portfolio review invitation. Segment 2 (7,200): App push + secure site module — cash education. Segments 3–6: matched to appropriate channel and content. All classified as education — no advice payload.',
       },
     ],
     guidedQuestion: {
-      text: '7,900 advisors configured across 3 tiers. Proceed to content & channel configuration?',
+      text: '42,000 investors across 6 behavioral segments. Proceed to content & channel configuration?',
       quickReplies: [
         { label: 'Proceed to content config', action: 'advance' },
-        { label: 'Adjust tier assignments', action: 'show_params' },
+        { label: 'Adjust segment assignments', action: 'show_params' },
       ],
     },
     handoff: {
