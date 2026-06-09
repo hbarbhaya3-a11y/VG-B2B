@@ -311,33 +311,6 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
         </Group>
       </Paper>
 
-      {/* Test Hypothesis */}
-      <Paper withBorder radius="md" p="md" style={{ borderLeft: '3px solid var(--mantine-color-indigo-6)' }}>
-        <Stack gap="sm">
-          <Group gap="xs">
-            <ThemeIcon size={22} radius="md" variant="light" color="indigo">
-              <IconTargetArrow size={13} stroke={1.8} />
-            </ThemeIcon>
-            <Text fw={700} size="sm">Test Hypothesis — Advisory Readiness Gap</Text>
-          </Group>
-          <Stack gap={6}>
-            <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Objective</Text>
-            <Badge size="sm" variant="light" color="vanguardRed" style={{ alignSelf: 'flex-start' }}>
-              Cross-sell to advisory
-            </Badge>
-            <Text size="xs" c="dimmed">Increase advisory journey conversion among planning-intent, unadvised investors.</Text>
-          </Stack>
-          <Stack gap={6}>
-            <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Pre-selected Hypothesis</Text>
-            <Paper p="sm" radius="sm" style={{ background: 'var(--mantine-color-indigo-light)', borderLeft: '2px solid var(--mantine-color-indigo-4)' }}>
-              <Text size="xs" fs="italic" style={{ lineHeight: 1.6 }}>
-                "When self-directed investors show repeated planning intent but do not start an advisory relationship, a behavior-matched sequence of education, portfolio review, and optional advice access will increase advisory appointment starts versus no action."
-              </Text>
-            </Paper>
-          </Stack>
-        </Stack>
-      </Paper>
-
       {/* Conversational Segment Builder */}
       <Card withBorder radius="md" p="md" style={{ cursor: 'pointer', borderStyle: convMode ? 'solid' : 'dashed' }} onClick={() => !convMode && setConvMode(true)}>
         <Group gap="sm">
@@ -406,6 +379,33 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
           </Stack>
         )}
       </Card>
+
+      {/* Test Hypothesis */}
+      <Paper withBorder radius="md" p="md" style={{ borderLeft: '3px solid var(--mantine-color-indigo-6)' }}>
+        <Stack gap="sm">
+          <Group gap="xs">
+            <ThemeIcon size={22} radius="md" variant="light" color="indigo">
+              <IconTargetArrow size={13} stroke={1.8} />
+            </ThemeIcon>
+            <Text fw={700} size="sm">Test Hypothesis — Advisory Readiness Gap</Text>
+          </Group>
+          <Stack gap={6}>
+            <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Objective</Text>
+            <Badge size="sm" variant="light" color="vanguardRed" style={{ alignSelf: 'flex-start' }}>
+              Cross-sell to advisory
+            </Badge>
+            <Text size="xs" c="dimmed">Increase advisory journey conversion among planning-intent, unadvised investors.</Text>
+          </Stack>
+          <Stack gap={6}>
+            <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Pre-selected Hypothesis</Text>
+            <Paper p="sm" radius="sm" style={{ background: 'var(--mantine-color-indigo-light)', borderLeft: '2px solid var(--mantine-color-indigo-4)' }}>
+              <Text size="xs" fs="italic" style={{ lineHeight: 1.6 }}>
+                "When self-directed investors show repeated planning intent but do not start an advisory relationship, a behavior-matched sequence of education, portfolio review, and optional advice access will increase advisory appointment starts versus no action."
+              </Text>
+            </Paper>
+          </Stack>
+        </Stack>
+      </Paper>
 
       {/* Audience tiles */}
       <SimpleGrid cols={3} spacing="md">

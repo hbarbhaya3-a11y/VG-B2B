@@ -11,38 +11,29 @@ const DEFAULT_DEPLOYING_LINES = [
   'Deployment complete — all channels live…',
 ]
 
-const tierColors = { 1: 'orange', 2: 'blue', 3: 'teal' }
-
-function SegmentCard({ segment, overrideText }) {
-  const isT1 = segment.tier === 1
-
+function SegmentCard({ segment }) {
   return (
-    <Paper withBorder p="md" radius="md" style={{ borderLeft: `3px solid var(--mantine-color-${segment.color}-5)` }}>
+    <Paper withBorder p="md" radius="md" style={{ borderTop: `3px solid var(--mantine-color-${segment.color}-5)` }}>
       <Stack gap="sm">
         <Group justify="space-between" align="flex-start">
-          <Stack gap={4}>
-            <Group gap="xs">
-              <Badge size="sm" color={segment.color} variant="filled">Tier {segment.tier}</Badge>
-              <Badge size="xs" color="gray" variant="outline" style={{ fontFamily: 'monospace', fontSize: 10 }}>
-                {segment.id}
-              </Badge>
-            </Group>
-            <Text size="sm" fw={700}>{segment.label}</Text>
-          </Stack>
-          <Stack gap={4} align="flex-end">
-            <Text size="2xl" fw={900} c={segment.color} style={{ lineHeight: 1 }}>
+          <Group gap={6} wrap="nowrap" style={{ flex: 1 }}>
+            <div style={{ width: 3, height: 32, borderRadius: 2, background: `var(--mantine-color-${segment.color}-5)`, flexShrink: 0 }} />
+            <Text size="sm" fw={700} style={{ lineHeight: 1.3 }}>{segment.label}</Text>
+          </Group>
+          <Stack gap={0} align="flex-end" style={{ flexShrink: 0 }}>
+            <Text size="xl" fw={900} c={segment.color} style={{ lineHeight: 1 }}>
               {segment.count.toLocaleString()}
             </Text>
-            <Text size="xs" c="dimmed">profiles</Text>
+            <Text size="xs" c="dimmed">participants</Text>
           </Stack>
         </Group>
 
         <Divider />
 
         <Stack gap={4}>
-          <Group gap={4}>
-            <IconPackage size={10} stroke={1.5} style={{ color: 'var(--mantine-color-dimmed)', flexShrink: 0 }} />
-            <Text size="xs" fw={600}>{segment.content}</Text>
+          <Group gap={4} align="flex-start">
+            <IconPackage size={10} stroke={1.5} style={{ color: 'var(--mantine-color-dimmed)', flexShrink: 0, marginTop: 2 }} />
+            <Text size="xs" c="dimmed" style={{ lineHeight: 1.4 }}>{segment.content}</Text>
           </Group>
         </Stack>
 
@@ -60,24 +51,18 @@ function SegmentCard({ segment, overrideText }) {
           ))}
         </List>
 
-        <Group gap="xs">
-          <Badge size="xs" color="green" variant="filled">✓ Pushed</Badge>
-          {isT1 && overrideText && (
-            <Badge size="xs" color="yellow" variant="light">Override: analyst call-in</Badge>
-          )}
-        </Group>
+        <Badge size="xs" color="green" variant="light" style={{ alignSelf: 'flex-start' }}>✓ Pushed</Badge>
       </Stack>
     </Paper>
   )
 }
 
-function DeploymentTable({ rows, showTier = true, onPreview }) {
+function DeploymentTable({ rows, onPreview }) {
   return (
     <Table striped highlightOnHover withTableBorder fz="xs">
       <Table.Thead>
         <Table.Tr>
           <Table.Th>Participant</Table.Th>
-          {showTier && <Table.Th>Tier</Table.Th>}
           <Table.Th>Channel</Table.Th>
           <Table.Th>Content</Table.Th>
           <Table.Th>Variant</Table.Th>
@@ -90,11 +75,6 @@ function DeploymentTable({ rows, showTier = true, onPreview }) {
         {rows.map((row, i) => (
           <Table.Tr key={i}>
             <Table.Td fw={600}>{row.name}</Table.Td>
-            {showTier && (
-              <Table.Td>
-                <Badge size="xs" color={tierColors[row.tier]} variant="light">T{row.tier}</Badge>
-              </Table.Td>
-            )}
             <Table.Td>{row.channel}</Table.Td>
             <Table.Td>{row.content.join(' \u00b7 ')}</Table.Td>
             <Table.Td>
@@ -131,7 +111,6 @@ function PreviewModalContent({ advisor: participant }) {
             <Text size="xs" c="dimmed">{participant.firm}</Text>
           </Group>
           <Group gap="xs">
-            <Badge size="xs" color={tierColors[participant.tier]} variant="light">Tier {participant.tier}</Badge>
             <Badge size="xs" color="gray" variant="outline">{participant.channel}</Badge>
             {participant.variant && (
               <Badge size="xs" color={participant.variant === 'A' ? 'blue' : 'violet'} variant="light">Variant {participant.variant}</Badge>
@@ -199,38 +178,24 @@ const PAGE_SIZE = 25
 function PaginatedDeploymentLog({ pd, onPreview }) {
   const entity = pd?.entityLabel || 'participants'
   const [page, setPage] = useState(1)
-  const [tierFilter, setTierFilter] = useState(0) // 0 = all
   const fullLog = useMemo(() => generateFullLog(pd), [pd])
-  const filtered = tierFilter === 0 ? fullLog : fullLog.filter(r => r.tier === tierFilter)
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
-  const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const totalPages = Math.ceil(fullLog.length / PAGE_SIZE)
+  const pageRows = fullLog.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   return (
     <Stack gap="sm" mt="md">
-      <Group justify="space-between" align="center">
-        <Group gap="xs">
-          <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.05em' }}>
-            Participant deployment log
-          </Text>
-          <Badge size="xs" variant="light" color="teal">{filtered.length.toLocaleString()} {entity}</Badge>
-        </Group>
-        <Group gap={4}>
-          {[0, 1, 2, 3].map(t => (
-            <Badge key={t} size="xs" variant={tierFilter === t ? 'filled' : 'light'}
-              color={t === 0 ? 'gray' : tierColors[t] || 'gray'}
-              style={{ cursor: 'pointer' }}
-              onClick={() => { setTierFilter(t); setPage(1) }}>
-              {t === 0 ? 'All' : `Tier ${t}`}
-            </Badge>
-          ))}
-        </Group>
+      <Group gap="xs">
+        <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.05em' }}>
+          Participant deployment log
+        </Text>
+        <Badge size="xs" variant="light" color="teal">{fullLog.length.toLocaleString()} {entity}</Badge>
       </Group>
 
       <DeploymentTable rows={pageRows} onPreview={onPreview} />
 
       <Group justify="space-between" align="center">
         <Text size="xs" c="dimmed">
-          Showing {((page-1)*PAGE_SIZE)+1}–{Math.min(page*PAGE_SIZE, filtered.length)} of {filtered.length.toLocaleString()}
+          Showing {((page-1)*PAGE_SIZE)+1}–{Math.min(page*PAGE_SIZE, fullLog.length)} of {fullLog.length.toLocaleString()}
         </Text>
         <Pagination size="xs" total={totalPages} value={page} onChange={setPage} />
       </Group>
@@ -385,7 +350,7 @@ export default function DeploymentPanel({ step, workflowState, onContinue, activ
           previewParticipant ? (
             <Group gap="xs">
               <Text fw={700}>{previewParticipant.name}</Text>
-              <Badge size="xs" color={tierColors[previewParticipant.tier]}>{previewParticipant.channel}</Badge>
+              <Badge size="xs" color="gray" variant="outline">{previewParticipant.channel}</Badge>
             </Group>
           ) : null
         }
