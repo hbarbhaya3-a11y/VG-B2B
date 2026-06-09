@@ -624,7 +624,7 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
         styles={{ root: { boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)' } }}
         style={{ alignSelf: 'flex-end' }}
       >
-        Configure Channels & Content Types
+        Configure Offers & Channels
       </Button>
     </Stack>
   )

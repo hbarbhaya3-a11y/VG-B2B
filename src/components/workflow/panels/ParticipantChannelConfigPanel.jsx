@@ -47,7 +47,7 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
       {/* Header */}
       <Paper withBorder p="md" radius="md">
         <Group justify="space-between" mb={4}>
-          <Text size="lg" fw={700}>Content & Channel Configuration</Text>
+          <Text size="lg" fw={700}>Offer & Channel Configuration</Text>
           <Group gap="xs">
             <Badge size="sm" variant="light" color="orange">{selectedOffers.length} offers</Badge>
             <Badge size="sm" variant="light" color="blue">{selectedSegs.length} segments</Badge>
