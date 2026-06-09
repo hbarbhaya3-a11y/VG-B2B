@@ -299,7 +299,7 @@ export default function UseCaseCatalog({ onRunScenario }) {
       </Card>
 
       {/* ════════════════ LIVE SIGNALS ════════════════════════════════ */}
-      <Group align="flex-start" gap="md" wrap="nowrap" style={{ minHeight: 480 }}>
+      <Group align="flex-start" gap="md" wrap="nowrap" style={{ minHeight: 600 }}>
           {/* ── Signal list ───────────────────────────────── */}
           <Stack gap="xs" style={{ width: 320, flexShrink: 0 }}>
             {/* Search + filter */}
@@ -322,8 +322,8 @@ export default function UseCaseCatalog({ onRunScenario }) {
               Live signals map 1:1 to scenarios
             </Text>
 
-            <ScrollArea style={{ maxHeight: 480 }}>
-              <Stack gap={6}>
+            <ScrollArea h={560} type="scroll" offsetScrollbars>
+              <Stack gap={6} pr={8}>
                 {filteredSignals.map((sig, idx) => {
                   const realIdx = LIVE_SIGNALS.indexOf(sig)
                   const isSelected = realIdx === selectedSignalIdx
