@@ -27,6 +27,32 @@ export const PAGE_TO_BUCKET = {
   'operations':             'operate',
 }
 
+export const BUCKET_COLORS = {
+  sense:    'teal',
+  simulate: 'violet',
+  select:   'vanguardRed',
+  trial:    'orange',
+  execute:  'green',
+  learn:    'grape',
+  operate:  'blue',
+}
+
+export const WORKFLOW_BUCKET_ORDER = ['sense', 'simulate', 'select', 'trial', 'execute', 'learn']
+
+export const STAGE_TO_BUCKET = {
+  SENSE:    'sense',
+  SIMULATE: 'simulate',
+  SELECT:   'select',
+  DECIDE:   'select',
+  GOVERN:   'select',
+  TRIAL:    'trial',
+  EXECUTE:  'execute',
+  DEPLOY:   'execute',
+  RESPOND:  'execute',
+  LEARN:    'learn',
+  MEASURE:  'learn',
+}
+
 export const theme = createTheme({
   primaryColor: 'vanguardRed',
   colors: {
