@@ -1,77 +1,44 @@
-import { useMemo } from 'react'
+import { useState } from 'react'
 import {
   Paper, Stack, Group, Text, Badge, Checkbox, Button, ThemeIcon, Alert,
-  Progress, SimpleGrid, Divider, Accordion
+  Progress, Divider, SimpleGrid, Box
 } from '@mantine/core'
 import {
-  IconChevronRight, IconPhone, IconMail, IconWorld, IconInfoCircle,
-  IconUsers
+  IconChevronRight, IconInfoCircle, IconUsers, IconGift, IconSparkles,
+  IconChartBar, IconSend
 } from '@tabler/icons-react'
-
-// Participant Channel Config — reads tier config from panelData
-const ICON_MAP = { phone: IconPhone, mail: IconMail, world: IconWorld, users: IconUsers }
-function getTierConfig(step) {
-  const pd = step?.panelData?.tierConfig
-  if (!pd || !Array.isArray(pd)) return []
-  return pd.map(t => ({
-    ...t,
-    icon: ICON_MAP[t.iconKey] || IconUsers,
-  }))
-}
 
 function RangeBar({ range, color }) {
   if (!range) return <Text size="xs" c="dimmed">—</Text>
   const low = Math.round(range[0] * 100)
   const high = Math.round(range[1] * 100)
-  const mid = (low + high) / 2
   return (
-    <Group gap={4} wrap="nowrap">
-      <Text size="xs" fw={500} c={mid > 40 ? 'teal' : 'dimmed'}>{low}–{high}%</Text>
-      <Progress.Root size="xs" w={40}>
-        <Progress.Section value={high} color={color || 'teal'}>
-          <Progress.Section value={high - low} color={color ? `${color}.3` : 'teal.3'} />
-        </Progress.Section>
+    <Group gap={6} wrap="nowrap" align="center">
+      <Text size="xs" fw={600} c={`${color}.7`} style={{ minWidth: 52 }}>{low}–{high}%</Text>
+      <Progress.Root size={6} w={44} radius="xl">
+        <Progress.Section value={high} color={`${color}.3`} />
+        <Progress.Section value={low} color={color} />
       </Progress.Root>
     </Group>
   )
 }
 
 export default function ParticipantChannelConfigPanel({ step, workflowState, setWorkflowState, onContinue }) {
-  const TIER_CONFIG = getTierConfig(step)
-  const contentMetadata = step.panelData?.contentMetadata || []
+  const pd = step.panelData
+  const offers = pd.offers || []
+  const segments = pd.segments || []
 
-  // Deduplicate all content type indices from tier config
-  const allIndices = [...new Set(TIER_CONFIG.flatMap(t => (t.contentTypes || []).map(ct => ct.index)))]
+  const [selectedOffers, setSelectedOffers] = useState(() => offers.map(o => o.id))
+  const [selectedSegs, setSelectedSegs] = useState(() => segments.map(s => s.id))
 
-  // Initialize from workflowState, or default to ALL indices pre-selected
-  const selectedContent = workflowState.selectedContentTypes ?? (contentMetadata.length > 0 ? contentMetadata.map((_, i) => i) : allIndices)
-  const setSelected = (indices) => setWorkflowState(s => ({ ...s, selectedContentTypes: indices }))
+  const toggleOffer = (id) => setSelectedOffers(ids => ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id])
+  const toggleSeg = (id) => setSelectedSegs(ids => ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id])
 
-  // Build a variants lookup from tier config (fallback when contentMetadata is empty)
-  const variantsLookup = {}
-  TIER_CONFIG.forEach(t => (t.contentTypes || []).forEach(ct => { variantsLookup[ct.index] = ct.variants || 1 }))
-  const selectedVariantCount = selectedContent.reduce((sum, i) => sum + (contentMetadata[i]?.variants || variantsLookup[i] || 1), 0)
-  const activeTierCount = TIER_CONFIG.filter(t =>
-    t.contentTypes.some(ct => selectedContent.includes(ct.index))
-  ).length
-
-  const handleToggle = (idx) => {
-    if (selectedContent.includes(idx)) setSelected(selectedContent.filter(i => i !== idx))
-    else setSelected([...selectedContent, idx])
-  }
-
-  const handleToggleTier = (tier) => {
-    const tierIndices = tier.contentTypes.map(ct => ct.index)
-    const allSelected = tierIndices.every(i => selectedContent.includes(i))
-    if (allSelected) {
-      setSelected(selectedContent.filter(i => !tierIndices.includes(i)))
-    } else {
-      setSelected([...new Set([...selectedContent, ...tierIndices])])
-    }
-  }
+  const totalVariants = segments.filter(s => selectedSegs.includes(s.id)).reduce((sum, s) => sum + s.variants, 0)
+  const totalReach = segments.filter(s => selectedSegs.includes(s.id)).reduce((sum, s) => sum + s.count, 0)
 
   const handleContinue = () => {
-    setWorkflowState(s => ({ ...s, selectedContentTypes: selectedContent }))
+    setWorkflowState(s => ({ ...s, selectedOffers, selectedSegments: selectedSegs }))
     onContinue()
   }
 
@@ -79,108 +46,159 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
     <Stack gap="md">
       {/* Header */}
       <Paper withBorder p="md" radius="md">
-        <Group justify="space-between" mb="xs">
+        <Group justify="space-between" mb={4}>
           <Text size="lg" fw={700}>Content & Channel Configuration</Text>
           <Group gap="xs">
-            <Badge size="sm" variant="light" color="orange">{selectedContent.length} types</Badge>
-            <Badge size="sm" variant="light" color="blue">{activeTierCount} tiers active</Badge>
-            <Badge size="sm" variant="light" color="green">{selectedVariantCount} variants</Badge>
+            <Badge size="sm" variant="light" color="orange">{selectedOffers.length} offers</Badge>
+            <Badge size="sm" variant="light" color="blue">{selectedSegs.length} segments</Badge>
+            <Badge size="sm" variant="light" color="green">{totalVariants} variants</Badge>
           </Group>
         </Group>
         <Text size="sm" c="dimmed">
-          Configuration flows from participant segment → channel → content type. Historical engagement rates shown as estimated ranges.
+          Select offers and confirm channel configuration per audience segment. Engagement rates are historical estimates.
         </Text>
       </Paper>
 
-      {/* Tier-based accordion */}
-      <Accordion variant="separated" radius="md" defaultValue={['1', '2', '3', '0']} multiple>
-        {TIER_CONFIG.map(tier => {
-          const Icon = tier.icon
-          const tierIndices = tier.contentTypes.map(ct => ct.index)
-          const tierSelectedCount = tierIndices.filter(i => selectedContent.includes(i)).length
-          const allTierSelected = tierSelectedCount === tierIndices.length
+      {/* Offer configuration */}
+      <Stack gap="xs">
+        <Group gap="xs">
+          <ThemeIcon size={20} radius="md" variant="light" color="orange">
+            <IconGift size={12} stroke={1.5} />
+          </ThemeIcon>
+          <Text size="sm" fw={700}>Offer Configuration</Text>
+          <Badge size="xs" color="orange" variant="light">{selectedOffers.length} of {offers.length} selected</Badge>
+        </Group>
 
-          return (
-            <Accordion.Item key={tier.tier} value={String(tier.tier)}>
-              <Accordion.Control>
-                <Group gap="sm" wrap="nowrap">
-                  <ThemeIcon size={28} radius="xl" variant="light" color={tier.color}>
-                    <Icon size={14} stroke={1.5} />
-                  </ThemeIcon>
-                  <div style={{ flex: 1 }}>
-                    <Group gap="xs">
-                      <Text size="sm" fw={700}>{tier.label}</Text>
-                      {tier.count && <Badge size="xs" variant="light" color={tier.color}>{tier.count.toLocaleString()} advisors</Badge>}
+        <SimpleGrid cols={2} spacing="sm">
+          {offers.map(offer => {
+            const isSelected = selectedOffers.includes(offer.id)
+            return (
+              <Paper
+                key={offer.id}
+                withBorder p="md" radius="md"
+                style={{
+                  borderLeft: `3px solid var(--mantine-color-${offer.color}-5)`,
+                  opacity: isSelected ? 1 : 0.45,
+                  cursor: 'pointer',
+                  transition: 'opacity 150ms ease',
+                }}
+                onClick={() => toggleOffer(offer.id)}
+              >
+                <Stack gap="sm">
+                  <Group justify="space-between" align="flex-start">
+                    <Group gap="xs" style={{ flex: 1 }}>
+                      <Checkbox
+                        size="xs"
+                        checked={isSelected}
+                        onChange={() => toggleOffer(offer.id)}
+                        color={offer.color}
+                        onClick={e => e.stopPropagation()}
+                      />
+                      <Text size="sm" fw={700} style={{ flex: 1 }}>{offer.label}</Text>
                     </Group>
-                    <Text size="xs" c="dimmed">Channel: {tier.channel}</Text>
-                  </div>
-                  <Badge size="xs" variant={allTierSelected ? 'filled' : 'light'} color={tier.color}>
-                    {tierSelectedCount}/{tierIndices.length}
-                  </Badge>
-                </Group>
-              </Accordion.Control>
-              <Accordion.Panel>
-                <Stack gap="xs">
-                  <Group justify="flex-end">
-                    <Checkbox
-                      label="Select all in tier"
-                      size="xs"
-                      checked={allTierSelected}
-                      indeterminate={tierSelectedCount > 0 && !allTierSelected}
-                      onChange={() => handleToggleTier(tier)}
-                    />
                   </Group>
-                  {tier.contentTypes.map(ct => {
-                    const isSelected = selectedContent.includes(ct.index)
-                    return (
-                      <Paper
-                        key={ct.index}
-                        withBorder
-                        p="sm"
-                        radius="sm"
-                        style={{
-                          opacity: isSelected ? 1 : 0.4,
-                          cursor: 'pointer',
-                          transition: 'all 150ms ease',
-                          borderLeft: isSelected ? `3px solid var(--mantine-color-${tier.color}-5)` : '3px solid transparent',
-                        }}
-                        onClick={() => handleToggle(ct.index)}
-                      >
-                        <Group justify="space-between" wrap="nowrap">
-                          <Group gap="sm" wrap="nowrap">
-                            <Checkbox checked={isSelected} onChange={() => handleToggle(ct.index)} size="xs" />
-                            <div>
-                              <Text size="sm" fw={500}>{ct.name}</Text>
-                              <Text size="xs" c="dimmed">{ct.variants} variant{ct.variants > 1 ? 's' : ''}</Text>
-                            </div>
-                          </Group>
-                          <Group gap="lg" wrap="nowrap">
-                            <Stack gap={0} align="center">
-                              <Text size="xs" c="dimmed">Open rate</Text>
-                              <RangeBar range={ct.histOpen} color={tier.color} />
-                            </Stack>
-                            <Stack gap={0} align="center">
-                              <Text size="xs" c="dimmed">Click rate</Text>
-                              <RangeBar range={ct.histClick} color={tier.color} />
-                            </Stack>
-                          </Group>
-                        </Group>
-                      </Paper>
-                    )
-                  })}
+
+                  <Text size="xs" c="dimmed" style={{ lineHeight: 1.5 }}>{offer.description}</Text>
+
+                  <Divider label="Best for" labelPosition="left" />
+                  <Group gap={4} wrap="wrap">
+                    {offer.bestFor.map(seg => (
+                      <Badge key={seg} size="xs" variant="light" color={offer.color}>{seg}</Badge>
+                    ))}
+                  </Group>
+
+                  <Divider label="Primary KPI" labelPosition="left" />
+                  <Group gap="xs">
+                    <IconChartBar size={11} stroke={1.5} style={{ color: `var(--mantine-color-${offer.color}-6)` }} />
+                    <Text size="xs" fw={600}>{offer.primaryKpi}</Text>
+                  </Group>
                 </Stack>
-              </Accordion.Panel>
-            </Accordion.Item>
-          )
-        })}
-      </Accordion>
+              </Paper>
+            )
+          })}
+        </SimpleGrid>
+      </Stack>
+
+      {/* Segment channel table */}
+      <Stack gap="xs">
+        <Group gap="xs">
+          <ThemeIcon size={20} radius="md" variant="light" color="blue">
+            <IconSend size={12} stroke={1.5} />
+          </ThemeIcon>
+          <Text size="sm" fw={700}>Channel Configuration by Segment</Text>
+          <Badge size="xs" color="blue" variant="light">{totalReach.toLocaleString()} participants · {totalVariants} variants</Badge>
+        </Group>
+
+        <Paper withBorder radius="md" style={{ overflow: 'hidden' }}>
+          {/* Column headers */}
+          <Box px="md" py="xs" style={{ background: 'var(--mantine-color-default-hover)', borderBottom: '1px solid var(--mantine-color-default-border)' }}>
+            <Group gap={0}>
+              <Box style={{ width: 28 }} />
+              <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ flex: 1, letterSpacing: '0.05em' }}>Segment</Text>
+              <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ width: 80, textAlign: 'right', letterSpacing: '0.05em' }}>Count</Text>
+              <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ width: 180, paddingLeft: 16, letterSpacing: '0.05em' }}>Channel</Text>
+              <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ width: 60, textAlign: 'center', letterSpacing: '0.05em' }}>Variants</Text>
+              <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ width: 130, textAlign: 'right', letterSpacing: '0.05em' }}>Open rate</Text>
+              <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ width: 130, textAlign: 'right', letterSpacing: '0.05em' }}>Click rate</Text>
+            </Group>
+          </Box>
+
+          {segments.map((seg, idx) => {
+            const isSelected = selectedSegs.includes(seg.id)
+            return (
+              <Box
+                key={seg.id}
+                px="md" py="sm"
+                style={{
+                  borderBottom: idx < segments.length - 1 ? '1px solid var(--mantine-color-default-border)' : 'none',
+                  opacity: isSelected ? 1 : 0.4,
+                  cursor: 'pointer',
+                  transition: 'opacity 150ms ease',
+                  background: isSelected ? 'transparent' : 'var(--mantine-color-default-hover)',
+                }}
+                onClick={() => toggleSeg(seg.id)}
+              >
+                <Group gap={0} align="center">
+                  <Box style={{ width: 28 }}>
+                    <Checkbox
+                      size="xs"
+                      checked={isSelected}
+                      onChange={() => toggleSeg(seg.id)}
+                      color={seg.color}
+                      onClick={e => e.stopPropagation()}
+                    />
+                  </Box>
+                  <Group gap={6} style={{ flex: 1 }}>
+                    <div style={{ width: 3, height: 28, borderRadius: 2, background: `var(--mantine-color-${seg.color}-5)`, flexShrink: 0 }} />
+                    <Text size="sm" fw={600}>{seg.label}</Text>
+                  </Group>
+                  <Text size="sm" fw={700} c={seg.color} style={{ width: 80, textAlign: 'right' }}>
+                    {seg.count.toLocaleString()}
+                  </Text>
+                  <Box style={{ width: 180, paddingLeft: 16 }}>
+                    <Badge size="xs" variant="light" color={seg.color}>{seg.channel}</Badge>
+                  </Box>
+                  <Text size="sm" fw={600} c="dimmed" style={{ width: 60, textAlign: 'center' }}>{seg.variants}</Text>
+                  <Box style={{ width: 130, display: 'flex', justifyContent: 'flex-end' }}>
+                    <RangeBar range={seg.openRate} color={seg.color} />
+                  </Box>
+                  <Box style={{ width: 130, display: 'flex', justifyContent: 'flex-end' }}>
+                    <RangeBar range={seg.clickRate} color={seg.color} />
+                  </Box>
+                </Group>
+              </Box>
+            )
+          })}
+        </Paper>
+      </Stack>
 
       {/* Summary */}
       <Alert variant="light" color="orange" icon={<IconInfoCircle size={16} />}>
         <Text size="sm">
-          <strong>{selectedContent.length}</strong> content types across{' '}
-          <strong>{activeTierCount}</strong> advisor tiers.{' '}
-          The Content Architect will generate <strong>{selectedVariantCount}</strong> creative variants.
+          <strong>{selectedOffers.length}</strong> offers across{' '}
+          <strong>{selectedSegs.length}</strong> segments reaching{' '}
+          <strong>{totalReach.toLocaleString()}</strong> participants.{' '}
+          TwinX will generate <strong>{totalVariants}</strong> content variants.
         </Text>
       </Alert>
 
@@ -188,13 +206,14 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
         size="md"
         variant="gradient"
         gradient={{ from: 'indigo', to: 'cyan', deg: 135 }}
+        leftSection={<IconSparkles size={16} stroke={1.5} />}
         rightSection={<IconChevronRight size={16} stroke={2} />}
         styles={{ root: { boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)' } }}
         style={{ alignSelf: 'flex-end' }}
         onClick={handleContinue}
-        disabled={selectedContent.length === 0}
+        disabled={selectedOffers.length === 0 || selectedSegs.length === 0}
       >
-        Generate Creative Variants
+        Recommend &amp; Simulate
       </Button>
     </Stack>
   )
