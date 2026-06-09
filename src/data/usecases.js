@@ -236,15 +236,39 @@ const UC_ADVISORY_READINESS = {
       actor: 'agent',
       headline: 'Content and channel configuration by behavioral segment',
       panelData: {
-        contentVariants: 3,
-        channels: ['Secure site card', 'Email', 'App push', 'Call center prompt'],
-        segmentConfig: [
-          { segment: 'Planning-Active, Advice-Undecided', content: '"What advice can help with" explainer', action: 'Complimentary portfolio review', channel: 'Secure site + email' },
-          { segment: 'High-Cash, Low-Conviction', content: '"When cash is useful vs idle" article', action: 'Cash allocation scenario', channel: 'App push + secure site' },
-          { segment: 'Portfolio Complexity Builders', content: 'Portfolio overlap / diversification insight', action: 'Portfolio health check', channel: 'Secure site dashboard' },
-          { segment: 'Volatility-Sensitive Watchers', content: 'Market reassurance message', action: 'Stay-the-course education / advisor option', channel: 'App push + email' },
-          { segment: 'Rollover / Transition Explorers', content: 'Path comparison checklist', action: 'IRA / rollover education session', channel: 'Email + call center prompt' },
-          { segment: 'Digitally Engaged but Service-Frustrated', content: 'Status transparency message', action: 'Service callback / task tracker', channel: 'Secure site + CRM' },
+        tierConfig: [
+          {
+            tier: 1, label: 'Planning-Active & High-Cash Segments', color: 'orange', iconKey: 'users',
+            count: 15600,
+            contentTypes: [
+              { index: 0, label: '"What advice can help with" explainer', channel: 'Secure site card + email', engagementRange: [0.22, 0.34], variants: 2 },
+              { index: 1, label: '"Put your cash to work" education module', channel: 'App push + secure site', engagementRange: [0.18, 0.28], variants: 2 },
+            ],
+          },
+          {
+            tier: 2, label: 'Portfolio Complexity & Volatility Segments', color: 'blue', iconKey: 'users',
+            count: 15900,
+            contentTypes: [
+              { index: 2, label: 'Portfolio overlap / diversification insight', channel: 'Secure site dashboard + email', engagementRange: [0.19, 0.31], variants: 1 },
+              { index: 3, label: 'Market reassurance + stay-the-course message', channel: 'App push + email', engagementRange: [0.21, 0.33], variants: 2 },
+            ],
+          },
+          {
+            tier: 3, label: 'Rollover & Service-Frustrated Segments', color: 'teal', iconKey: 'users',
+            count: 10300,
+            contentTypes: [
+              { index: 4, label: 'Path comparison checklist: IRA / rollover guide', channel: 'Email + call center prompt', engagementRange: [0.24, 0.38], variants: 1 },
+              { index: 5, label: 'Status transparency message + service callback', channel: 'Secure site + CRM task', engagementRange: [0.15, 0.25], variants: 1 },
+            ],
+          },
+        ],
+        contentMetadata: [
+          { label: '"What advice can help with" explainer', channel: 'Secure site + email', variants: 2, engagementRange: [0.22, 0.34] },
+          { label: '"Put your cash to work" module', channel: 'App push', variants: 2, engagementRange: [0.18, 0.28] },
+          { label: 'Portfolio insight card', channel: 'Secure site dashboard', variants: 1, engagementRange: [0.19, 0.31] },
+          { label: 'Market reassurance message', channel: 'App push + email', variants: 2, engagementRange: [0.21, 0.33] },
+          { label: 'Rollover path comparison checklist', channel: 'Email + call center', variants: 1, engagementRange: [0.24, 0.38] },
+          { label: 'Service transparency message', channel: 'Secure site + CRM', variants: 1, engagementRange: [0.15, 0.25] },
         ],
       },
     },
