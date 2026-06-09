@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import {
   Paper, Stack, Group, Text, Badge, SimpleGrid, ThemeIcon, Divider, Button,
-  Alert, NumberInput, Select, Switch, Slider, Modal, ScrollArea, Loader, Progress
+  Alert, NumberInput, Select, Switch, Slider, Modal, ScrollArea, Loader, Progress, Textarea, Card
 } from '@mantine/core'
 import {
   IconUsers, IconPhone, IconMail, IconBell, IconShieldCheck, IconChevronRight,
-  IconTargetArrow, IconSpeakerphone, IconMessageCircle, IconPencil, IconLock, IconEye, IconCheck
+  IconTargetArrow, IconSpeakerphone, IconMessageCircle, IconPencil, IconLock, IconEye, IconCheck,
+  IconSparkles, IconWand
 } from '@tabler/icons-react'
 import { ArticlePreview, EmailFullPreview, WholesalerPreview, PortalPreview } from './ContentGenerationPanel'
 import { useUseCase } from '../../../contexts/UseCaseContext'
@@ -137,6 +138,11 @@ const SCORING_LINES = [
   'Participant segments ready…',
 ]
 
+const AI_SEGMENTS = [
+  { id: 'ai-seg-1', tier: 1, color: 'violet', label: 'High-Net-Worth Planning Actives (55+)', count: 8200, channel: 'Secure site card + email', description: 'Investors aged 55+ with >$250K AUM, 3+ planning-tool uses in 30 days, no advisor relationship in 12 months.', kpi: 'Advisory consultation starts, AUM under advice' },
+  { id: 'ai-seg-2', tier: 2, color: 'grape', label: 'Pre-Retirement Goal Builders', count: 12400, channel: 'App push + secure site', description: 'Investors within 10 years of stated retirement age, actively using goal-projection tools, self-directed.', kpi: 'Planning completion, advisor inquiry rate' },
+]
+
 export default function ParticipantSegmentationPanel({ step, workflowState, setWorkflowState, onContinue }) {
   const pd = step.panelData
   const [editMode, setEditMode] = useState(false)
@@ -144,6 +150,11 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
   const [lineIndex, setLineIndex] = useState(0)
   const [sampleTier, setSampleTier] = useState(null)
   const { activeUseCase } = useUseCase()
+  const [convMode, setConvMode] = useState(false)
+  const [convInput, setConvInput] = useState('')
+  const [convSegments, setConvSegments] = useState(null)
+  const [convLoading, setConvLoading] = useState(false)
+  const [activeTiers, setActiveTiers] = useState(null)
 
   useEffect(() => {
     if (phase !== 'scoring') return
@@ -202,6 +213,16 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
     }
   }
 
+  const handleGenerateSegments = () => {
+    setConvLoading(true)
+    setTimeout(() => {
+      setConvLoading(false)
+      setConvSegments(AI_SEGMENTS)
+    }, 1800)
+  }
+
+  const tiersToRender = activeTiers || pd.tiers
+
   const segmentConfig = workflowState?.segmentConfig || {
     tiers: pd.tiers.map(t => ({ tier: t.tier, count: t.count, channel: t.channel, contentType: t.content?.type })),
     holdoutCount: pd.holdout.count,
@@ -236,6 +257,90 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
 
   return (
     <Stack gap="md">
+      {/* Conversational Segment Builder */}
+      <Card withBorder radius="md" p="md" style={{ cursor: 'pointer', borderStyle: convMode ? 'solid' : 'dashed' }} onClick={() => !convMode && setConvMode(true)}>
+        <Group gap="sm">
+          <ThemeIcon size={36} radius="md" variant="gradient" gradient={{ from: 'violet', to: 'grape', deg: 135 }}>
+            <IconSparkles size={20} stroke={1.5} />
+          </ThemeIcon>
+          <Stack gap={2} style={{ flex: 1 }}>
+            <Group gap="xs">
+              <Text size="sm" fw={700}>Conversational Segment Builder</Text>
+              <Badge size="xs" color="violet" variant="light">AI</Badge>
+            </Group>
+            <Text size="xs" c="dimmed">Describe your target audience in plain language — TwinX will generate behavioral segments automatically.</Text>
+          </Stack>
+          {convMode && (
+            <Button size="xs" variant="subtle" color="gray" onClick={(e) => { e.stopPropagation(); setConvMode(false); setConvSegments(null) }}>
+              Close
+            </Button>
+          )}
+        </Group>
+
+        {convMode && (
+          <Stack gap="sm" mt="md" onClick={(e) => e.stopPropagation()}>
+            <Textarea
+              placeholder="e.g. 'Find me investors over 55 with >$250K in assets who haven't spoken to an advisor in the last 12 months but have been actively using our retirement calculator'"
+              minRows={3}
+              value={convInput}
+              onChange={(e) => setConvInput(e.currentTarget.value)}
+              radius="md"
+            />
+            <Group>
+              <Button
+                size="sm"
+                variant="gradient"
+                gradient={{ from: 'violet', to: 'grape', deg: 135 }}
+                leftSection={<IconWand size={14} />}
+                onClick={handleGenerateSegments}
+                loading={convLoading}
+                disabled={convLoading}
+              >
+                Generate segments
+              </Button>
+              {convLoading && (
+                <Group gap="xs">
+                  <Loader size="xs" color="violet" />
+                  <Text size="xs" c="dimmed">Analyzing behavioral patterns across 42,000 twins…</Text>
+                </Group>
+              )}
+            </Group>
+
+            {convSegments && (
+              <Stack gap="sm">
+                <Text size="xs" fw={700} c="violet" tt="uppercase" style={{ letterSpacing: '0.06em' }}>Generated segments</Text>
+                <SimpleGrid cols={2} spacing="sm">
+                  {convSegments.map((seg) => (
+                    <Paper key={seg.id} withBorder p="md" radius="md" style={{ borderLeft: `3px solid var(--mantine-color-${seg.color}-5)` }}>
+                      <Stack gap="xs">
+                        <Badge size="sm" color={seg.color} variant="filled">Tier {seg.tier}</Badge>
+                        <Text size="sm" fw={700}>{seg.label}</Text>
+                        <Text size="xs" c="dimmed">{seg.description}</Text>
+                        <Badge size="xs" variant="light" color={seg.color}>{seg.channel}</Badge>
+                        <Text size="xs" c="dimmed" fw={600}>KPI: {seg.kpi}</Text>
+                        <Text style={{ fontSize: 28, fontWeight: 900, lineHeight: 1, color: `var(--mantine-color-${seg.color}-7)` }}>
+                          {seg.count.toLocaleString()}
+                        </Text>
+                      </Stack>
+                    </Paper>
+                  ))}
+                </SimpleGrid>
+                <Button
+                  size="sm"
+                  variant="light"
+                  color="violet"
+                  leftSection={<IconCheck size={14} />}
+                  onClick={() => setActiveTiers(convSegments)}
+                  style={{ alignSelf: 'flex-start' }}
+                >
+                  Apply segments
+                </Button>
+              </Stack>
+            )}
+          </Stack>
+        )}
+      </Card>
+
       {/* Hero + edit toggle */}
       <Paper withBorder p="md" radius="md" style={{ background: 'var(--mantine-color-teal-light)' }}>
         <Group justify="space-between">
@@ -268,10 +373,10 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
 
       {/* Tier cards — merge panelData with workflowState overrides */}
       <SimpleGrid cols={3} spacing="md">
-        {pd.tiers.map((tier) => {
+        {tiersToRender.map((tier) => {
           const override = segmentConfig.tiers.find(t => t.tier === tier.tier)
           const merged = override ? { ...tier, channel: override.channel || tier.channel, contentType: override.contentType || tier.content?.type } : tier
-          return <TierCard key={tier.tier} tier={merged} editMode={editMode} onUpdate={handleTierUpdate} onSeeSample={handleSeeSample} />
+          return <TierCard key={tier.id || tier.tier} tier={merged} editMode={editMode} onUpdate={handleTierUpdate} onSeeSample={handleSeeSample} />
         })}
       </SimpleGrid>
 

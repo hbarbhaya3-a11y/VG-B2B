@@ -32,6 +32,7 @@ import OutcomeCohortPanel from './panels/OutcomeCohortPanel'
 import TrialValidationPanel from './panels/TrialValidationPanel'
 import ParticipantSegmentationPanel from './panels/ParticipantSegmentationPanel'
 import ParticipantChannelConfigPanel from './panels/ParticipantChannelConfigPanel'
+import CampaignObjectivePanel from './panels/CampaignObjectivePanel'
 
 const STAGE_COLORS = { SENSE: 'teal', SIMULATE: 'violet', GOVERN: 'red', DEPLOY_LEARN: 'green' }
 
@@ -354,6 +355,7 @@ export default function WorkflowRunner({ onExitWorkflow }) {
       case 'trial_validation':          return <TrialValidationPanel {...commonProps} />
       case 'participant_segmentation':  return <ParticipantSegmentationPanel {...commonProps} />
       case 'participant_channel_config': return <ParticipantChannelConfigPanel {...commonProps} />
+      case 'campaign_objective': return <CampaignObjectivePanel panelData={currentStep.panelData} onContinue={handleContinue} />
       default:                           return <PlaceholderPanel {...commonProps} />
     }
   }

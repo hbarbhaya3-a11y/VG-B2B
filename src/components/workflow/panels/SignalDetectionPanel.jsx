@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Paper, Stack, Group, Text, Badge, SimpleGrid, Progress, Table, ThemeIcon, Divider, Button, Alert, Loader, Center } from '@mantine/core'
-import { IconRadar, IconShieldCheck, IconClock, IconDatabase, IconChevronRight, IconBrain, IconUsers, IconSpeakerphone, IconRoute2, IconChartBar, IconCheck } from '@tabler/icons-react'
+import { IconRadar, IconShieldCheck, IconClock, IconDatabase, IconChevronRight, IconBrain, IconUsers, IconSpeakerphone, IconRoute2, IconChartBar, IconCheck, IconSparkles } from '@tabler/icons-react'
 import DataSourceStrip from '../../ui/DataSourceStrip'
 
 const CLASSIFYING_LINES = [
@@ -236,6 +236,41 @@ export default function SignalDetectionPanel({ step, onContinue }) {
       {/* Expandable precedent config */}
       {expandedPrecedent !== null && pd.precedents[expandedPrecedent]?.config && (
         <PrecedentConfigCard precedent={pd.precedents[expandedPrecedent]} />
+      )}
+
+      {/* Next Best Action */}
+      {pd.nba && (
+        <Paper withBorder radius="md" p="md">
+          <Stack gap="sm">
+            <Group gap="xs">
+              <ThemeIcon size={24} radius="md" variant="gradient" gradient={{ from: 'indigo', to: 'cyan', deg: 135 }}>
+                <IconSparkles size={14} color="white" />
+              </ThemeIcon>
+              <Text fw={700} size="sm">Next Best Action</Text>
+              <Badge size="xs" variant="light" color="indigo">Aligned to cross-sell objective</Badge>
+            </Group>
+            <Paper withBorder radius="sm" p="sm" style={{ background: 'var(--mantine-color-indigo-light)' }}>
+              <Text fw={700} size="sm">{pd.nba.recommendation}</Text>
+              <Text size="xs" c="dimmed" mt={4}>{pd.nba.rationale}</Text>
+            </Paper>
+            <SimpleGrid cols={2} spacing="xs">
+              <Paper withBorder radius="sm" p="sm">
+                <Text size="10px" c="dimmed" fw={600} tt="uppercase" style={{ letterSpacing: '0.06em' }}>Expected lift</Text>
+                <Text fw={800} size="sm" c="indigo">{pd.nba.expectedLift}</Text>
+              </Paper>
+              <Paper withBorder radius="sm" p="sm">
+                <Text size="10px" c="dimmed" fw={600} tt="uppercase" style={{ letterSpacing: '0.06em' }}>AUM impact (90d)</Text>
+                <Text fw={800} size="sm" c="teal">{pd.nba.aumImpact}</Text>
+              </Paper>
+            </SimpleGrid>
+            <Group gap="xs">
+              <Text size="xs" c="dimmed" fw={600}>Alternatives considered:</Text>
+              {pd.nba.alternatives.map((alt, i) => (
+                <Badge key={i} size="xs" variant="outline" color="gray">{alt.action} — {alt.expectedLift}</Badge>
+              ))}
+            </Group>
+          </Stack>
+        </Paper>
       )}
 
       <Button
