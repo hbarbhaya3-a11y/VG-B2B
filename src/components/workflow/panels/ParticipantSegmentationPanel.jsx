@@ -281,6 +281,72 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
 
   return (
     <Stack gap="md">
+      {/* Hero + edit toggle */}
+      <Paper withBorder p="md" radius="md" style={{ background: 'var(--mantine-color-teal-light)' }}>
+        <Group justify="space-between">
+          <Group gap="lg">
+            <ThemeIcon size={48} radius="xl" variant="filled" color="teal">
+              <IconTargetArrow size={24} stroke={1.5} />
+            </ThemeIcon>
+            <Stack gap={2}>
+              <Text style={{ fontSize: 40, fontWeight: 900, lineHeight: 1, color: 'var(--mantine-color-teal-7)' }}>
+                {pd.totalTargeted.toLocaleString()}
+              </Text>
+              <Text size="sm" fw={500}>{pd.cohortDescription || 'participants identified in this cohort'}</Text>
+              <Group gap="xs">
+                <Badge size="xs" color="teal" variant="light">Behavioral scoring</Badge>
+                <Badge size="xs" color="teal" variant="light">{pd.totalTargeted?.toLocaleString()} twins scored</Badge>
+              </Group>
+            </Stack>
+          </Group>
+          <Button
+            size="xs"
+            variant={editMode ? 'filled' : 'light'}
+            color="teal"
+            leftSection={editMode ? <IconLock size={12} /> : <IconPencil size={12} />}
+            onClick={() => setEditMode(e => !e)}
+          >
+            {editMode ? 'Lock configuration' : 'Edit configuration'}
+          </Button>
+        </Group>
+      </Paper>
+
+      {/* Test Hypothesis */}
+      <Paper withBorder radius="md" p="md" style={{ borderLeft: '3px solid var(--mantine-color-indigo-6)' }}>
+        <Stack gap="sm">
+          <Group gap="xs">
+            <ThemeIcon size={22} radius="md" variant="light" color="indigo">
+              <IconTargetArrow size={13} stroke={1.8} />
+            </ThemeIcon>
+            <Text fw={700} size="sm">Test Hypothesis — Advisory Readiness Gap</Text>
+          </Group>
+          <Stack gap={6}>
+            <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Objective</Text>
+            <Badge size="sm" variant="light" color="vanguardRed" style={{ alignSelf: 'flex-start' }}>
+              Cross-sell to advisory
+            </Badge>
+            <Text size="xs" c="dimmed">Increase advisory journey conversion among planning-intent, unadvised investors.</Text>
+          </Stack>
+          <Stack gap={6}>
+            <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Pre-selected Hypothesis</Text>
+            <Paper p="sm" radius="sm" style={{ background: 'var(--mantine-color-indigo-light)', borderLeft: '2px solid var(--mantine-color-indigo-4)' }}>
+              <Text size="xs" fs="italic" style={{ lineHeight: 1.6 }}>
+                "When self-directed investors show repeated planning intent but do not start an advisory relationship, a behavior-matched sequence of education, portfolio review, and optional advice access will increase advisory appointment starts versus no action."
+              </Text>
+            </Paper>
+          </Stack>
+        </Stack>
+      </Paper>
+
+      {/* Tier cards — merge panelData with workflowState overrides */}
+      <SimpleGrid cols={3} spacing="md">
+        {tiersToRender.map((tier) => {
+          const override = segmentConfig.tiers.find(t => t.tier === tier.tier)
+          const merged = override ? { ...tier, channel: override.channel || tier.channel, contentType: override.contentType || tier.content?.type } : tier
+          return <TierCard key={tier.id || tier.tier} tier={merged} editMode={editMode} onUpdate={handleTierUpdate} onSeeSample={handleSeeSample} isSelected={selectedTierIds.includes(tier.id)} onToggle={(id) => setSelectedTierIds(ids => ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id])} />
+        })}
+      </SimpleGrid>
+
       {/* Conversational Segment Builder */}
       <Card withBorder radius="md" p="md" style={{ cursor: 'pointer', borderStyle: convMode ? 'solid' : 'dashed' }} onClick={() => !convMode && setConvMode(true)}>
         <Group gap="sm">
@@ -365,71 +431,6 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
         )}
       </Card>
 
-      {/* Hero + edit toggle */}
-      <Paper withBorder p="md" radius="md" style={{ background: 'var(--mantine-color-teal-light)' }}>
-        <Group justify="space-between">
-          <Group gap="lg">
-            <ThemeIcon size={48} radius="xl" variant="filled" color="teal">
-              <IconTargetArrow size={24} stroke={1.5} />
-            </ThemeIcon>
-            <Stack gap={2}>
-              <Text style={{ fontSize: 40, fontWeight: 900, lineHeight: 1, color: 'var(--mantine-color-teal-7)' }}>
-                {pd.totalTargeted.toLocaleString()}
-              </Text>
-              <Text size="sm" fw={500}>{pd.cohortDescription || 'participants identified in this cohort'}</Text>
-              <Group gap="xs">
-                <Badge size="xs" color="teal" variant="light">Behavioral scoring</Badge>
-                <Badge size="xs" color="teal" variant="light">{pd.totalTargeted?.toLocaleString()} twins scored</Badge>
-              </Group>
-            </Stack>
-          </Group>
-          <Button
-            size="xs"
-            variant={editMode ? 'filled' : 'light'}
-            color="teal"
-            leftSection={editMode ? <IconLock size={12} /> : <IconPencil size={12} />}
-            onClick={() => setEditMode(e => !e)}
-          >
-            {editMode ? 'Lock configuration' : 'Edit configuration'}
-          </Button>
-        </Group>
-      </Paper>
-
-      {/* Test Hypothesis */}
-      <Paper withBorder radius="md" p="md" style={{ borderLeft: '3px solid var(--mantine-color-indigo-6)' }}>
-        <Stack gap="sm">
-          <Group gap="xs">
-            <ThemeIcon size={22} radius="md" variant="light" color="indigo">
-              <IconTargetArrow size={13} stroke={1.8} />
-            </ThemeIcon>
-            <Text fw={700} size="sm">Test Hypothesis — Advisory Readiness Gap</Text>
-          </Group>
-          <Stack gap={6}>
-            <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Objective</Text>
-            <Badge size="sm" variant="light" color="vanguardRed" style={{ alignSelf: 'flex-start' }}>
-              Cross-sell to advisory
-            </Badge>
-            <Text size="xs" c="dimmed">Increase advisory journey conversion among planning-intent, unadvised investors.</Text>
-          </Stack>
-          <Stack gap={6}>
-            <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Pre-selected Hypothesis</Text>
-            <Paper p="sm" radius="sm" style={{ background: 'var(--mantine-color-indigo-light)', borderLeft: '2px solid var(--mantine-color-indigo-4)' }}>
-              <Text size="xs" fs="italic" style={{ lineHeight: 1.6 }}>
-                "When self-directed investors show repeated planning intent but do not start an advisory relationship, a behavior-matched sequence of education, portfolio review, and optional advice access will increase advisory appointment starts versus no action."
-              </Text>
-            </Paper>
-          </Stack>
-        </Stack>
-      </Paper>
-
-      {/* Tier cards — merge panelData with workflowState overrides */}
-      <SimpleGrid cols={3} spacing="md">
-        {tiersToRender.map((tier) => {
-          const override = segmentConfig.tiers.find(t => t.tier === tier.tier)
-          const merged = override ? { ...tier, channel: override.channel || tier.channel, contentType: override.contentType || tier.content?.type } : tier
-          return <TierCard key={tier.id || tier.tier} tier={merged} editMode={editMode} onUpdate={handleTierUpdate} onSeeSample={handleSeeSample} isSelected={selectedTierIds.includes(tier.id)} onToggle={(id) => setSelectedTierIds(ids => ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id])} />
-        })}
-      </SimpleGrid>
 
       {/* Model insight */}
       <Paper withBorder p="md" radius="md">
