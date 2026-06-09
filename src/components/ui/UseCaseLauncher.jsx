@@ -19,8 +19,8 @@ export default function UseCaseLauncher({ opened, onClose, onNavigate }) {
       title={
         <Group gap="sm">
           <IconRoute2 size={18} stroke={1.5} />
-          <Text fw={700} size="md">Signal Scenarios</Text>
-          <Badge variant="light" color="vanguardRed" size="sm">Vanguard POV</Badge>
+          <Text fw={700} size="md">Personal Wealth Signal Scenarios</Text>
+          <Badge variant="light" color="vanguardRed" size="sm">Vanguard Personal Wealth</Badge>
         </Group>
       }
       size="xl"
