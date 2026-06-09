@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import {
-  Stack, Group, Text, Badge, Button, Select, Paper, Divider, Box,
+  Stack, Group, Text, Badge, Button, Select, MultiSelect, Paper, Divider, Box,
   ThemeIcon, SimpleGrid, ActionIcon, NumberInput,
 } from '@mantine/core'
 import { DatePickerInput } from '@mantine/dates'
 import {
   IconTarget, IconCurrencyDollar, IconCalendar, IconChevronRight,
-  IconSparkles, IconChartBar, IconPlus, IconX,
+  IconSparkles, IconChartBar, IconX,
 } from '@tabler/icons-react'
 
 const ALL_KPIS = [
@@ -30,25 +30,30 @@ const ALL_KPIS = [
   { value: 'campaign_roi',        label: 'Campaign ROI multiple' },
 ]
 
-// Map each objective's KPI values (matching ALL_KPIS values above)
 const DEFAULT_KPIS = {
-  cross_sell: { primary: 'advisory_starts',     secondary: 'aum_under_advice' },
-  aum_growth: { primary: 'incremental_aum',     secondary: 'portfolio_reviews' },
-  retention:  { primary: 'outflow_reduction',   secondary: 'closure_prevention' },
-  activation: { primary: 'cash_conversion',     secondary: 'planning_engagement' },
-  education:  { primary: 'planning_completion', secondary: 'content_engagement' },
+  cross_sell: ['advisory_starts', 'aum_under_advice', 'advisor_bookings', 'portfolio_reviews'],
+  aum_growth: ['incremental_aum', 'portfolio_reviews', 'funded_advisory'],
+  retention:  ['outflow_reduction', 'closure_prevention', 're_engagement'],
+  activation: ['cash_conversion', 'planning_engagement', 'funded_action'],
+  education:  ['planning_completion', 'content_engagement', 'return_visit'],
+}
+
+const DEFAULT_SECONDARY_OBJ = {
+  cross_sell: 'aum_growth',
+  aum_growth: 'cross_sell',
+  retention:  'activation',
+  activation: 'cross_sell',
+  education:  'activation',
 }
 
 const kpiLabel = (val) => ALL_KPIS.find(k => k.value === val)?.label || val
 
 export default function CampaignObjectivePanel({ panelData: pd, onContinue }) {
   const [primaryObj,   setPrimaryObj]   = useState(pd.defaultObjective)
-  const [secondaryObj, setSecondaryObj] = useState(null)
-  const [showSecondary, setShowSecondary] = useState(false)
+  const [secondaryObj, setSecondaryObj] = useState(DEFAULT_SECONDARY_OBJ[pd.defaultObjective] ?? null)
+  const [showSecondary, setShowSecondary] = useState(true)
 
-  const getKpis = (objId) => DEFAULT_KPIS[objId] || DEFAULT_KPIS.cross_sell
-  const [primaryKpi,   setPrimaryKpi]   = useState(getKpis(pd.defaultObjective).primary)
-  const [secondaryKpi, setSecondaryKpi] = useState(getKpis(pd.defaultObjective).secondary)
+  const [selectedKpis, setSelectedKpis] = useState(DEFAULT_KPIS[pd.defaultObjective] ?? [])
 
   const [budget,    setBudget]    = useState(pd.defaultBudget)
   const [startDate, setStartDate] = useState(null)
@@ -56,17 +61,9 @@ export default function CampaignObjectivePanel({ panelData: pd, onContinue }) {
 
   const handlePrimaryObjChange = (val) => {
     setPrimaryObj(val)
-    const kpis = getKpis(val)
-    setPrimaryKpi(kpis.primary)
-    setSecondaryKpi(kpis.secondary)
-  }
-
-  const handleAddSecondary = () => {
-    setShowSecondary(true)
-    // default secondary objective to the next one in the list
-    const idx = pd.objectives.findIndex(o => o.id === primaryObj)
-    const next = pd.objectives[(idx + 1) % pd.objectives.length]
-    setSecondaryObj(next.id)
+    setSelectedKpis(DEFAULT_KPIS[val] ?? [])
+    // update secondary if it conflicts
+    if (secondaryObj === val) setSecondaryObj(DEFAULT_SECONDARY_OBJ[val] ?? null)
   }
 
   const handleRemoveSecondary = () => {
@@ -74,15 +71,15 @@ export default function CampaignObjectivePanel({ panelData: pd, onContinue }) {
     setSecondaryObj(null)
   }
 
-  const primaryObjData = pd.objectives.find(o => o.id === primaryObj)
+  const primaryObjData   = pd.objectives.find(o => o.id === primaryObj)
   const secondaryObjData = pd.objectives.find(o => o.id === secondaryObj)
-  const formattedBudget = budget ? `$${Number(budget).toLocaleString()}` : 'unset'
+  const validBudget      = budget !== '' && budget !== null && !isNaN(Number(budget)) && Number(budget) > 0
+  const formattedBudget  = validBudget ? `$${Number(budget).toLocaleString()}` : 'unset'
 
   const durationDays = startDate && endDate
     ? Math.max(1, Math.round((endDate - startDate) / (1000 * 60 * 60 * 24)))
     : null
 
-  // objectives available for secondary — exclude the primary
   const secondaryObjectiveOptions = pd.objectives
     .filter(o => o.id !== primaryObj)
     .map(o => ({ value: o.id, label: o.label }))
@@ -119,18 +116,7 @@ export default function CampaignObjectivePanel({ panelData: pd, onContinue }) {
       </Stack>
 
       {/* Secondary objective */}
-      {!showSecondary ? (
-        <Button
-          size="xs"
-          variant="subtle"
-          color="gray"
-          leftSection={<IconPlus size={13} />}
-          style={{ alignSelf: 'flex-start' }}
-          onClick={handleAddSecondary}
-        >
-          Add secondary objective
-        </Button>
-      ) : (
+      {showSecondary ? (
         <Stack gap="xs">
           <Group gap="xs" align="center">
             <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Secondary Objective</Text>
@@ -147,6 +133,17 @@ export default function CampaignObjectivePanel({ panelData: pd, onContinue }) {
             description={secondaryObjData?.description}
           />
         </Stack>
+      ) : (
+        <Button
+          size="xs"
+          variant="subtle"
+          color="gray"
+          leftSection={<IconTarget size={13} />}
+          style={{ alignSelf: 'flex-start' }}
+          onClick={() => { setShowSecondary(true); setSecondaryObj(DEFAULT_SECONDARY_OBJ[primaryObj] ?? null) }}
+        >
+          Add secondary objective
+        </Button>
       )}
 
       <Divider />
@@ -164,7 +161,6 @@ export default function CampaignObjectivePanel({ panelData: pd, onContinue }) {
             thousandSeparator=","
             leftSection={<IconCurrencyDollar size={14} />}
             placeholder="e.g. 150000"
-            hideControls={false}
           />
         </Stack>
         <Stack gap="xs">
@@ -199,35 +195,24 @@ export default function CampaignObjectivePanel({ panelData: pd, onContinue }) {
 
       <Divider label="Success KPIs" labelPosition="left" />
 
-      {/* 2 KPI dropdowns */}
-      <SimpleGrid cols={2} spacing="md">
-        <Stack gap="xs">
-          <Group gap={4}>
-            <IconChartBar size={13} stroke={1.5} style={{ color: 'var(--mantine-color-red-6)' }} />
-            <Text size="xs" fw={700} c="red">Primary KPI</Text>
-          </Group>
-          <Select
-            data={ALL_KPIS}
-            value={primaryKpi}
-            onChange={setPrimaryKpi}
-            radius="md"
-            size="sm"
-          />
-        </Stack>
-        <Stack gap="xs">
-          <Group gap={4}>
-            <IconChartBar size={13} stroke={1.5} style={{ color: 'var(--mantine-color-orange-6)' }} />
-            <Text size="xs" fw={700} c="orange">Secondary KPI</Text>
-          </Group>
-          <Select
-            data={ALL_KPIS}
-            value={secondaryKpi}
-            onChange={setSecondaryKpi}
-            radius="md"
-            size="sm"
-          />
-        </Stack>
-      </SimpleGrid>
+      {/* Multi-select KPIs */}
+      <Stack gap="xs">
+        <Group gap={4}>
+          <IconChartBar size={13} stroke={1.5} style={{ color: 'var(--mantine-color-red-6)' }} />
+          <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.06em' }}>KPIs to track</Text>
+          <Badge size="xs" variant="light" color="orange">{selectedKpis.length} selected</Badge>
+        </Group>
+        <MultiSelect
+          data={ALL_KPIS}
+          value={selectedKpis}
+          onChange={setSelectedKpis}
+          radius="md"
+          placeholder="Select one or more KPIs…"
+          searchable
+          clearable
+          maxDropdownHeight={300}
+        />
+      </Stack>
 
       {/* Summary */}
       <Paper withBorder radius="md" p="md" style={{ background: 'var(--mantine-color-default-hover)' }}>
@@ -236,13 +221,14 @@ export default function CampaignObjectivePanel({ panelData: pd, onContinue }) {
           <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.06em' }}>Campaign Summary</Text>
         </Group>
         <Text size="sm">
-          {durationDays
-            ? <><strong>{durationDays}-day</strong> </>
-            : null}
+          {durationDays ? <><strong>{durationDays}-day </strong></> : null}
           <strong>{primaryObjData?.label}</strong>
           {secondaryObjData ? <> + <strong>{secondaryObjData.label}</strong></> : null}
-          {' '}campaign ·
-          budget <strong>{formattedBudget}</strong> · measuring <strong>{kpiLabel(primaryKpi)}</strong> and <strong>{kpiLabel(secondaryKpi)}</strong>.
+          {' '}campaign · budget <strong>{formattedBudget}</strong>
+          {selectedKpis.length > 0 && (
+            <> · measuring <strong>{selectedKpis.map(k => kpiLabel(k)).join(', ')}</strong></>
+          )}
+          .
         </Text>
       </Paper>
 
