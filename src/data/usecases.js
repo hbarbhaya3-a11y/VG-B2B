@@ -346,6 +346,12 @@ const UC_ADVISORY_READINESS = {
           'Content classified as education — no advice payload',
           '30-day intervention window confirmed',
         ],
+        doNothing: { engagement: 0.03, advisorsReached: 0, aum: 0 },
+        scenarioRationale: {
+          A: 'Education-first with optional portfolio review. Reaches all 6 segments with appropriately classified content. Highest confidence (87%). Recommended.',
+          B: 'Direct advisor invitation pathway. Higher potential AUM but 1.8× cost and lower confidence. Reserved for high-intent segment escalation.',
+          C: 'Education-only, no advisor path. Lowest cost and risk but limited AUM impact. Suitable if budget-constrained.',
+        },
       },
     },
     {
@@ -581,7 +587,7 @@ const UC_IDLE_CASH = {
       id: 'step-4', label: 'Decision Approval', stage: 'SELECT', page: 'trust-compliance',
       panelType: 'human_approval', actor: 'human',
       headline: 'Decision Approval Gate',
-      panelData: { approver: 'Campaign Lead / Personal Wealth Marketing', defaultOverride: 'Approved — Scenario A for both segments.', approvalItems: ['Scenario A: education + scenario calculator', '31,000 investors · 3,100 holdout', 'Education classified — no advice payload', '60-day window confirmed'] },
+      panelData: { approver: 'Campaign Lead / Personal Wealth Marketing', defaultOverride: 'Approved — Scenario A for both segments.', approvalItems: ['Scenario A: education + scenario calculator', '31,000 investors · 3,100 holdout', 'Education classified — no advice payload', '60-day window confirmed'], doNothing: { engagement: 0.03, advisorsReached: 0, aum: 0 }, scenarioRationale: { A: 'Education + cash scenario calculator. Best balance of reach and cost.', B: 'Advisor invitation for high-cash segment. Higher AUM potential, higher cost.', C: 'Email-only, lower engagement. Lowest cost option.' } },
     },
     {
       id: 'step-5', label: 'Compliance Clearance', stage: 'SELECT', page: 'trust-compliance',
@@ -703,7 +709,7 @@ const UC_DIVERSIFICATION = {
       id: 'step-4', label: 'Decision Approval', stage: 'SELECT', page: 'trust-compliance',
       panelType: 'human_approval', actor: 'human',
       headline: 'Decision Approval Gate',
-      panelData: { approver: 'Campaign Lead', defaultOverride: 'Approved — Scenario A for all 3 segments.', approvalItems: ['Scenario A: portfolio health check + optional advisor invite', '24,000 investors · 2,400 holdout', 'Content classified as education', '45-day window confirmed'] },
+      panelData: { approver: 'Campaign Lead', defaultOverride: 'Approved — Scenario A for all 3 segments.', approvalItems: ['Scenario A: portfolio health check + optional advisor invite', '24,000 investors · 2,400 holdout', 'Content classified as education', '45-day window confirmed'], doNothing: { engagement: 0.03, advisorsReached: 0, aum: 0 }, scenarioRationale: { A: 'Portfolio health check + optional advisor invite. Education-classified. Best confidence.', B: 'Personalized rebalancing suggestion. Higher engagement but higher cost.', C: 'Portfolio insight only, no advisor path. Minimal cost, limited AUM.' } },
     },
     {
       id: 'step-5', label: 'Compliance Clearance', stage: 'SELECT', page: 'trust-compliance',
@@ -820,7 +826,7 @@ const UC_VOLATILITY = {
       id: 'step-4', label: 'Decision Approval', stage: 'SELECT', page: 'trust-compliance',
       panelType: 'human_approval', actor: 'human',
       headline: 'Decision Approval Gate',
-      panelData: { approver: 'Campaign Lead', defaultOverride: 'Approved — Scenario A. 72-hour urgency window in effect.', approvalItems: ['Scenario A: reassurance + stay-the-course', '38,000 investors · 3,800 holdout', 'Education classified — no advice payload', '72-hour urgency window confirmed'] },
+      panelData: { approver: 'Campaign Lead', defaultOverride: 'Approved — Scenario A. 72-hour urgency window in effect.', approvalItems: ['Scenario A: reassurance + stay-the-course', '38,000 investors · 3,800 holdout', 'Education classified — no advice payload', '72-hour urgency window confirmed'], doNothing: { engagement: 0.03, advisorsReached: 0, aum: 0 }, scenarioRationale: { A: 'Reassurance + stay-the-course education. Time-sensitive. Highest AUM retention.', B: 'Proactive outreach with advisor option. Higher engagement, higher cost.', C: 'Email-only reassurance. Lowest reach, minimal cost.' } },
     },
     {
       id: 'step-5', label: 'Compliance Clearance', stage: 'SELECT', page: 'trust-compliance',
@@ -936,7 +942,7 @@ const UC_ROLLOVER = {
       id: 'step-4', label: 'Decision Approval', stage: 'SELECT', page: 'trust-compliance',
       panelType: 'human_approval', actor: 'human',
       headline: 'Decision Approval Gate',
-      panelData: { approver: 'Campaign Lead', defaultOverride: 'Approved — Scenario A. Neutral framing enforced; no solicitation.', approvalItems: ['Scenario A: neutral path education + optional advisor', '14,000 investors · 1,400 holdout', 'Education classified — no advice payload', 'Reaction-based signals only — no predictive inference', '45-day decision window confirmed'] },
+      panelData: { approver: 'Campaign Lead', defaultOverride: 'Approved — Scenario A. Neutral framing enforced; no solicitation.', approvalItems: ['Scenario A: neutral path education + optional advisor', '14,000 investors · 1,400 holdout', 'Education classified — no advice payload', 'Reaction-based signals only — no predictive inference', '45-day decision window confirmed'], doNothing: { engagement: 0.03, advisorsReached: 0, aum: 0 }, scenarioRationale: { A: 'Neutral path comparison + optional advisor. Reaction-based signals only. Recommended.', B: 'Direct rollover consultation invitation. Higher conversion risk on fiduciary posture.', C: 'Education-only rollover guide. No advisor path. Lowest cost.' } },
     },
     {
       id: 'step-5', label: 'Compliance Clearance', stage: 'SELECT', page: 'trust-compliance',
