@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Paper, Stack, Group, Text, Badge, SimpleGrid, Progress, Button, Alert, Checkbox, Divider, ThemeIcon, Loader, NumberInput, Select, Tabs, Table, Collapse, Box } from '@mantine/core'
+import { Paper, Stack, Group, Text, Badge, SimpleGrid, Progress, Button, Alert, Checkbox, Divider, ThemeIcon, Loader, NumberInput, Select, Tabs, Table, Modal } from '@mantine/core'
 import { BarChart, DonutChart } from '@mantine/charts'
-import { IconChartBar, IconChevronRight, IconAlertTriangle, IconCheck, IconPlayerPlay, IconStars, IconPencil, IconLock, IconUsers, IconAdjustments, IconGift, IconSend, IconSparkles, IconFileText, IconVideo, IconMail, IconDeviceMobile, IconBook, IconPhone, IconShield, IconChevronDown, IconChevronUp } from '@tabler/icons-react'
+import { IconChartBar, IconChevronRight, IconAlertTriangle, IconCheck, IconPlayerPlay, IconStars, IconPencil, IconLock, IconUsers, IconAdjustments, IconGift, IconSend, IconSparkles, IconFileText, IconVideo, IconMail, IconDeviceMobile, IconPhone, IconShield } from '@tabler/icons-react'
 import { useUseCase } from '../../../contexts/UseCaseContext'
 
 // Content types and their metadata
@@ -87,47 +87,94 @@ function generateBody(typeId, segLabel) {
   return bodies[typeId] || bodies.article
 }
 
-function ContentVariantCard({ variant }) {
-  const [open, setOpen] = useState(false)
+function ContentVariantTile({ variant, onClick }) {
   const Icon = variant.contentType.icon
   return (
-    <Paper withBorder radius="md" style={{ borderLeft: `3px solid var(--mantine-color-${variant.contentType.color}-5)`, overflow: 'hidden' }}>
-      <Group
-        px="md" py="sm" justify="space-between" wrap="nowrap"
-        style={{ cursor: 'pointer' }}
-        onClick={() => setOpen(o => !o)}
-      >
-        <Group gap="sm" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
-          <ThemeIcon size={28} radius="md" variant="light" color={variant.contentType.color}>
-            <Icon size={14} stroke={1.5} />
+    <Paper
+      withBorder p="md" radius="md"
+      style={{
+        borderTop: `3px solid var(--mantine-color-${variant.contentType.color}-5)`,
+        cursor: 'pointer',
+        transition: 'box-shadow 150ms ease',
+      }}
+      onClick={() => onClick(variant)}
+    >
+      <Stack gap="sm">
+        <Group justify="space-between">
+          <ThemeIcon size={32} radius="md" variant="light" color={variant.contentType.color}>
+            <Icon size={16} stroke={1.5} />
           </ThemeIcon>
-          <Stack gap={1} style={{ minWidth: 0 }}>
-            <Group gap="xs" wrap="nowrap">
-              <Text size="xs" fw={700} truncate>{variant.headline}</Text>
-              <Badge size="xs" variant="dot" color={variant.segColor}>V{variant.variantNum}</Badge>
-            </Group>
-            <Group gap={6} wrap="nowrap">
-              <Badge size="xs" variant="light" color={variant.contentType.color}>{variant.contentType.label}</Badge>
-              <Text size="xs" c="dimmed" truncate>{variant.segment}</Text>
-            </Group>
-          </Stack>
+          <Badge size="xs" variant="dot" color={variant.segColor}>V{variant.variantNum}</Badge>
         </Group>
-        <ThemeIcon size={18} variant="subtle" color="gray" radius="sm">
-          {open ? <IconChevronUp size={12} /> : <IconChevronDown size={12} />}
-        </ThemeIcon>
-      </Group>
-      <Collapse in={open}>
-        <Box px="md" pb="md" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
-          <Stack gap="xs" pt="sm">
-            <Group gap="xs" wrap="wrap">
-              <Badge size="xs" variant="light" color={variant.segColor}>Audience: {variant.segment}</Badge>
-              <Badge size="xs" variant="light" color="gray">Channel: {variant.channel}</Badge>
-            </Group>
-            <Text size="xs" c="dimmed" style={{ lineHeight: 1.6 }}>{variant.body}</Text>
-          </Stack>
-        </Box>
-      </Collapse>
+        <Stack gap={2}>
+          <Text size="xs" fw={700} style={{ lineHeight: 1.3 }}>{variant.headline}</Text>
+          <Badge size="xs" variant="light" color={variant.contentType.color} style={{ alignSelf: 'flex-start' }}>{variant.contentType.label}</Badge>
+        </Stack>
+        <Divider />
+        <Text size="xs" c="dimmed" truncate>{variant.segment}</Text>
+        <Badge size="xs" variant="outline" color="gray">{variant.channel}</Badge>
+      </Stack>
     </Paper>
+  )
+}
+
+function ContentVariantGrid({ variants }) {
+  const [active, setActive] = useState(null)
+  return (
+    <>
+      <Stack gap="sm">
+        <Group gap="xs">
+          <ThemeIcon size={20} radius="md" variant="light" color="violet">
+            <IconSparkles size={12} stroke={1.5} />
+          </ThemeIcon>
+          <Text size="sm" fw={700}>Generated Content Variants</Text>
+          <Badge size="xs" color="violet" variant="light">{variants.length} variants · click to preview</Badge>
+        </Group>
+        <SimpleGrid cols={4} spacing="sm">
+          {variants.map(v => <ContentVariantTile key={v.id} variant={v} onClick={setActive} />)}
+        </SimpleGrid>
+      </Stack>
+
+      <Modal
+        opened={!!active}
+        onClose={() => setActive(null)}
+        title={
+          active && (
+            <Group gap="xs">
+              <ThemeIcon size={24} radius="md" variant="light" color={active.contentType.color}>
+                <active.contentType.icon size={13} stroke={1.5} />
+              </ThemeIcon>
+              <Stack gap={0}>
+                <Text size="sm" fw={700}>{active.contentType.label}</Text>
+                <Text size="xs" c="dimmed">Variant {active.variantNum} · {active.segment}</Text>
+              </Stack>
+            </Group>
+          )
+        }
+        size="lg"
+        radius="md"
+      >
+        {active && (
+          <Stack gap="md">
+            <Group gap="xs" wrap="wrap">
+              <Badge size="sm" variant="light" color={active.segColor}>Audience: {active.segment}</Badge>
+              <Badge size="sm" variant="light" color="gray">Channel: {active.channel}</Badge>
+            </Group>
+            <Paper withBorder p="md" radius="md" style={{ borderLeft: `3px solid var(--mantine-color-${active.contentType.color}-5)` }}>
+              <Stack gap="sm">
+                <Text size="md" fw={700}>{active.headline}</Text>
+                <Divider />
+                <Text size="sm" style={{ lineHeight: 1.7 }}>{active.body}</Text>
+              </Stack>
+            </Paper>
+            <Group gap="xs" justify="flex-end">
+              <Button size="xs" variant="light" color="gray" onClick={() => setActive(null)}>Close</Button>
+              <Button size="xs" variant="light" color={active.contentType.color}>Approve variant</Button>
+            </Group>
+          </Stack>
+        )}
+      </Modal>
+    </>
   )
 }
 
@@ -339,18 +386,22 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
     { channel: 'Tier 3 — Portal', rate: selectedId === 'B' ? 12 : selectedId === 'C' ? 8 : 8 },
   ]
 
-  // Upstream config summary (from content_channel_config step)
-  const upstreamContentCount = workflowState?.selectedContentTypes?.length ?? 'All'
-  const upstreamChannels = workflowState?.enabledChannels
-    ? Object.entries(workflowState.enabledChannels).filter(([_, v]) => v).map(([k]) => k).length
-    : 3
-  const upstreamHoldout = workflowState?.advisorConfig?.holdoutCount ?? pd.holdout
-
-  // Build content variants from step 4 segments
+  // Derive values from steps 1–4
   const channelStep = activeUseCase?.steps.find(s => s.panelType === 'participant_channel_config')
+  const campaignObjectiveStep = activeUseCase?.steps.find(s => s.panelType === 'campaign_objective')
+  const segmentationStep = activeUseCase?.steps.find(s => s.panelType === 'participant_segmentation')
+
   const allSegments = channelStep?.panelData?.segments || []
   const selectedSegIds = workflowState?.selectedSegments
   const activeSegments = selectedSegIds ? allSegments.filter(s => selectedSegIds.includes(s.id)) : allSegments
+
+  const allOffers = channelStep?.panelData?.offers || []
+  const selectedOfferIds = workflowState?.selectedOffers
+  const activeOffersCount = selectedOfferIds ? selectedOfferIds.length : allOffers.length
+
+  const totalReachLocked = activeSegments.reduce((sum, s) => sum + s.count, 0) || 42000
+  const holdoutLocked = workflowState?.segmentConfig?.holdoutCount ?? segmentationStep?.panelData?.holdout?.count ?? 4200
+
   const contentVariants = buildVariants(activeSegments, allSegments)
 
   if (phase === 'config') {
@@ -385,51 +436,53 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
         {/* Unified config card */}
         <Paper withBorder p="md" radius="md">
           <Stack gap="md">
-            {/* Section 1: Model parameters */}
             <SimpleGrid cols={2} spacing="md">
+              {/* Locked — derived from steps 1–4 */}
               <Stack gap="xs">
                 <Group gap="xs">
-                  <IconAdjustments size={14} stroke={1.5} style={{ color: 'var(--mantine-color-dimmed)' }} />
-                  <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.05em' }}>Locked parameters</Text>
+                  <IconLock size={13} stroke={1.5} style={{ color: 'var(--mantine-color-dimmed)' }} />
+                  <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.05em' }}>Locked — from your config</Text>
                 </Group>
+                <Group justify="space-between"><Text size="xs" c="dimmed">Campaign objective</Text><Badge variant="light" color="vanguardRed" size="xs">{campaignObjectiveStep?.panelData?.objectives?.find(o => o.recommended)?.label || 'Cross-sell to advisory'}</Badge></Group>
+                <Group justify="space-between"><Text size="xs" c="dimmed">Budget</Text><Badge variant="light" color="green" size="xs">${(campaignObjectiveStep?.panelData?.defaultBudget || 150000).toLocaleString()}</Badge></Group>
+                <Group justify="space-between"><Text size="xs" c="dimmed">Population (reach)</Text><Badge variant="light" color="orange" size="xs">{totalReachLocked.toLocaleString()}</Badge></Group>
+                <Group justify="space-between"><Text size="xs" c="dimmed">Holdout</Text><Badge variant="light" color="gray" size="xs">{holdoutLocked}</Badge></Group>
+                <Group justify="space-between"><Text size="xs" c="dimmed">Active segments</Text><Badge variant="light" color="blue" size="xs">{activeSegments.length}</Badge></Group>
+                <Group justify="space-between"><Text size="xs" c="dimmed">Offers</Text><Badge variant="light" color="grape" size="xs">{activeOffersCount}</Badge></Group>
+                <Group justify="space-between"><Text size="xs" c="dimmed">Content variants</Text><Badge variant="light" color="violet" size="xs">{contentVariants.length}</Badge></Group>
+                <Group justify="space-between"><Text size="xs" c="dimmed">Episode baseline</Text><Badge variant="light" color="blue" size="xs">18 prior episodes</Badge></Group>
                 <Group justify="space-between"><Text size="xs" c="dimmed">Iterations</Text><Badge variant="light" color="violet" size="xs">1,000</Badge></Group>
-                <Group justify="space-between"><Text size="xs" c="dimmed">Episode baseline</Text><Badge variant="light" color="blue" size="xs">18 prior</Badge></Group>
-                <Group justify="space-between"><Text size="xs" c="dimmed">Population</Text><Badge variant="light" color="orange" size="xs">7,900</Badge></Group>
-                <Group justify="space-between"><Text size="xs" c="dimmed">Holdout</Text><Badge variant="light" color="gray" size="xs">400</Badge></Group>
               </Stack>
+
+              {/* Tunable */}
               <Stack gap="xs">
-                <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.05em' }}>Tunable parameters</Text>
+                <Group gap="xs">
+                  <IconAdjustments size={13} stroke={1.5} style={{ color: 'var(--mantine-color-dimmed)' }} />
+                  <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.05em' }}>Tunable parameters</Text>
+                </Group>
                 {editMode ? (
                   <>
                     <NumberInput label="Confidence threshold (%)" value={params.confidenceThreshold} onChange={v => setParams(p => ({ ...p, confidenceThreshold: v }))} min={50} max={99} size="xs" />
                     <NumberInput label="Min engagement (%)" value={params.minEngagement} onChange={v => setParams(p => ({ ...p, minEngagement: v }))} min={5} max={40} size="xs" />
-                    <Select label="Time horizon" value={params.timeHorizon} onChange={v => setParams(p => ({ ...p, timeHorizon: v }))} data={['14 days', '30 days', '90 days']} size="xs" allowDeselect={false} />
-                    <NumberInput label="Tier 1 multiplier" value={params.tier1Multiplier} onChange={v => setParams(p => ({ ...p, tier1Multiplier: v }))} min={1} max={5} step={0.5} size="xs" />
+                    <Select label="Time horizon" value={params.timeHorizon} onChange={v => setParams(p => ({ ...p, timeHorizon: v }))} data={['14 days', '30 days', '60 days', '90 days']} size="xs" allowDeselect={false} />
+                    <NumberInput label="Response curve sensitivity" value={params.tier1Multiplier} onChange={v => setParams(p => ({ ...p, tier1Multiplier: v }))} min={1} max={5} step={0.5} size="xs" />
                   </>
                 ) : (
                   <>
                     <Group justify="space-between"><Text size="xs" c="dimmed">Confidence threshold</Text><Badge variant="outline" color="gray" size="xs">{params.confidenceThreshold}%</Badge></Group>
                     <Group justify="space-between"><Text size="xs" c="dimmed">Min engagement</Text><Badge variant="outline" color="gray" size="xs">{params.minEngagement}%</Badge></Group>
                     <Group justify="space-between"><Text size="xs" c="dimmed">Time horizon</Text><Badge variant="outline" color="gray" size="xs">{params.timeHorizon}</Badge></Group>
-                    <Group justify="space-between"><Text size="xs" c="dimmed">Tier 1 multiplier</Text><Badge variant="outline" color="gray" size="xs">{params.tier1Multiplier}×</Badge></Group>
+                    <Group justify="space-between"><Text size="xs" c="dimmed">Response curve sensitivity</Text><Badge variant="outline" color="gray" size="xs">{params.tier1Multiplier}×</Badge></Group>
                   </>
                 )}
               </Stack>
             </SimpleGrid>
-
-            {/* Upstream configuration summary */}
-            <Divider label="Upstream Configuration" labelPosition="left" />
-            <Group gap="md">
-              <Badge size="sm" variant="light" color="orange">{upstreamContentCount} content types</Badge>
-              <Badge size="sm" variant="light" color="blue">{upstreamChannels} channels</Badge>
-              <Badge size="sm" variant="light" color="violet">Holdout: {upstreamHoldout}</Badge>
-            </Group>
           </Stack>
         </Paper>
 
-        <Button size="md" variant="gradient" gradient={{ from: 'indigo', to: 'cyan', deg: 135 }} leftSection={<IconSparkles size={16} stroke={1.5} />} styles={{ root: { boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)' } }}
+        <Button size="md" variant="gradient" gradient={{ from: 'indigo', to: 'cyan', deg: 135 }} leftSection={<IconPlayerPlay size={16} stroke={1.5} />} styles={{ root: { boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)' } }}
           onClick={() => { setPhase('running'); setRunLine(0) }}>
-          Generate Content Variants
+          Run TwinX Simulation
         </Button>
       </Stack>
     )
@@ -654,20 +707,9 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
         </Tabs>
       </Paper>
 
-      {/* Generated content variants */}
+      {/* Generated content variants — tiles */}
       {contentVariants.length > 0 && (
-        <Stack gap="sm">
-          <Group gap="xs">
-            <ThemeIcon size={20} radius="md" variant="light" color="violet">
-              <IconSparkles size={12} stroke={1.5} />
-            </ThemeIcon>
-            <Text size="sm" fw={700}>Generated Content Variants</Text>
-            <Badge size="xs" color="violet" variant="light">{contentVariants.length} variants · click to preview</Badge>
-          </Group>
-          <Stack gap="xs">
-            {contentVariants.map(v => <ContentVariantCard key={v.id} variant={v} />)}
-          </Stack>
-        </Stack>
+        <ContentVariantGrid variants={contentVariants} />
       )}
 
       <Button

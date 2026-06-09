@@ -213,7 +213,7 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
         onClick={handleContinue}
         disabled={selectedOffers.length === 0 || selectedSegs.length === 0}
       >
-        Recommend &amp; Simulate
+        Generate Content Variants
       </Button>
     </Stack>
   )
