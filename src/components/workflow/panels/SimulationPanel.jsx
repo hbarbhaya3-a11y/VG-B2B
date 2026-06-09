@@ -1,8 +1,135 @@
 import { useState, useEffect } from 'react'
-import { Paper, Stack, Group, Text, Badge, SimpleGrid, Progress, Button, Alert, Checkbox, Divider, ThemeIcon, Loader, NumberInput, Select, Tabs, Table } from '@mantine/core'
+import { Paper, Stack, Group, Text, Badge, SimpleGrid, Progress, Button, Alert, Checkbox, Divider, ThemeIcon, Loader, NumberInput, Select, Tabs, Table, Collapse, Box } from '@mantine/core'
 import { BarChart, DonutChart } from '@mantine/charts'
-import { IconChartBar, IconChevronRight, IconAlertTriangle, IconCheck, IconPlayerPlay, IconStars, IconPencil, IconLock, IconUsers, IconAdjustments, IconGift, IconSend } from '@tabler/icons-react'
+import { IconChartBar, IconChevronRight, IconAlertTriangle, IconCheck, IconPlayerPlay, IconStars, IconPencil, IconLock, IconUsers, IconAdjustments, IconGift, IconSend, IconSparkles, IconFileText, IconVideo, IconMail, IconDeviceMobile, IconBook, IconPhone, IconShield, IconChevronDown, IconChevronUp } from '@tabler/icons-react'
 import { useUseCase } from '../../../contexts/UseCaseContext'
+
+// Content types and their metadata
+const CONTENT_TYPES = [
+  { id: 'article',   label: 'Plain-language educational article', icon: IconFileText,    color: 'blue'   },
+  { id: 'insight',   label: 'Portfolio health insight',           icon: IconChartBar,    color: 'teal'   },
+  { id: 'calculator',label: 'Scenario calculator',                icon: IconSparkles,    color: 'violet' },
+  { id: 'video',     label: '60-second explainer video',          icon: IconVideo,       color: 'grape'  },
+  { id: 'email',     label: 'Advisor invitation email',           icon: IconMail,        color: 'orange' },
+  { id: 'cta',       label: 'Secure-site CTA card',               icon: IconDeviceMobile,color: 'cyan'   },
+  { id: 'script',    label: 'Call script / advisor brief',        icon: IconPhone,       color: 'green'  },
+  { id: 'faq',       label: 'FAQ / disclosure module',            icon: IconShield,      color: 'gray'   },
+]
+
+// Map channel keywords → best content type IDs (ordered by variant slot)
+const CHANNEL_CONTENT_MAP = {
+  'secure-site card': ['cta', 'article'],
+  'secure-site insight': ['insight', 'article'],
+  'secure site': ['cta', 'faq'],
+  'app push': ['video', 'cta'],
+  'email + advisor': ['email', 'script'],
+  'email + secure': ['article', 'faq'],
+  'email': ['email', 'article'],
+  'crm': ['script', 'faq'],
+}
+
+function getContentTypesForChannel(channel) {
+  const lower = channel.toLowerCase()
+  for (const [key, types] of Object.entries(CHANNEL_CONTENT_MAP)) {
+    if (lower.includes(key)) return types
+  }
+  return ['article', 'cta']
+}
+
+function buildVariants(segments, allSegments) {
+  const variants = []
+  segments.forEach(seg => {
+    const typeIds = getContentTypesForChannel(seg.channel)
+    for (let v = 0; v < seg.variants; v++) {
+      const typeId = typeIds[v % typeIds.length]
+      const ct = CONTENT_TYPES.find(c => c.id === typeId) || CONTENT_TYPES[0]
+      variants.push({
+        id: `${seg.id}-v${v + 1}`,
+        segment: seg.label,
+        segColor: seg.color,
+        channel: seg.channel,
+        variantNum: v + 1,
+        contentType: ct,
+        headline: generateHeadline(ct.id, seg.label, v),
+        body: generateBody(ct.id, seg.label),
+      })
+    }
+  })
+  return variants
+}
+
+function generateHeadline(typeId, segLabel, v) {
+  const headlines = {
+    article:    ['Is your portfolio ready for what\'s next?', 'What a Vanguard advisor actually does for you', 'How to know when advice makes sense'],
+    insight:    ['Your portfolio: a 3-minute health check', 'Where overlap may be costing you', 'Diversification gaps in your current mix'],
+    calculator: ['Retirement income: run your numbers', 'What does advice cost vs. cost you?', 'Cash scenario: what happens if you invest now?'],
+    video:      ['60 seconds: the planning-to-advice path', '3 signs it may be time to get advice', 'How Vanguard advisory works'],
+    email:      ['Your complimentary portfolio review — book now', 'A quick conversation could change your plan', 'An advisor wants to connect with you'],
+    cta:        ['See your personalized advisory fit', 'Ready to take the next step?', 'Explore what advice could look like for you'],
+    script:     ['Discovery call guide: planning-intent investors', 'Advisor brief: complexity household outreach', 'Consultation prep: income planning discussion'],
+    faq:        ['Common questions about Vanguard advisory', 'How advice and education differ — and why it matters', 'Your rights, our obligations: a plain-language guide'],
+  }
+  const arr = headlines[typeId] || headlines.article
+  return arr[v % arr.length]
+}
+
+function generateBody(typeId, segLabel) {
+  const bodies = {
+    article: `Educational content tailored for ${segLabel}. Covers portfolio review fundamentals, the value of goal-based planning, and how to evaluate whether advisory services are a fit — without solicitation language.`,
+    insight: `A visual portfolio health summary highlighting concentration risk, overlap, and diversification gaps. Designed to prompt reflection and an optional next step — not a recommendation.`,
+    calculator: `An interactive scenario tool that lets the investor model different allocation paths, income drawdown scenarios, or cash deployment timelines. Output is illustrative, not advice.`,
+    video: `A 60-second animated explainer covering the planning-to-advice journey. Calm, benefit-led tone. Ends with a soft CTA to explore further — no product mention.`,
+    email: `Personalized advisor invitation email. Opens with the investor's stated planning goal, acknowledges their journey so far, and offers a no-obligation conversation. Disclosure-compliant draft.`,
+    cta: `Secure-site card surfaced at the right moment in the investor's session. Short headline, 1–2 lines of context, a single action button. Variants test headline framing and CTA copy.`,
+    script: `Advisor brief summarising the investor's behavioral signals, planning intent, and suggested conversation opener. Includes education-vs-advice boundary guidance for the advisor.`,
+    faq: `A plain-language FAQ covering how Vanguard advisory works, fee structures, suitability, and what happens after a consultation. Disclosure module auto-attaches based on content class.`,
+  }
+  return bodies[typeId] || bodies.article
+}
+
+function ContentVariantCard({ variant }) {
+  const [open, setOpen] = useState(false)
+  const Icon = variant.contentType.icon
+  return (
+    <Paper withBorder radius="md" style={{ borderLeft: `3px solid var(--mantine-color-${variant.contentType.color}-5)`, overflow: 'hidden' }}>
+      <Group
+        px="md" py="sm" justify="space-between" wrap="nowrap"
+        style={{ cursor: 'pointer' }}
+        onClick={() => setOpen(o => !o)}
+      >
+        <Group gap="sm" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+          <ThemeIcon size={28} radius="md" variant="light" color={variant.contentType.color}>
+            <Icon size={14} stroke={1.5} />
+          </ThemeIcon>
+          <Stack gap={1} style={{ minWidth: 0 }}>
+            <Group gap="xs" wrap="nowrap">
+              <Text size="xs" fw={700} truncate>{variant.headline}</Text>
+              <Badge size="xs" variant="dot" color={variant.segColor}>V{variant.variantNum}</Badge>
+            </Group>
+            <Group gap={6} wrap="nowrap">
+              <Badge size="xs" variant="light" color={variant.contentType.color}>{variant.contentType.label}</Badge>
+              <Text size="xs" c="dimmed" truncate>{variant.segment}</Text>
+            </Group>
+          </Stack>
+        </Group>
+        <ThemeIcon size={18} variant="subtle" color="gray" radius="sm">
+          {open ? <IconChevronUp size={12} /> : <IconChevronDown size={12} />}
+        </ThemeIcon>
+      </Group>
+      <Collapse in={open}>
+        <Box px="md" pb="md" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
+          <Stack gap="xs" pt="sm">
+            <Group gap="xs" wrap="wrap">
+              <Badge size="xs" variant="light" color={variant.segColor}>Audience: {variant.segment}</Badge>
+              <Badge size="xs" variant="light" color="gray">Channel: {variant.channel}</Badge>
+            </Group>
+            <Text size="xs" c="dimmed" style={{ lineHeight: 1.6 }}>{variant.body}</Text>
+          </Stack>
+        </Box>
+      </Collapse>
+    </Paper>
+  )
+}
 
 const RUNNING_LINES = [
   'Loading episode priors from TwinX…',
@@ -219,6 +346,13 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
     : 3
   const upstreamHoldout = workflowState?.advisorConfig?.holdoutCount ?? pd.holdout
 
+  // Build content variants from step 4 segments
+  const channelStep = activeUseCase?.steps.find(s => s.panelType === 'participant_channel_config')
+  const allSegments = channelStep?.panelData?.segments || []
+  const selectedSegIds = workflowState?.selectedSegments
+  const activeSegments = selectedSegIds ? allSegments.filter(s => selectedSegIds.includes(s.id)) : allSegments
+  const contentVariants = buildVariants(activeSegments, allSegments)
+
   if (phase === 'config') {
     return (
       <Stack gap="md">
@@ -293,9 +427,9 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
           </Stack>
         </Paper>
 
-        <Button size="md" variant="gradient" gradient={{ from: 'indigo', to: 'cyan', deg: 135 }} leftSection={<IconPlayerPlay size={16} stroke={1.5} />} styles={{ root: { boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)' } }}
+        <Button size="md" variant="gradient" gradient={{ from: 'indigo', to: 'cyan', deg: 135 }} leftSection={<IconSparkles size={16} stroke={1.5} />} styles={{ root: { boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)' } }}
           onClick={() => { setPhase('running'); setRunLine(0) }}>
-          Run TwinX Simulation
+          Generate Content Variants
         </Button>
       </Stack>
     )
@@ -519,6 +653,22 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
           </Tabs.Panel>
         </Tabs>
       </Paper>
+
+      {/* Generated content variants */}
+      {contentVariants.length > 0 && (
+        <Stack gap="sm">
+          <Group gap="xs">
+            <ThemeIcon size={20} radius="md" variant="light" color="violet">
+              <IconSparkles size={12} stroke={1.5} />
+            </ThemeIcon>
+            <Text size="sm" fw={700}>Generated Content Variants</Text>
+            <Badge size="xs" color="violet" variant="light">{contentVariants.length} variants · click to preview</Badge>
+          </Group>
+          <Stack gap="xs">
+            {contentVariants.map(v => <ContentVariantCard key={v.id} variant={v} />)}
+          </Stack>
+        </Stack>
+      )}
 
       <Button
         size="md" variant="gradient" gradient={{ from: 'indigo', to: 'cyan', deg: 135 }} rightSection={<IconChevronRight size={16} stroke={2} />}
