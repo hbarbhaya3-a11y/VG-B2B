@@ -3,7 +3,7 @@ node_modules/
 .vite/
 
 # Build outputs
-# assets/ and dist/ committed for GitHub Pages hosting
+dist/
 
 # Runtime logs
 npm-debug.log*
