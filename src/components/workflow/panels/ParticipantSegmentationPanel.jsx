@@ -377,8 +377,8 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
                 <Divider label="Behavioral signal" labelPosition="left" />
                 <Text size="xs" c="dimmed">{tier.behavioralSignal || tier.description}</Text>
 
-                <Divider label="Recommendation" labelPosition="left" />
-                <Text size="xs">{tier.recommendation || tier.contentType}</Text>
+                <Divider label="Channel" labelPosition="left" />
+                <Badge size="xs" variant="light" color={tier.color}>{tier.channel}</Badge>
               </Stack>
             </Paper>
           )
