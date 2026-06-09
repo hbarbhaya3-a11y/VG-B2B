@@ -105,4 +105,12 @@ export function UseCaseProvider({ children }) {
   )
 }
 
-export const useUseCase = () => useContext(UseCaseContext)
+const DEFAULT_CTX = {
+  activeUseCase: null, stepIndex: 0, currentStep: null, totalSteps: 0,
+  isFirst: true, isLast: true, isHumanGate: false, lockedBeforeIndex: null,
+  autonomyMode: 'guided', setAutonomyMode: () => {},
+  pipelineStatus: 'idle', setPipelineStatus: () => {},
+  launch: () => {}, exit: () => {}, advance: () => {}, retreat: () => {},
+  goToStep: () => {}, approve: () => {}, consumeSeedState: () => null,
+}
+export const useUseCase = () => useContext(UseCaseContext) ?? DEFAULT_CTX
