@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   Paper, Stack, Group, Text, Badge, SimpleGrid, ThemeIcon, Divider, Button,
-  Alert, NumberInput, Select, Switch, Slider, Modal, ScrollArea, Loader, Progress, Textarea, Card
+  Alert, NumberInput, Select, Switch, Slider, Modal, ScrollArea, Loader, Progress, Textarea, Card, Checkbox
 } from '@mantine/core'
 import {
   IconUsers, IconPhone, IconMail, IconBell, IconShieldCheck, IconChevronRight,
@@ -52,14 +52,29 @@ const CONTENT_TYPE_OPTIONS = [
   { value: 'Advisor consult offer', label: 'Advisor consultation offer' },
 ]
 
-function TierCard({ tier, editMode, onUpdate, onSeeSample }) {
+function TierCard({ tier, editMode, onUpdate, onSeeSample, isSelected, onToggle }) {
   const Icon = TIER_ICONS[tier.color] || IconUsers
 
   return (
-    <Paper withBorder p="md" radius="md" style={{ borderLeft: `3px solid var(--mantine-color-${tier.color}-5)` }}>
+    <Paper
+      withBorder p="md" radius="md"
+      style={{
+        borderLeft: `3px solid var(--mantine-color-${tier.color}-5)`,
+        opacity: isSelected === false ? 0.5 : 1,
+        transition: 'opacity 150ms ease',
+      }}
+    >
       <Stack gap="sm">
         <Group justify="space-between">
-          <Badge size="sm" color={tier.color} variant="filled">Tier {tier.tier}</Badge>
+          <Group gap="xs">
+            <Checkbox
+              size="xs"
+              checked={isSelected !== false}
+              onChange={() => onToggle?.(tier.id)}
+              color={tier.color}
+            />
+            <Badge size="sm" color={tier.color} variant="filled">Tier {tier.tier}</Badge>
+          </Group>
           <ThemeIcon size="sm" variant="light" color={tier.color} radius="sm">
             <Icon size={12} stroke={1.5} />
           </ThemeIcon>
@@ -140,7 +155,6 @@ const SCORING_LINES = [
 
 const AI_SEGMENTS = [
   { id: 'ai-seg-1', tier: 1, color: 'violet', label: 'High-Net-Worth Planning Actives (55+)', count: 8200, channel: 'Secure site card + email', description: 'Investors aged 55+ with >$250K AUM, 3+ planning-tool uses in 30 days, no advisor relationship in 12 months.', kpi: 'Advisory consultation starts, AUM under advice' },
-  { id: 'ai-seg-2', tier: 2, color: 'grape', label: 'Pre-Retirement Goal Builders', count: 12400, channel: 'App push + secure site', description: 'Investors within 10 years of stated retirement age, actively using goal-projection tools, self-directed.', kpi: 'Planning completion, advisor inquiry rate' },
 ]
 
 export default function ParticipantSegmentationPanel({ step, workflowState, setWorkflowState, onContinue }) {
@@ -391,7 +405,7 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
             <Text fw={700} size="sm">Test Hypothesis — Advisory Readiness Gap</Text>
           </Group>
           <Stack gap={6}>
-            <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Pre-selected Objective</Text>
+            <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Objective</Text>
             <Badge size="sm" variant="light" color="vanguardRed" style={{ alignSelf: 'flex-start' }}>
               Cross-sell to advisory
             </Badge>
@@ -413,7 +427,7 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
         {tiersToRender.map((tier) => {
           const override = segmentConfig.tiers.find(t => t.tier === tier.tier)
           const merged = override ? { ...tier, channel: override.channel || tier.channel, contentType: override.contentType || tier.content?.type } : tier
-          return <TierCard key={tier.id || tier.tier} tier={merged} editMode={editMode} onUpdate={handleTierUpdate} onSeeSample={handleSeeSample} />
+          return <TierCard key={tier.id || tier.tier} tier={merged} editMode={editMode} onUpdate={handleTierUpdate} onSeeSample={handleSeeSample} isSelected={selectedTierIds.includes(tier.id)} onToggle={(id) => setSelectedTierIds(ids => ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id])} />
         })}
       </SimpleGrid>
 
