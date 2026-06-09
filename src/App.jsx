@@ -299,10 +299,7 @@ export default function App() {
       <AppShell.Main style={{ background: 'var(--mantine-color-gray-0)' }}>
         <Box p="md">
           {isWorkflowActive && (
-            <>
-              <StageBreadcrumb currentStage={currentStep?.stage} />
-              <UseCaseBar onNavigate={handleNavigate} />
-            </>
+            <StageBreadcrumb currentStage={currentStep?.stage} />
           )}
 
           {isWorkflowActive ? (
