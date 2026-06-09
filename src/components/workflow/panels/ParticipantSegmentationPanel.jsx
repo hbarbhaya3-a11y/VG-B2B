@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   Paper, Stack, Group, Text, Badge, SimpleGrid, ThemeIcon, Divider, Button,
-  Alert, NumberInput, Select, Switch, Slider, Modal, ScrollArea, Loader, Progress, Textarea, Card, Checkbox
+  Alert, NumberInput, Select, Slider, Modal, ScrollArea, Loader, Progress, Textarea, Card, Checkbox, Table, Box
 } from '@mantine/core'
 import {
   IconUsers, IconPhone, IconMail, IconBell, IconShieldCheck, IconChevronRight,
@@ -248,13 +248,13 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
   const tiersToRender = activeTiers || pd.tiers
 
   const segmentConfig = workflowState?.segmentConfig || {
-    tiers: pd.tiers.map(t => ({ tier: t.tier, count: t.count, channel: t.channel, contentType: t.content?.type })),
+    tiers: pd.tiers.map(t => ({ id: t.id, tier: t.tier, count: t.count, channel: t.channel, contentType: t.content?.type })),
     holdoutCount: pd.holdout.count,
     totalTargeted: pd.totalTargeted,
   }
 
   const handleTierUpdate = (updatedTier) => {
-    const newTiers = segmentConfig.tiers.map(t => t.tier === updatedTier.tier ? updatedTier : t)
+    const newTiers = segmentConfig.tiers.map(t => t.id === updatedTier.id ? updatedTier : t)
     setWorkflowState?.(s => ({
       ...s,
       segmentConfig: { ...segmentConfig, tiers: newTiers },
@@ -338,14 +338,67 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
         </Stack>
       </Paper>
 
-      {/* Tier cards — merge panelData with workflowState overrides */}
-      <SimpleGrid cols={3} spacing="md">
-        {tiersToRender.map((tier) => {
-          const override = segmentConfig.tiers.find(t => t.tier === tier.tier)
-          const merged = override ? { ...tier, channel: override.channel || tier.channel, contentType: override.contentType || tier.content?.type } : tier
-          return <TierCard key={tier.id || tier.tier} tier={merged} editMode={editMode} onUpdate={handleTierUpdate} onSeeSample={handleSeeSample} isSelected={selectedTierIds.includes(tier.id)} onToggle={(id) => setSelectedTierIds(ids => ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id])} />
-        })}
-      </SimpleGrid>
+      {/* Audience table */}
+      <Paper withBorder radius="md" style={{ overflow: 'hidden' }}>
+        <Box p="sm" style={{ background: 'var(--mantine-color-default-hover)', borderBottom: '1px solid var(--mantine-color-default-border)' }}>
+          <Group gap="xs">
+            <IconUsers size={14} stroke={1.5} />
+            <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>
+              Audiences · {tiersToRender.length} identified · {tiersToRender.filter(t => selectedTierIds.includes(t.id)).reduce((s, t) => s + t.count, 0).toLocaleString()} selected
+            </Text>
+          </Group>
+        </Box>
+        <Table striped highlightOnHover withColumnBorders={false} verticalSpacing="sm" horizontalSpacing="md">
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th style={{ width: 32 }}></Table.Th>
+              <Table.Th style={{ width: 28 }}>#</Table.Th>
+              <Table.Th>Audience name</Table.Th>
+              <Table.Th style={{ width: 90, textAlign: 'right' }}>Count</Table.Th>
+              <Table.Th>Behavioral signal</Table.Th>
+              <Table.Th>Recommendation</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {tiersToRender.map((tier, idx) => {
+              const isSelected = selectedTierIds.includes(tier.id)
+              return (
+                <Table.Tr
+                  key={tier.id}
+                  style={{ opacity: isSelected ? 1 : 0.45, transition: 'opacity 150ms ease' }}
+                >
+                  <Table.Td>
+                    <Checkbox
+                      size="xs"
+                      checked={isSelected}
+                      onChange={() => setSelectedTierIds(ids => ids.includes(tier.id) ? ids.filter(i => i !== tier.id) : [...ids, tier.id])}
+                      color={tier.color}
+                    />
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="xs" c="dimmed" fw={600}>{idx + 1}</Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Group gap={6}>
+                      <div style={{ width: 3, height: 32, borderRadius: 2, background: `var(--mantine-color-${tier.color}-5)`, flexShrink: 0 }} />
+                      <Text size="sm" fw={600}>{tier.label}</Text>
+                    </Group>
+                  </Table.Td>
+                  <Table.Td style={{ textAlign: 'right' }}>
+                    <Text size="sm" fw={700} c={tier.color}>{tier.count.toLocaleString()}</Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="xs" c="dimmed" style={{ lineHeight: 1.5 }}>{tier.behavioralSignal || tier.description}</Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="xs" style={{ lineHeight: 1.5 }}>{tier.recommendation || tier.contentType}</Text>
+                  </Table.Td>
+                </Table.Tr>
+              )
+            })}
+          </Table.Tbody>
+        </Table>
+      </Paper>
 
       {/* Conversational Segment Builder */}
       <Card withBorder radius="md" p="md" style={{ cursor: 'pointer', borderStyle: convMode ? 'solid' : 'dashed' }} onClick={() => !convMode && setConvMode(true)}>
@@ -437,8 +490,8 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
         <SimpleGrid cols={2} spacing="xl">
           <Stack gap="sm">
             <Stack gap={0}>
-              <Text size="xl" fw={800} c="teal" style={{ lineHeight: 1 }}>{pd.tiers?.length || 3}</Text>
-              <Text size="xs" c="dimmed">Participant segments identified</Text>
+              <Text size="xl" fw={800} c="teal" style={{ lineHeight: 1 }}>{tiersToRender?.length || 7}</Text>
+              <Text size="xs" c="dimmed">Audience groups identified</Text>
             </Stack>
             <Group gap="xs" wrap="wrap">
               {['Age cohort', 'Risk profile', 'Behavioral signals', 'Plan type', 'Anxiety score'].map(f => (
@@ -506,7 +559,7 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
             {pd.tiers.map((tier) => {
               const pct = (tier.count / (pd.totalTargeted + holdoutCount)) * 100
               return (
-                <div key={tier.tier} style={{ flex: pct, background: `var(--mantine-color-${tier.color}-5)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div key={tier.id} style={{ flex: pct, background: `var(--mantine-color-${tier.color}-5)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {pct > 5 && <Text size="xs" c="white" fw={700}>{Math.round(pct)}%</Text>}
                 </div>
               )
@@ -544,10 +597,10 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
 
           {/* Legend */}
           <Group gap="md" mt={4}>
-            {pd.tiers.map((tier) => (
-              <Group key={tier.tier} gap={4}>
+            {pd.tiers.map((tier, idx) => (
+              <Group key={tier.id} gap={4}>
                 <div style={{ width: 8, height: 8, borderRadius: 2, background: `var(--mantine-color-${tier.color}-5)` }} />
-                <Text size="xs" c="dimmed">T{tier.tier}: {tier.count.toLocaleString()}</Text>
+                <Text size="xs" c="dimmed">#{idx + 1}: {tier.count.toLocaleString()}</Text>
               </Group>
             ))}
             <Group gap={4}>
