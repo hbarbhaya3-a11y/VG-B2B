@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Paper, Stack, Group, Text, Badge, SimpleGrid, Progress, Button, Alert, Checkbox, Divider, ThemeIcon, Loader, NumberInput, Select, Tabs, Table } from '@mantine/core'
 import { BarChart, DonutChart } from '@mantine/charts'
-import { IconChartBar, IconChevronRight, IconAlertTriangle, IconCheck, IconPlayerPlay, IconStars, IconPencil, IconLock, IconUsers, IconAdjustments } from '@tabler/icons-react'
+import { IconChartBar, IconChevronRight, IconAlertTriangle, IconCheck, IconPlayerPlay, IconStars, IconPencil, IconLock, IconUsers, IconAdjustments, IconGift, IconSend } from '@tabler/icons-react'
+import { useUseCase } from '../../../contexts/UseCaseContext'
 
 const RUNNING_LINES = [
   'Loading episode priors from TwinX…',
@@ -104,7 +105,73 @@ function ScenarioCard({ scenario, selected, onSelect }) {
   )
 }
 
+function OfferChannelSummary({ workflowState, activeUseCase }) {
+  const channelStep = activeUseCase?.steps.find(s => s.panelType === 'participant_channel_config')
+  const channelPd = channelStep?.panelData
+  if (!channelPd) return null
+
+  const allOffers = channelPd.offers || []
+  const allSegments = channelPd.segments || []
+
+  const selectedOfferIds = workflowState?.selectedOffers
+  const selectedSegIds = workflowState?.selectedSegments
+
+  const activeOffers = selectedOfferIds ? allOffers.filter(o => selectedOfferIds.includes(o.id)) : allOffers
+  const activeSegs = selectedSegIds ? allSegments.filter(s => selectedSegIds.includes(s.id)) : allSegments
+  const totalVariants = activeSegs.reduce((sum, s) => sum + s.variants, 0)
+  const totalReach = activeSegs.reduce((sum, s) => sum + s.count, 0)
+
+  return (
+    <Paper withBorder p="md" radius="md" style={{ background: 'var(--mantine-color-default-hover)' }}>
+      <Stack gap="sm">
+        <Group gap="xs" mb={2}>
+          <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Step 4 Configuration Summary</Text>
+          <Badge size="xs" color="violet" variant="light">{activeOffers.length} offers · {activeSegs.length} segments · {totalVariants} variants · {totalReach.toLocaleString()} reach</Badge>
+        </Group>
+
+        {/* Offers */}
+        <Stack gap={4}>
+          <Group gap={6}>
+            <IconGift size={12} stroke={1.5} style={{ color: 'var(--mantine-color-orange-6)' }} />
+            <Text size="xs" fw={700} c="orange">Selected Offers</Text>
+          </Group>
+          <Group gap="xs" wrap="wrap">
+            {activeOffers.map(o => (
+              <Badge key={o.id} size="xs" variant="light" color={o.color}>{o.label}</Badge>
+            ))}
+          </Group>
+        </Stack>
+
+        <Divider />
+
+        {/* Segments + channels */}
+        <Stack gap={4}>
+          <Group gap={6}>
+            <IconSend size={12} stroke={1.5} style={{ color: 'var(--mantine-color-blue-6)' }} />
+            <Text size="xs" fw={700} c="blue">Segments &amp; Channels</Text>
+          </Group>
+          <Stack gap={4}>
+            {activeSegs.map(s => (
+              <Group key={s.id} justify="space-between" wrap="nowrap">
+                <Group gap={6} wrap="nowrap">
+                  <div style={{ width: 3, height: 16, borderRadius: 2, background: `var(--mantine-color-${s.color}-5)`, flexShrink: 0 }} />
+                  <Text size="xs" fw={500}>{s.label}</Text>
+                </Group>
+                <Group gap="xs" wrap="nowrap">
+                  <Badge size="xs" variant="light" color={s.color}>{s.channel}</Badge>
+                  <Text size="xs" c="dimmed">{s.variants}v</Text>
+                </Group>
+              </Group>
+            ))}
+          </Stack>
+        </Stack>
+      </Stack>
+    </Paper>
+  )
+}
+
 export default function SimulationPanel({ step, workflowState, setWorkflowState, onContinue }) {
+  const { activeUseCase } = useUseCase()
   const pd = step.panelData
   const [phase, setPhase] = useState('config')
   const [runLine, setRunLine] = useState(0)
@@ -177,6 +244,9 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
             </Button>
           </Group>
         </Paper>
+
+        {/* Step 4 summary */}
+        <OfferChannelSummary workflowState={workflowState} activeUseCase={activeUseCase} />
 
         {/* Unified config card */}
         <Paper withBorder p="md" radius="md">
