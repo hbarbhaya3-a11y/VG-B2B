@@ -72,7 +72,7 @@ function TierCard({ tier, editMode, onUpdate, onSeeSample }) {
         </Stack>
 
         <Divider label="Who" labelPosition="left" />
-        <Text size="xs" c="dimmed">{tier.criteria}</Text>
+        <Text size="xs" c="dimmed">{tier.criteria || tier.description}</Text>
 
         <Divider label="Channel" labelPosition="left" />
         {editMode ? (
