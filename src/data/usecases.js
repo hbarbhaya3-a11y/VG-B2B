@@ -153,7 +153,9 @@ const UC_ADVISORY_READINESS = {
       headline: '42,000 investors segmented into 6 behavioral need-states',
       panelData: {
         totalInvestors: 42000,
+        totalTargeted: 42000,
         holdoutCount: 4200,
+        holdout: { count: 4200, method: 'Random holdout', power: '80% statistical power' },
         segmentSummary: '42,000 investors segmented into 6 behavioral need-states · 4,200 holdout for causal measurement',
         tiers: [
           {
@@ -509,7 +511,9 @@ const UC_IDLE_CASH = {
       headline: '31,000 cash-heavy investors segmented by intent signal',
       panelData: {
         totalInvestors: 31000,
+        totalTargeted: 31000,
         holdoutCount: 3100,
+        holdout: { count: 3100, method: 'Random holdout', power: '80% statistical power' },
         segmentSummary: '31,000 investors segmented into 2 behavioral groups · 3,100 holdout',
         tiers: [
           {
@@ -649,7 +653,8 @@ const UC_DIVERSIFICATION = {
       panelType: 'participant_segmentation', actor: 'agent',
       headline: '24,000 investors segmented by portfolio health gap type',
       panelData: {
-        totalInvestors: 24000, holdoutCount: 2400,
+        totalInvestors: 24000, totalTargeted: 24000, holdoutCount: 2400,
+        holdout: { count: 2400, method: 'Random holdout', power: '80% statistical power' },
         segmentSummary: '24,000 investors segmented into 3 groups · 2,400 holdout',
         tiers: [
           { id: 'seg-1', tier: 1, color: 'orange', label: 'Concentrated Position Holders', count: 8800, channel: 'Secure site dashboard + email', contentType: 'Portfolio overlap / diversification insight + health check', description: 'Single-stock or sector concentration >40% of portfolio; repeated performance checks without rebalancing.', kpi: 'Diversification action, portfolio health check completion' },
@@ -766,7 +771,8 @@ const UC_VOLATILITY = {
       panelType: 'participant_segmentation', actor: 'agent',
       headline: '38,000 investors segmented by volatility behavior type',
       panelData: {
-        totalInvestors: 38000, holdoutCount: 3800,
+        totalInvestors: 38000, totalTargeted: 38000, holdoutCount: 3800,
+        holdout: { count: 3800, method: 'Random holdout', power: '80% statistical power' },
         segmentSummary: '38,000 investors segmented into 2 groups · 3,800 holdout',
         tiers: [
           { id: 'seg-1', tier: 1, color: 'orange', label: 'Volatility-Sensitive Watchers', count: 27000, channel: 'App push + secure site banner + email', contentType: 'Market reassurance + portfolio resilience message + optional advisor access', description: 'Repeat logins, market-news clicks, sell-flow starts, short session loops during market drawdown.', kpi: 'Reduced sell-flow completion, reduced support contact, retained AUM' },
@@ -881,7 +887,8 @@ const UC_ROLLOVER = {
       panelType: 'participant_segmentation', actor: 'agent',
       headline: '14,000 investors segmented by rollover intent signal',
       panelData: {
-        totalInvestors: 14000, holdoutCount: 1400,
+        totalInvestors: 14000, totalTargeted: 14000, holdoutCount: 1400,
+        holdout: { count: 1400, method: 'Random holdout', power: '80% statistical power' },
         segmentSummary: '14,000 investors segmented into 2 groups · 1,400 holdout',
         tiers: [
           { id: 'seg-1', tier: 1, color: 'orange', label: 'Active Rollover / Transition Explorers', count: 9200, channel: 'Email + secure site checklist + call center prompt', contentType: 'Path comparison checklist: IRA / rollover education session', description: 'Searches IRA, rollover, retirement, job-change content; starts but does not complete rollover journey.', kpi: 'Rollover education completion, IRA starts, AUM retained' },
