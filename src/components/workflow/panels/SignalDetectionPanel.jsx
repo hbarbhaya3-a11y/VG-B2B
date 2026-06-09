@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Paper, Stack, Group, Text, Badge, SimpleGrid, Progress, Table, ThemeIcon, Divider, Button, Alert, Loader, Center } from '@mantine/core'
-import { IconRadar, IconShieldCheck, IconClock, IconDatabase, IconChevronRight, IconBrain, IconUsers, IconSpeakerphone, IconRoute2, IconChartBar, IconCheck, IconSparkles } from '@tabler/icons-react'
+import { IconRadar, IconShieldCheck, IconClock, IconDatabase, IconChevronRight, IconBrain, IconUsers, IconSpeakerphone, IconRoute2, IconChartBar, IconCheck, IconSparkles, IconMessageDots } from '@tabler/icons-react'
 import DataSourceStrip from '../../ui/DataSourceStrip'
 
 const CLASSIFYING_LINES = [
@@ -237,6 +237,45 @@ export default function SignalDetectionPanel({ step, onContinue }) {
       {expandedPrecedent !== null && pd.precedents[expandedPrecedent]?.config && (
         <PrecedentConfigCard precedent={pd.precedents[expandedPrecedent]} />
       )}
+
+      {/* Conversational Intelligence — Cohort */}
+      <Paper withBorder radius="md" p="md" style={{ borderLeft: '3px solid var(--mantine-color-teal-5)', background: 'var(--mantine-color-teal-light)' }}>
+        <Stack gap="sm">
+          <Group gap="xs">
+            <ThemeIcon size={24} radius="md" variant="gradient" gradient={{ from: 'teal', to: 'cyan', deg: 135 }}>
+              <IconUsers size={14} color="white" />
+            </ThemeIcon>
+            <Text fw={700} size="sm">Conversational Intelligence — Participant Cohort</Text>
+            <Badge size="xs" color="teal" variant="filled">42,000 in scope</Badge>
+          </Group>
+          <SimpleGrid cols={3} spacing="xs">
+            <Stack gap={1}>
+              <Text size="xs" c="dimmed">Participants in cohort</Text>
+              <Text size="lg" fw={800} c="teal">42,000</Text>
+            </Stack>
+            <Stack gap={1}>
+              <Text size="xs" c="dimmed">Holdout (causal)</Text>
+              <Text size="lg" fw={800} c="dimmed">4,200</Text>
+            </Stack>
+            <Stack gap={1}>
+              <Text size="xs" c="dimmed">Treatment group</Text>
+              <Text size="lg" fw={800} c="teal">37,800</Text>
+            </Stack>
+            <Stack gap={1}>
+              <Text size="xs" c="dimmed">Planning-tool active</Text>
+              <Text size="lg" fw={800} c="orange">68%</Text>
+            </Stack>
+            <Stack gap={1}>
+              <Text size="xs" c="dimmed">No advisor relationship</Text>
+              <Text size="lg" fw={800} c="orange">91%</Text>
+            </Stack>
+            <Stack gap={1}>
+              <Text size="xs" c="dimmed">Intervention window</Text>
+              <Text size="lg" fw={800} c="violet">30 days</Text>
+            </Stack>
+          </SimpleGrid>
+        </Stack>
+      </Paper>
 
       {/* Recommended Hypothesis */}
       <Paper withBorder radius="md" p="md" style={{ borderLeft: '3px solid var(--mantine-color-indigo-5)', background: 'var(--mantine-color-indigo-light)' }}>

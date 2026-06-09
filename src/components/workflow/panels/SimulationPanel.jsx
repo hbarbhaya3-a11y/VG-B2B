@@ -297,7 +297,7 @@ const SEG_DETAIL = [
     avoid: ['Hard-sell advisory language', 'Product-specific recommendation without eligibility / advice clearance'],
   },
   {
-    id: 'seg-2', color: 'orange',
+    id: 'seg-2', color: 'yellow',
     label: 'High-cash, low-conviction investors', count: 7900,
     signal: 'Rising cash / money-market balances, low investment activity, planning-tool use',
     offer: 'Digital Advisor Assessment + cash scenario tool',
@@ -321,7 +321,7 @@ const SEG_DETAIL = [
     avoid: ['Generic diversification advice', 'Fund-specific recommendations without advice clearance'],
   },
   {
-    id: 'seg-4', color: 'blue',
+    id: 'seg-4', color: 'indigo',
     label: 'Volatility-sensitive recheckers', count: 5800,
     signal: 'Repeated logins during volatility, performance-page loops, sell-flow research',
     offer: 'Market reassurance + optional advisor path',
@@ -345,7 +345,7 @@ const SEG_DETAIL = [
     avoid: ['Rollover or product solicitation before education', 'Reaction-based signals substituting for life-event confirmation'],
   },
   {
-    id: 'seg-6', color: 'teal',
+    id: 'seg-6', color: 'green',
     label: 'Tax-efficiency seekers', count: 3400,
     signal: 'Tax content visits, cost-basis pages, taxable account activity',
     offer: 'Tax-Efficient Strategy Education',
@@ -594,6 +594,24 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
           </Text>
         </Stack>
       </Paper>
+
+      {/* KPI Impact tiles */}
+      <SimpleGrid cols={4} spacing="sm">
+        {[
+          { label: 'Advisor appointment starts', value: '+440', sub: 'vs do-nothing baseline', color: 'green' },
+          { label: 'AUM retained / protected',   value: '+$31.8M', sub: 'reduced leakage risk', color: 'violet' },
+          { label: 'Idle cash activated',         value: '+$24.3M', sub: 'cash-to-investment', color: 'teal' },
+          { label: 'Annual advisory revenue',     value: '+$391K', sub: 'annualized proxy', color: 'orange' },
+        ].map(kpi => (
+          <Paper key={kpi.label} withBorder p="md" radius="md" style={{ borderTop: `3px solid var(--mantine-color-${kpi.color}-5)` }}>
+            <Stack gap={4}>
+              <Text size="xs" c="dimmed" style={{ lineHeight: 1.3 }}>{kpi.label}</Text>
+              <Text size="xl" fw={900} c={kpi.color} style={{ lineHeight: 1 }}>{kpi.value}</Text>
+              <Text size="xs" c="dimmed">{kpi.sub}</Text>
+            </Stack>
+          </Paper>
+        ))}
+      </SimpleGrid>
 
       {/* Recommendation table */}
       <Paper withBorder radius="md" style={{ overflow: 'auto' }}>

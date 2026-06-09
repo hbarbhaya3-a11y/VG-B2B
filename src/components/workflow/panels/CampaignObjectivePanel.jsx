@@ -28,10 +28,13 @@ const ALL_KPIS = [
   { value: 'email_open',          label: 'Email open rate' },
   { value: 'click_through',       label: 'Click-through rate' },
   { value: 'campaign_roi',        label: 'Campaign ROI multiple' },
+  { value: 'aum_retained',        label: 'AUM retained / protected' },
+  { value: 'idle_cash_activated', label: 'Idle cash activated' },
+  { value: 'annual_advisory_rev', label: 'Annual advisory revenue proxy' },
 ]
 
 const DEFAULT_KPIS = {
-  cross_sell: ['advisory_starts', 'aum_under_advice', 'advisor_bookings', 'portfolio_reviews'],
+  cross_sell: ['advisory_starts', 'aum_retained', 'idle_cash_activated', 'annual_advisory_rev'],
   aum_growth: ['incremental_aum', 'portfolio_reviews', 'funded_advisory'],
   retention:  ['outflow_reduction', 'closure_prevention', 're_engagement'],
   activation: ['cash_conversion', 'planning_engagement', 'funded_action'],
@@ -57,7 +60,7 @@ export default function CampaignObjectivePanel({ panelData: pd, onContinue }) {
 
   const [budget,    setBudget]    = useState(pd.defaultBudget)
   const [startDate, setStartDate] = useState(new Date('2026-06-15'))
-  const [endDate,   setEndDate]   = useState(new Date('2026-07-14'))
+  const [endDate,   setEndDate]   = useState(new Date('2026-07-15'))
 
   const handlePrimaryObjChange = (val) => {
     setPrimaryObj(val)

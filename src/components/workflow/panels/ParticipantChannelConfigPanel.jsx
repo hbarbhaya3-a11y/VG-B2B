@@ -1,24 +1,22 @@
 import { useState } from 'react'
 import {
   Paper, Stack, Group, Text, Badge, Checkbox, Button, ThemeIcon, Alert,
-  Progress, Divider, SimpleGrid, Box, Select
+  Progress, Divider, SimpleGrid, Box
 } from '@mantine/core'
 import {
   IconChevronRight, IconInfoCircle, IconGift, IconSparkles,
-  IconChartBar, IconSend, IconWifi
+  IconChartBar, IconWifi, IconDeviceMobile, IconMail, IconPhone,
+  IconBrowser, IconBell, IconMessage
 } from '@tabler/icons-react'
 
-const CHANNEL_OPTIONS = [
-  { value: 'Secure-site card + email',   label: 'Secure-site card + email' },
-  { value: 'App push + secure site',     label: 'App push + secure site' },
-  { value: 'Secure-site insight + email',label: 'Secure-site insight + email' },
-  { value: 'App push + article',         label: 'App push + article' },
-  { value: 'Email + advisor task',       label: 'Email + advisor task' },
-  { value: 'Email + secure-site module', label: 'Email + secure-site module' },
-  { value: 'Secure site + CRM task',     label: 'Secure site + CRM task' },
-  { value: 'In-app notification + email',label: 'In-app notification + email' },
-  { value: 'Email only',                 label: 'Email only' },
-  { value: 'App push only',              label: 'App push only' },
+const CHANNEL_TILES = [
+  { id: 'secure-site-card',    label: 'Secure-site card',        icon: IconBrowser,       color: 'blue'   },
+  { id: 'email',               label: 'Email',                   icon: IconMail,           color: 'orange' },
+  { id: 'app-push',            label: 'App push',                icon: IconBell,           color: 'violet' },
+  { id: 'advisor-crm',         label: 'Advisor / CRM task',      icon: IconPhone,          color: 'green'  },
+  { id: 'secure-site-insight', label: 'Secure-site insight',     icon: IconBrowser,        color: 'teal'   },
+  { id: 'in-app-notification', label: 'In-app notification',     icon: IconDeviceMobile,   color: 'cyan'   },
+  { id: 'article',             label: 'Article / blog',          icon: IconMessage,        color: 'grape'  },
 ]
 
 function RangeBar({ range, color }) {
@@ -41,22 +39,19 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
   const offers = pd.offers || []
   const segments = pd.segments || []
 
-  const [selectedOffers, setSelectedOffers] = useState(() => offers.map(o => o.id))
-  const [selectedSegs, setSelectedSegs] = useState(() => segments.map(s => s.id))
-  // channel per segment: default from panelData
-  const [segChannels, setSegChannels] = useState(() =>
-    Object.fromEntries(segments.map(s => [s.id, s.channel]))
-  )
+  const [selectedOffers,   setSelectedOffers]   = useState(() => offers.map(o => o.id))
+  const [selectedSegs,     setSelectedSegs]      = useState(() => segments.map(s => s.id))
+  const [selectedChannels, setSelectedChannels]  = useState(() => CHANNEL_TILES.map(c => c.id))
 
-  const toggleOffer = (id) => setSelectedOffers(ids => ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id])
-  const toggleSeg = (id) => setSelectedSegs(ids => ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id])
-  const setChannel = (segId, val) => setSegChannels(prev => ({ ...prev, [segId]: val }))
+  const toggleOffer   = (id) => setSelectedOffers(ids => ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id])
+  const toggleSeg     = (id) => setSelectedSegs(ids => ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id])
+  const toggleChannel = (id) => setSelectedChannels(ids => ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id])
 
   const totalVariants = segments.filter(s => selectedSegs.includes(s.id)).reduce((sum, s) => sum + s.variants, 0)
-  const totalReach = segments.filter(s => selectedSegs.includes(s.id)).reduce((sum, s) => sum + s.count, 0)
+  const totalReach    = segments.filter(s => selectedSegs.includes(s.id)).reduce((sum, s) => sum + s.count, 0)
 
   const handleContinue = () => {
-    setWorkflowState(s => ({ ...s, selectedOffers, selectedSegments: selectedSegs, segChannels }))
+    setWorkflowState(s => ({ ...s, selectedOffers, selectedSegments: selectedSegs, selectedChannels }))
     onContinue()
   }
 
@@ -68,12 +63,13 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
           <Text size="lg" fw={700}>Offer & Channel Configuration</Text>
           <Group gap="xs">
             <Badge size="sm" variant="light" color="orange">{selectedOffers.length} offers</Badge>
+            <Badge size="sm" variant="light" color="teal">{selectedChannels.length} channels</Badge>
             <Badge size="sm" variant="light" color="blue">{selectedSegs.length} segments</Badge>
             <Badge size="sm" variant="light" color="green">{totalVariants} variants</Badge>
           </Group>
         </Group>
         <Text size="sm" c="dimmed">
-          Select offers, assign channels per segment, and confirm configuration. Engagement rates are historical estimates.
+          Select offers, activate channels, and confirm segment configuration. Engagement rates are historical estimates.
         </Text>
       </Paper>
 
@@ -103,28 +99,17 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
                 onClick={() => toggleOffer(offer.id)}
               >
                 <Stack gap="sm">
-                  <Group justify="space-between" align="flex-start">
-                    <Group gap="xs" style={{ flex: 1 }}>
-                      <Checkbox
-                        size="xs"
-                        checked={isSelected}
-                        onChange={() => toggleOffer(offer.id)}
-                        color={offer.color}
-                        onClick={e => e.stopPropagation()}
-                      />
-                      <Text size="sm" fw={700} style={{ flex: 1 }}>{offer.label}</Text>
-                    </Group>
+                  <Group gap="xs">
+                    <Checkbox
+                      size="xs"
+                      checked={isSelected}
+                      onChange={() => toggleOffer(offer.id)}
+                      color={offer.color}
+                      onClick={e => e.stopPropagation()}
+                    />
+                    <Text size="sm" fw={700}>{offer.label}</Text>
                   </Group>
-
                   <Text size="xs" c="dimmed" style={{ lineHeight: 1.5 }}>{offer.description}</Text>
-
-                  <Divider label="Best for" labelPosition="left" />
-                  <Group gap={4} wrap="wrap">
-                    {offer.bestFor.map(seg => (
-                      <Badge key={seg} size="xs" variant="light" color={offer.color}>{seg}</Badge>
-                    ))}
-                  </Group>
-
                   <Divider label="Primary KPI" labelPosition="left" />
                   <Group gap="xs">
                     <IconChartBar size={11} stroke={1.5} style={{ color: `var(--mantine-color-${offer.color}-6)` }} />
@@ -137,53 +122,56 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
         </SimpleGrid>
       </Stack>
 
-      {/* Channel selection per segment */}
+      {/* Channel selection tiles */}
       <Stack gap="xs">
         <Group gap="xs">
           <ThemeIcon size={20} radius="md" variant="light" color="teal">
             <IconWifi size={12} stroke={1.5} />
           </ThemeIcon>
           <Text size="sm" fw={700}>Channel Selection</Text>
-          <Badge size="xs" color="teal" variant="light">one channel per segment</Badge>
+          <Badge size="xs" color="teal" variant="light">{selectedChannels.length} of {CHANNEL_TILES.length} active</Badge>
         </Group>
-        <Paper withBorder radius="md" p="md">
-          <Stack gap="sm">
-            {segments.map(seg => {
-              const isActive = selectedSegs.includes(seg.id)
-              return (
-                <Group key={seg.id} gap="md" wrap="nowrap" align="center" style={{ opacity: isActive ? 1 : 0.4 }}>
-                  <div style={{ width: 3, height: 28, borderRadius: 2, background: `var(--mantine-color-${seg.color}-5)`, flexShrink: 0 }} />
-                  <Text size="xs" fw={600} style={{ flex: 1, minWidth: 160 }}>{seg.label}</Text>
-                  <Box style={{ flex: 1 }}>
-                    <Select
-                      data={CHANNEL_OPTIONS}
-                      value={segChannels[seg.id] || seg.channel}
-                      onChange={val => setChannel(seg.id, val)}
-                      size="xs"
-                      radius="md"
-                      disabled={!isActive}
-                      allowDeselect={false}
-                    />
-                  </Box>
-                </Group>
-              )
-            })}
-          </Stack>
-        </Paper>
+        <SimpleGrid cols={4} spacing="sm">
+          {CHANNEL_TILES.map(ch => {
+            const isActive = selectedChannels.includes(ch.id)
+            const Icon = ch.icon
+            return (
+              <Paper
+                key={ch.id}
+                withBorder p="sm" radius="md"
+                style={{
+                  borderTop: `3px solid var(--mantine-color-${ch.color}-${isActive ? '5' : '2'})`,
+                  opacity: isActive ? 1 : 0.45,
+                  cursor: 'pointer',
+                  transition: 'all 150ms ease',
+                  background: isActive ? `var(--mantine-color-${ch.color}-light)` : undefined,
+                }}
+                onClick={() => toggleChannel(ch.id)}
+              >
+                <Stack gap="xs" align="center">
+                  <ThemeIcon size={28} radius="md" variant={isActive ? 'filled' : 'light'} color={ch.color}>
+                    <Icon size={14} stroke={1.5} />
+                  </ThemeIcon>
+                  <Text size="xs" fw={600} ta="center" style={{ lineHeight: 1.3 }}>{ch.label}</Text>
+                  {isActive && <Badge size="xs" color={ch.color} variant="light">Active</Badge>}
+                </Stack>
+              </Paper>
+            )
+          })}
+        </SimpleGrid>
       </Stack>
 
       {/* Segment engagement table */}
       <Stack gap="xs">
         <Group gap="xs">
           <ThemeIcon size={20} radius="md" variant="light" color="blue">
-            <IconSend size={12} stroke={1.5} />
+            <IconSparkles size={12} stroke={1.5} />
           </ThemeIcon>
           <Text size="sm" fw={700}>Segment Configuration</Text>
           <Badge size="xs" color="blue" variant="light">{totalReach.toLocaleString()} participants · {totalVariants} variants</Badge>
         </Group>
 
         <Paper withBorder radius="md" style={{ overflow: 'hidden' }}>
-          {/* Column headers */}
           <Box px="md" py="xs" style={{ background: 'var(--mantine-color-default-hover)', borderBottom: '1px solid var(--mantine-color-default-border)' }}>
             <Group gap={0}>
               <Box style={{ width: 28 }} />
@@ -242,9 +230,10 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
       </Stack>
 
       {/* Summary */}
-      <Alert variant="light" color="orange" icon={<IconInfoCircle size={16} />}>
+      <Alert variant="light" color="teal" icon={<IconInfoCircle size={16} />}>
         <Text size="sm">
-          <strong>{selectedOffers.length}</strong> offers across{' '}
+          <strong>{selectedOffers.length}</strong> offers via{' '}
+          <strong>{selectedChannels.length}</strong> channels across{' '}
           <strong>{selectedSegs.length}</strong> segments reaching{' '}
           <strong>{totalReach.toLocaleString()}</strong> participants.{' '}
           TwinX will generate <strong>{totalVariants}</strong> content variants.
@@ -260,9 +249,9 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
         styles={{ root: { boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)' } }}
         style={{ alignSelf: 'flex-end' }}
         onClick={handleContinue}
-        disabled={selectedOffers.length === 0 || selectedSegs.length === 0}
+        disabled={selectedOffers.length === 0 || selectedSegs.length === 0 || selectedChannels.length === 0}
       >
-        Generate Content Variants
+        Recommend and Simulate
       </Button>
     </Stack>
   )

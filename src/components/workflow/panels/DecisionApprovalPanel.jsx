@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Paper, Stack, Group, Text, Badge, SimpleGrid, Textarea, Button, Alert, Divider, ThemeIcon, Progress, Table } from '@mantine/core'
+import { Paper, Stack, Group, Text, Badge, SimpleGrid, Button, Alert, Divider, ThemeIcon, Progress, Table } from '@mantine/core'
 import { IconUserCheck, IconAlertTriangle, IconCheck, IconChevronDown, IconChevronRight } from '@tabler/icons-react'
 
 const KPI_ROWS = [
@@ -165,20 +165,6 @@ export default function DecisionApprovalPanel({ step, workflowState, onApprove }
         )}
       </Paper>
 
-      <Divider label="Decision" labelPosition="left" />
-
-      {/* Override input */}
-      <Stack gap="xs">
-        <Textarea
-          label="Field override or constraint (optional)"
-          description="Edit or clear as needed. Overrides are logged as human-preference signals for model retraining."
-          value={overrideText}
-          onChange={(e) => setOverrideText(e.target.value)}
-          minRows={2}
-          radius="md"
-        />
-      </Stack>
-
       {/* Approve / Decline */}
       <Group justify="flex-end" gap="md">
         <Button size="md" variant="light" color="red">Decline</Button>
@@ -188,9 +174,9 @@ export default function DecisionApprovalPanel({ step, workflowState, onApprove }
           gradient={{ from: 'indigo', to: 'cyan', deg: 135 }}
           styles={{ root: { boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)' } }}
           leftSection={<IconCheck size={16} stroke={2} />}
-          onClick={() => onApprove(overrideText)}
+          onClick={() => onApprove('')}
         >
-          Approve &amp; Proceed
+          Approve and send for clearance
         </Button>
       </Group>
     </Stack>
