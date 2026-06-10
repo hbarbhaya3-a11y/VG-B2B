@@ -218,55 +218,370 @@ function OfferChannelSummary({ workflowState, activeUseCase }) {
   )
 }
 
-// ── Variant preview modal ─────────────────────────────────────────────────
+// ── Consulting-grade variant content library ──────────────────────────────
+const VARIANT_CONTENT = {
+  'seg-1': {
+    A: {
+      format: 'Secure-site personalised card',
+      subject: null,
+      headline: 'Is your portfolio aligned with where you want to be?',
+      subhead: 'A complimentary portfolio review — no obligation, no sales pitch.',
+      body: [
+        "You've been using Vanguard's planning tools — which means you're already thinking about the right questions. A portfolio review takes that thinking one step further: it surfaces whether your current allocation, fund mix, and contribution strategy are actually moving you toward the goals you've set.",
+        "It's not an advice session. It's a structured look at your portfolio through the lens of your goals — with a clear picture of what's working, what may need attention, and what options exist. The next step is yours to take.",
+      ],
+      cta: 'Start my portfolio review',
+      complianceNote: 'Education-classified. No suitability determination. "Options exist" language avoids implicit recommendation. Standard risk disclosure auto-attaches.',
+    },
+    B: {
+      format: 'Triggered email — Day 3 follow-up',
+      subject: 'A second look at your portfolio — no cost, no obligation',
+      headline: "You've done the planning work. This is the next step.",
+      subhead: null,
+      body: [
+        "Hi [First Name],",
+        "Over the past few weeks, you've been exploring Vanguard's retirement and planning tools. That kind of engagement tells us you're thinking carefully about your financial future — and we want to make sure that thinking has somewhere useful to go.",
+        "A complimentary portfolio review gives you a structured view of where your portfolio stands today relative to the goals you've described. No sales conversation, no product recommendation unless it's appropriate and you want one. Just clarity.",
+        "When you're ready, the review takes about 20 minutes and can be done entirely online or with a Vanguard team member — whichever you prefer.",
+      ],
+      cta: 'Schedule my review',
+      complianceNote: 'Personalization token [First Name] must resolve; fallback to "Hi there". Fee disclosure and "not investment advice" footer required. Subject line cleared by Guardrail Rail 3.',
+    },
+  },
+  'seg-2': {
+    A: {
+      format: 'App push notification — immediate trigger',
+      subject: null,
+      headline: 'Is your cash working for your goals?',
+      subhead: 'Run a quick scenario — takes 2 minutes.',
+      body: [
+        "Your cash and money market balance has grown — which is smart if you're building a buffer. But if that cash has been sitting longer than planned, it may be working less hard than it could.",
+        "This isn't a prompt to invest. It's a tool: a scenario calculator that lets you model what different options might look like for your specific balance and goals. The math is yours to keep. The decision is yours to make.",
+      ],
+      cta: 'Run my cash scenario',
+      complianceNote: 'No product reference until scenario tool is opened. "May be working less hard" framing avoids performance claim. Calculator output marked as illustrative.',
+    },
+    B: {
+      format: 'Secure-site education module — session-triggered',
+      subject: null,
+      headline: 'When cash helps — and when it may hold you back',
+      subhead: 'A plain-language guide to cash in your portfolio.',
+      body: [
+        "There's a version of cash that's deliberate: an emergency reserve, a short-term goal, liquidity you know you'll need. There's another version that's accidental: money that landed in your account and never found a direction.",
+        "This guide helps you tell the two apart — and think through what makes sense for your situation. It covers cash allocation frameworks, the role of money market funds, and how investors in similar positions have thought about the same question.",
+        "No recommendation at the end. Just a clearer picture.",
+      ],
+      cta: 'Read the guide',
+      complianceNote: '"Investors in similar positions" language must not reference identifiable individuals. No specific product mention. Disclosure: "For educational purposes only."',
+    },
+  },
+  'seg-3': {
+    A: {
+      format: 'Secure-site portfolio insight card — session-triggered',
+      subject: null,
+      headline: 'Your portfolio has some overlap worth looking at.',
+      subhead: 'See where your funds may be doubling up.',
+      body: [
+        "When you hold multiple funds across a portfolio, it's common to end up with more overlap than you intended — similar exposures in different wrappers, sector concentrations that compound across fund lines, or a mix that's broader in name than in practice.",
+        "This insight gives you a visual breakdown of your current portfolio's overlap, concentration, and diversification profile. It's based on what's actually in your account — not a generic template.",
+        "From there, you can decide what, if anything, you want to do about it.",
+      ],
+      cta: 'See my portfolio health check',
+      complianceNote: 'Portfolio analysis is factual (holdings-based), not advice. "Decide what you want to do" language preserves investor agency. No rebalancing recommendation without advice clearance.',
+    },
+    B: {
+      format: 'Triggered email — Day 5 follow-up',
+      subject: 'Your portfolio check: overlap, concentration, and what to consider',
+      headline: 'Complexity isn\'t always diversification.',
+      subhead: null,
+      body: [
+        "Hi [First Name],",
+        "More funds doesn't always mean more diversification. With multiple positions across your portfolio, there's a reasonable chance some of them share underlying exposures — which can mean more concentration risk than your fund count suggests.",
+        "We've run a quick overlap analysis on your current holdings. The results are in your account — and they're worth a look, especially if your portfolio has grown without a full review in a while.",
+        "The analysis is educational: it tells you what's there, not what to do. But it gives you a solid starting point for whatever comes next.",
+      ],
+      cta: 'View my overlap analysis',
+      complianceNote: '"Reasonable chance" is probabilistic, not prescriptive. Holdings-based analysis must not include a rebalancing recommendation. Standard disclosures apply.',
+    },
+  },
+  'seg-4': {
+    A: {
+      format: 'App push notification — within 6 hours of login spike',
+      subject: null,
+      headline: 'Before reacting, revisit your plan.',
+      subhead: 'Market movement — and what it means for your goals.',
+      body: [
+        "Markets moved. You logged in to check. That's the right instinct — staying informed matters.",
+        "Before you make any changes, it's worth asking one question: has anything changed about what you're trying to accomplish? If the answer is no, your plan may not need to change either.",
+        "We've put together a short piece on what's happening in the market right now — and a framework for deciding when market movement is worth acting on, and when it isn't.",
+      ],
+      cta: 'Read the market perspective',
+      complianceNote: 'Timing is critical: push must fire within 6 hours of login spike detection. No performance comparison. "Markets moved" must not include directional language (up/down/crash). Article is education-classified.',
+    },
+    B: {
+      format: 'Educational article — secure-site and email',
+      subject: 'What changed — and what didn\'t',
+      headline: 'What changed in the market — and what didn\'t change about your plan.',
+      subhead: null,
+      body: [
+        "Market volatility tests investors — not because of what it does to portfolios in the short term, but because of the decisions it prompts. The research is consistent: the most costly investment mistakes tend to happen during periods of stress, not stability.",
+        "This article walks through what's happening in the current environment, the historical context for this kind of movement, and a set of questions to ask yourself before making any changes to your portfolio.",
+        "It doesn't tell you what to do. But it gives you a better basis for deciding.",
+      ],
+      cta: 'Read the full article',
+      complianceNote: 'Article must not include market predictions or performance comparisons. "Research is consistent" requires citation of general academic framing, not Vanguard performance data. Education-classified.',
+    },
+  },
+  'seg-5': {
+    A: {
+      format: 'Email — triggered by income calculator use or RMD content view',
+      subject: 'Planning retirement income: a framework for what comes next',
+      headline: 'Plan your income before the decision point.',
+      subhead: null,
+      body: [
+        "Hi [First Name],",
+        "Retirement income planning is one of the most consequential financial decisions most investors make — and unlike saving decisions, many of the key choices are difficult to reverse once made.",
+        "How you draw from your portfolio, when you claim Social Security, whether and how you convert tax-deferred assets, how you sequence withdrawals — these decisions interact with each other in ways that are worth mapping out before you're in the middle of them.",
+        "We've built an income projection tool that lets you model different scenarios: different withdrawal rates, different Social Security timing, different asset sequencing strategies. It doesn't tell you which path to take. But it gives you a clear view of the trade-offs.",
+        "If you'd like to think through any of this with a Vanguard advisor, that option is available too — no cost for the conversation.",
+      ],
+      cta: 'Open the income projection tool',
+      complianceNote: 'Advisor offer must include eligibility qualifier. "No cost for the conversation" language cleared; fee schedule must be accessible from landing page. Projection tool output marked as illustrative.',
+    },
+    B: {
+      format: 'Advisor task + email — routed to personal advisor services team',
+      subject: 'Exploring retirement choices — a conversation when you\'re ready',
+      headline: 'Retirement decisions are easier to make before they\'re urgent.',
+      subhead: null,
+      body: [
+        "Hi [First Name],",
+        "Based on what we can see about your Vanguard accounts, you may be approaching a period where some key retirement income decisions come into focus. We want to make sure you have the right support when you need it.",
+        "A conversation with a Vanguard advisor — one focused specifically on retirement income planning — can help you map out your options before any decisions are time-pressured. It's not a sales call. It's a planning conversation, and it's available at no cost.",
+        "If you'd like to set something up, you can book directly online or call us when it's convenient.",
+      ],
+      cta: 'Book a retirement income conversation',
+      complianceNote: 'Advisor task must be routed only to licensed Personal Advisor Services team. "Based on what we can see" requires data consent confirmation. No product reference until eligibility confirmed. ERISA boundary check required for rollover-adjacent language.',
+    },
+  },
+  'seg-6': {
+    A: {
+      format: 'Year-end triggered email — October–December window',
+      subject: 'Before year-end: tax-smart moves worth considering',
+      headline: 'Make tax-aware choices before you transact.',
+      subhead: null,
+      body: [
+        "Hi [First Name],",
+        "Year-end is one of the more consequential windows for investors who care about tax efficiency. Decisions made — or not made — in the next few weeks can affect your tax picture for the full calendar year.",
+        "This guide walks through the key considerations: tax-loss harvesting and wash-sale rules, Roth conversion timing and the factors that make it favorable, asset location across account types, and cost-basis accounting methods.",
+        "None of this is a recommendation to act. It's a framework for deciding whether to act — and if so, how to think through the options. For decisions with significant tax implications, a review with a tax advisor or financial planner is worth the time.",
+      ],
+      cta: 'Read the year-end tax guide',
+      complianceNote: 'Tax content requires disclaimer: "This is general educational information, not tax advice. Consult a qualified tax professional." Wash-sale rule explanation must be accurate; legal review recommended for this variant.',
+    },
+    B: {
+      format: 'Secure-site education module — Roth calculator + article bundle',
+      subject: null,
+      headline: 'Understand the tax trade-offs in your portfolio.',
+      subhead: 'A framework for Roth conversions, asset location, and cost-basis.',
+      body: [
+        "Tax efficiency in investing isn't about finding loopholes — it's about understanding how different accounts, asset types, and transaction sequences interact with your tax situation over time.",
+        "This module covers three areas where the decisions matter most: Roth conversion — when it makes sense, when it doesn't, and how to model the trade-off. Asset location — which assets belong in tax-advantaged vs. taxable accounts, and why. Cost-basis accounting — how your choice of accounting method affects realized gains and losses.",
+        "Each section includes a calculator so you can run the numbers for your situation. The output is educational — a starting point for the conversation, not the final word.",
+      ],
+      cta: 'Open the tax efficiency module',
+      complianceNote: 'Roth conversion calculator must include tax-rate sensitivity assumptions. Output labeled "illustrative only." No performance claim. Requires: "Not tax advice" disclaimer. Module classified as education.',
+    },
+  },
+  'seg-7': {
+    A: {
+      format: 'Secure-site proactive status card — triggered by repeated status-check sessions',
+      subject: null,
+      headline: 'We can help complete this step.',
+      subhead: 'Here\'s where things stand with your request.',
+      body: [
+        "We've noticed you've returned to check on this a few times — which tells us the current status isn't as clear as it should be.",
+        "Here's the current status of your open request: [STATUS_PLACEHOLDER]. If this isn't resolved to your satisfaction, there's a direct line to the team handling it — no hold music, no re-explaining your situation from the start.",
+        "We want to get this right for you.",
+      ],
+      cta: 'Get an update from the team',
+      complianceNote: '[STATUS_PLACEHOLDER] must resolve from live CRM data — do not surface if status data is unavailable. This card must not appear if the service case is already closed. Routing must go to same-case rep where possible.',
+    },
+    B: {
+      format: 'CRM task — routed to service representative + secure-site confirmation message',
+      subject: null,
+      headline: 'Here\'s what happens next.',
+      subhead: 'A Vanguard team member will be in touch.',
+      body: [
+        "We've flagged your account for a proactive callback. A member of the Vanguard service team will reach out within [TIMEFRAME] — they'll have your account context already, so you won't need to explain the situation from scratch.",
+        "If you'd prefer to connect sooner, you can reach us directly at [CONTACT_LINK]. Either way, we'll make sure this gets resolved.",
+      ],
+      cta: 'Confirm callback preference',
+      complianceNote: '[TIMEFRAME] must be populated from CRM SLA data — do not use generic "soon." [CONTACT_LINK] must be direct routing number, not main IVR. CRM task priority: HIGH. Marketing content suppressed for this segment until service case resolved.',
+    },
+  },
+}
+
+// ── Consulting-grade Variant Preview Modal ────────────────────────────────
 function VariantPreviewModal({ variant, seg, onClose }) {
   if (!variant || !seg) return null
-  const typeId = variant === 'A'
-    ? getContentTypesForChannel(seg.channel)[0]
-    : getContentTypesForChannel(seg.channel)[1] || getContentTypesForChannel(seg.channel)[0]
-  const ct = CONTENT_TYPES.find(c => c.id === typeId) || CONTENT_TYPES[0]
-  const Icon = ct.icon
-  const headline = generateHeadline(typeId, variant === 'A' ? 0 : 1)
-  const body = generateBody(typeId, seg.label)
+  const content = VARIANT_CONTENT[seg.id]?.[variant]
+  if (!content) return null
+
+  const variantColor = variant === 'A' ? seg.color : 'gray'
+
+  const SECTION = ({ label, children }) => (
+    <Stack gap="xs">
+      <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>{label}</Text>
+      {children}
+    </Stack>
+  )
+
   return (
     <Modal
       opened
       onClose={onClose}
-      size="lg"
+      size="xl"
       radius="md"
       title={
-        <Group gap="xs">
-          <ThemeIcon size={28} radius="md" variant="light" color={ct.color}>
-            <Icon size={14} stroke={1.5} />
-          </ThemeIcon>
-          <Stack gap={0}>
-            <Text size="sm" fw={700}>Content Variant {variant} — {ct.label}</Text>
-            <Text size="xs" c="dimmed">{seg.label}</Text>
+        <Group gap="sm">
+          <div style={{ width: 4, height: 36, borderRadius: 2, background: `var(--mantine-color-${seg.color}-5)`, flexShrink: 0 }} />
+          <Stack gap={2}>
+            <Group gap="xs">
+              <Badge size="sm" color={seg.color} variant="filled">Variant {variant}</Badge>
+              <Badge size="sm" color="teal" variant="light">Education-classified</Badge>
+              <Badge size="sm" color="gray" variant="outline">{content.format}</Badge>
+            </Group>
+            <Text size="sm" fw={700}>{seg.label}</Text>
           </Stack>
         </Group>
       }
     >
-      <Stack gap="md">
-        <Group gap="xs" wrap="wrap">
-          <Badge size="sm" variant="light" color={seg.color}>Segment: {seg.label}</Badge>
-          <Badge size="sm" variant="light" color="gray">Channel: {seg.channel}</Badge>
-          <Badge size="sm" variant="light" color="orange">Offer: {seg.offer}</Badge>
-        </Group>
-        <Paper withBorder p="md" radius="md" style={{ borderLeft: `3px solid var(--mantine-color-${ct.color}-5)` }}>
-          <Stack gap="sm">
-            <Text size="md" fw={700}>{headline}</Text>
-            <Divider />
-            <Text size="sm" style={{ lineHeight: 1.7 }}>{body}</Text>
-          </Stack>
+      <Stack gap="lg">
+        {/* Context strip */}
+        <Paper withBorder p="sm" radius="md" style={{ background: 'var(--mantine-color-default-hover)' }}>
+          <Group gap="xl" wrap="wrap">
+            <Stack gap={2}>
+              <Text size="xs" c="dimmed" fw={600}>Segment</Text>
+              <Group gap="xs">
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: `var(--mantine-color-${seg.color}-5)` }} />
+                <Text size="xs" fw={700}>{seg.label}</Text>
+              </Group>
+            </Stack>
+            <Stack gap={2}>
+              <Text size="xs" c="dimmed" fw={600}>Channel</Text>
+              <Text size="xs" fw={700}>{seg.channel}</Text>
+            </Stack>
+            <Stack gap={2}>
+              <Text size="xs" c="dimmed" fw={600}>Offer</Text>
+              <Text size="xs" fw={700}>{seg.offer}</Text>
+            </Stack>
+            <Stack gap={2}>
+              <Text size="xs" c="dimmed" fw={600}>Reach</Text>
+              <Text size="xs" fw={700}>{seg.count.toLocaleString()} investors</Text>
+            </Stack>
+          </Group>
         </Paper>
-        <Group gap="xs">
-          <Badge size="xs" variant="light" color={ct.color}>{ct.label}</Badge>
-          <Badge size="xs" variant="light" color="teal">Education-classified</Badge>
-          <Badge size="xs" variant="light" color="gray">Disclosure auto-attaches</Badge>
-        </Group>
-        <Group gap="xs" justify="flex-end">
-          <Button size="xs" variant="light" color="gray" onClick={onClose}>Close</Button>
-          <Button size="xs" variant="light" color={ct.color}>Approve variant</Button>
+
+        {/* The message */}
+        <SECTION label="The Message">
+          <Paper withBorder p="md" radius="md" style={{ borderLeft: `3px solid var(--mantine-color-${seg.color}-5)` }}>
+            <Stack gap="sm">
+              {content.subject && (
+                <Group gap="xs" align="flex-start">
+                  <Badge size="xs" color="gray" variant="outline" style={{ flexShrink: 0, marginTop: 2 }}>Subject</Badge>
+                  <Text size="sm" fw={600} style={{ lineHeight: 1.4 }}>{content.subject}</Text>
+                </Group>
+              )}
+              <Stack gap={2}>
+                <Text size="xs" c="dimmed" fw={600}>Headline</Text>
+                <Text size="lg" fw={800} style={{ lineHeight: 1.3 }}>{content.headline}</Text>
+              </Stack>
+              {content.subhead && (
+                <Text size="sm" c="dimmed" style={{ lineHeight: 1.4 }}>{content.subhead}</Text>
+              )}
+              <Divider />
+              <Stack gap="xs">
+                {content.body.map((para, i) => (
+                  <Text key={i} size="sm" style={{ lineHeight: 1.7 }}>{para}</Text>
+                ))}
+              </Stack>
+              <Divider />
+              <Group gap="xs" align="center">
+                <Badge size="sm" color={seg.color} variant="light" style={{ cursor: 'default' }}>→ {content.cta}</Badge>
+                <Text size="xs" c="dimmed">Primary CTA</Text>
+              </Group>
+            </Stack>
+          </Paper>
+        </SECTION>
+
+        <SimpleGrid cols={2} spacing="md">
+          {/* Why this works */}
+          <SECTION label="Why This Works for This Segment">
+            <Paper withBorder p="sm" radius="md">
+              <Stack gap="xs">
+                <Text size="xs" style={{ lineHeight: 1.6 }}>{seg.why}</Text>
+                <Divider />
+                <Text size="xs" fw={600}>Behavioral signal that triggered this variant:</Text>
+                <Text size="xs" c="dimmed" style={{ lineHeight: 1.5 }}>{seg.signal}</Text>
+              </Stack>
+            </Paper>
+          </SECTION>
+
+          {/* How to send it */}
+          <SECTION label="How to Send It — Channel Delivery Spec">
+            <Paper withBorder p="sm" radius="md">
+              <Stack gap="xs">
+                <Group gap="xs">
+                  <Badge size="xs" color="blue" variant="light">Format</Badge>
+                  <Text size="xs">{content.format}</Text>
+                </Group>
+                <Divider />
+                <Text size="xs" fw={600}>Delivery path:</Text>
+                <Stack gap={4}>
+                  {seg.path.map((step, i) => (
+                    <Group key={i} gap="xs" align="flex-start">
+                      <Badge size="xs" color={seg.color} variant="filled" style={{ minWidth: 18, flexShrink: 0 }}>{i + 1}</Badge>
+                      <Text size="xs" style={{ lineHeight: 1.4 }}>{step}</Text>
+                    </Group>
+                  ))}
+                </Stack>
+              </Stack>
+            </Paper>
+          </SECTION>
+
+          {/* Messaging discipline */}
+          <SECTION label="Messaging Discipline — What to Avoid">
+            <Paper withBorder p="sm" radius="md">
+              <Stack gap={6}>
+                {seg.avoid.map((a, i) => (
+                  <Group key={i} gap="xs" align="flex-start">
+                    <Text size="xs" c="red" fw={800}>✕</Text>
+                    <Text size="xs" c="dimmed" style={{ lineHeight: 1.4 }}>{a}</Text>
+                  </Group>
+                ))}
+              </Stack>
+            </Paper>
+          </SECTION>
+
+          {/* Compliance notes */}
+          <SECTION label="Compliance & Guardrail Notes">
+            <Paper withBorder p="sm" radius="md" style={{ background: 'var(--mantine-color-teal-light)' }}>
+              <Stack gap="xs">
+                <Group gap="xs">
+                  <Badge size="xs" color="teal" variant="filled">Education-classified</Badge>
+                  <Badge size="xs" color="green" variant="light">Disclosure auto-attaches</Badge>
+                  <Badge size="xs" color="gray" variant="outline">C2PA provenance</Badge>
+                </Group>
+                <Divider />
+                <Text size="xs" style={{ lineHeight: 1.6 }}>{content.complianceNote}</Text>
+              </Stack>
+            </Paper>
+          </SECTION>
+        </SimpleGrid>
+
+        <Group justify="flex-end" gap="xs">
+          <Button size="sm" variant="light" color="gray" onClick={onClose}>Close</Button>
+          <Button size="sm" variant="light" color="green">Approve Variant {variant}</Button>
         </Group>
       </Stack>
     </Modal>
@@ -624,8 +939,8 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
               <Table.Th>Behavioral signal</Table.Th>
               <Table.Th>Recommended offer</Table.Th>
               <Table.Th>Best channel</Table.Th>
-              <Table.Th>Content variant A</Table.Th>
-              <Table.Th>Content variant B</Table.Th>
+              <Table.Th style={{ textAlign: 'center', width: 60 }}>Var A</Table.Th>
+              <Table.Th style={{ textAlign: 'center', width: 60 }}>Var B</Table.Th>
               <Table.Th>Why this segment matters</Table.Th>
             </Table.Tr>
           </Table.Thead>
@@ -645,21 +960,15 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
                 <Table.Td><Text size="xs" c="dimmed">{seg.signal}</Text></Table.Td>
                 <Table.Td><Badge size="xs" variant="light" color={seg.color}>{seg.offer}</Badge></Table.Td>
                 <Table.Td><Text size="xs">{seg.channel}</Text></Table.Td>
-                <Table.Td>
-                  <Group gap={6} wrap="nowrap">
-                    <ActionIcon size="sm" variant="light" color={seg.color} radius="sm" onClick={() => setVariantPreview({ seg, variant: 'A' })}>
-                      <IconEye size={12} stroke={1.5} />
-                    </ActionIcon>
-                    <Text size="xs" fs="italic" c="dimmed" style={{ lineHeight: 1.3 }}>{seg.variantA}</Text>
-                  </Group>
+                <Table.Td style={{ textAlign: 'center' }}>
+                  <ActionIcon size="sm" variant="light" color={seg.color} radius="sm" title="Preview Variant A" onClick={() => setVariantPreview({ seg, variant: 'A' })}>
+                    <IconEye size={12} stroke={1.5} />
+                  </ActionIcon>
                 </Table.Td>
-                <Table.Td>
-                  <Group gap={6} wrap="nowrap">
-                    <ActionIcon size="sm" variant="light" color="gray" radius="sm" onClick={() => setVariantPreview({ seg, variant: 'B' })}>
-                      <IconEye size={12} stroke={1.5} />
-                    </ActionIcon>
-                    <Text size="xs" fs="italic" c="dimmed" style={{ lineHeight: 1.3 }}>{seg.variantB}</Text>
-                  </Group>
+                <Table.Td style={{ textAlign: 'center' }}>
+                  <ActionIcon size="sm" variant="light" color="gray" radius="sm" title="Preview Variant B" onClick={() => setVariantPreview({ seg, variant: 'B' })}>
+                    <IconEye size={12} stroke={1.5} />
+                  </ActionIcon>
                 </Table.Td>
                 <Table.Td><Text size="xs" c="dimmed" style={{ lineHeight: 1.5 }}>{seg.why}</Text></Table.Td>
               </Table.Tr>
