@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Paper, Stack, Group, Text, Badge, Select, Button, ThemeIcon, Divider, SimpleGrid, Table, Alert, Loader, Progress } from '@mantine/core'
+import { Paper, Stack, Group, Text, Badge, Select, Button, ThemeIcon, Divider, SimpleGrid, Table, Alert, Loader, Progress, Center } from '@mantine/core'
 import { IconSparkles, IconCheck, IconShieldCheck, IconEye, IconEdit } from '@tabler/icons-react'
 import { BarChart, LineChart } from '@mantine/charts'
 
