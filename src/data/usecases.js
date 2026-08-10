@@ -492,16 +492,6 @@ const UC_ADVISORY_READINESS = {
       },
     },
     {
-      id: 'step-6b',
-      label: 'Launch Kit Factory',
-      stage: 'EXECUTE',
-      page: 'content-engine',
-      panelType: 'launch_kit',
-      actor: 'agent',
-      headline: 'Generating per-strategy launch kits — committee deck, notices, participant comms',
-      panelData: {},
-    },
-    {
       id: 'step-7',
       label: 'Deployment',
       stage: 'EXECUTE',

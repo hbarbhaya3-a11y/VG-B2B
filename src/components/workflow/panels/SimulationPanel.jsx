@@ -456,8 +456,11 @@ function buildTabContent(seg, ch, variant) {
 }
 
 function ContentPreviewModal({ seg, onClose }) {
-  const matched = PREVIEW_CHANNELS.filter(c => c.re.test(seg.channel))
-  const channels = matched.length ? matched : [PREVIEW_CHANNELS[1]]
+  // Committee deck is mandatory approval content for every segment (not a
+  // channel), so it always leads; the segment's actual channels follow.
+  const deck = PREVIEW_CHANNELS.find(c => c.kind === 'deck')
+  const matched = PREVIEW_CHANNELS.filter(c => c.kind !== 'deck' && c.re.test(seg.channel))
+  const channels = [deck, ...(matched.length ? matched : [PREVIEW_CHANNELS.find(c => c.kind === 'email')])]
   const tabs = channels.flatMap(ch => ['A', 'B'].map(vr => ({
     value: `${ch.kind}-${vr}`,
     label: `${ch.label} ${vr === 'A' ? 'V1' : 'V2'}`,
@@ -526,7 +529,7 @@ const SEG_DETAIL = [
     label: 'Eligible Nonparticipants', count: 11800,
     signal: 'Eligible per plan document; zero deferral election on payroll feed',
     offer: 'Auto Enrollment (4% default + opt-out)',
-    channel: 'Committee deck + participant email',
+    channel: 'Participant email',
     variantA: '"You\'re eligible — here\'s what enrollment means"',
     variantB: '"Getting started in your retirement plan"',
     why: 'Eligible non-enrollees rarely self-enroll. Auto-enrollment with opt-out is the single highest-lift, reversible plan-design change for participation.',

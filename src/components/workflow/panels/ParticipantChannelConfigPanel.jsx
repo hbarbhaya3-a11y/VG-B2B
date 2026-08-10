@@ -60,7 +60,6 @@ const AVG_PAY = 50000
 
 // ── Delivery channels (multiselect) ─────────────────────────────────────────
 const CHANNELS = [
-  { id: 'committee', label: 'Committee deck' },
   { id: 'email', label: 'Participant email' },
   { id: 'portal', label: 'Portal' },
   { id: 'sms', label: 'SMS / push' },
@@ -151,7 +150,7 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
   const pd = step.panelData
   const [selected, setSelected] = useState(['auto_enrollment'])
   const [values, setValues] = useState({ auto_enrollment: { ...SEED.auto_enrollment } })
-  const [channels, setChannels] = useState(['committee', 'email', 'portal'])
+  const [channels, setChannels] = useState(['email', 'portal'])
 
   // Selecting a strategy seeds its default levers (which drive default KPIs).
   const onSelect = (next) => {
