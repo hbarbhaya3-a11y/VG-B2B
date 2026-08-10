@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Paper, Stack, Group, Text, Badge, SimpleGrid, Progress, Button, Alert, Divider, ThemeIcon, Loader, NumberInput, Select, Table, Modal, ActionIcon, Slider, Switch, SegmentedControl } from '@mantine/core'
 import { IconChartBar, IconChevronRight, IconAlertTriangle, IconCheck, IconPlayerPlay, IconPencil, IconLock, IconAdjustments, IconGift, IconSend, IconSparkles, IconFileText, IconVideo, IconMail, IconDeviceMobile, IconPhone, IconShield, IconChevronDown, IconChevronUp, IconEye } from '@tabler/icons-react'
 import { useUseCase } from '../../../contexts/UseCaseContext'
+import { PortfolioLab, PortfolioRecommendation } from './PortfolioPanels'
 
 // ── Content type registry ──────────────────────────────────────────────────
 const CONTENT_TYPES = [
@@ -1060,7 +1061,7 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
         <Stack gap="xs">
           <Group gap="xs">
             <ThemeIcon size="sm" color="violet" variant="filled" radius="sm"><IconChartBar size={12} stroke={1.5} /></ThemeIcon>
-            <Text size="sm" fw={700}>TwinX Recommendation — 42,000 investors segmented into 7 behavioral need-states</Text>
+            <Text size="sm" fw={700}>TwinX Recommendation — 42,000 eligible employees across 7 workforce cohorts</Text>
             <Badge size="xs" color="violet" variant="light">1,000 simulation iterations</Badge>
           </Group>
           <Text size="xs" c="dimmed" style={{ lineHeight: 1.6 }}>
@@ -1068,6 +1069,12 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
           </Text>
         </Stack>
       </Paper>
+
+      {/* Screen 7 — Portfolio Simulation & Allocation Lab */}
+      <PortfolioLab />
+
+      {/* Screen 8 — Portfolio Recommendation */}
+      <PortfolioRecommendation />
 
       {/* KPI Impact tiles */}
       <SimpleGrid cols={4} spacing="sm">

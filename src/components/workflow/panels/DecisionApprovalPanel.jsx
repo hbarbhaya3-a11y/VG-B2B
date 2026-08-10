@@ -1,183 +1,134 @@
 import { useState } from 'react'
-import { Paper, Stack, Group, Text, Badge, SimpleGrid, Button, Alert, Divider, ThemeIcon, Progress, Table } from '@mantine/core'
-import { IconUserCheck, IconAlertTriangle, IconCheck, IconChevronDown, IconChevronRight } from '@tabler/icons-react'
+import { Paper, Stack, Group, Text, Badge, SimpleGrid, Button, Alert, Divider, ThemeIcon, Table, Switch, Box } from '@mantine/core'
+import { IconUserCheck, IconAlertTriangle, IconCheck, IconLock, IconShieldX } from '@tabler/icons-react'
 
-const KPI_ROWS = [
-  { metric: 'Portfolio review starts',            baseline: '1,928',   recommended: '4,973',    incremental: '+3,046',            color: 'teal'   },
-  { metric: 'Advisor appointment starts',         baseline: '211',     recommended: '652',      incremental: '+440',              color: 'green'  },
-  { metric: 'Digital Advisor assessment starts',  baseline: '293',     recommended: '851',      incremental: '+558',              color: 'blue'   },
-  { metric: 'Estimated new advisory relationships',baseline: '211',    recommended: '652',      incremental: '+440',              color: 'green'  },
-  { metric: 'AUM moving into advice path',        baseline: '$60.7M',  recommended: '$191.0M',  incremental: '+$130.2M',          color: 'green'  },
-  { metric: 'Idle cash activated',                baseline: '$13.8M',  recommended: '$38.1M',   incremental: '+$24.3M',           color: 'teal'   },
-  { metric: 'AUM retained / protected',           baseline: 'Baseline leakage risk', recommended: 'Reduced leakage risk', incremental: '+$31.8M protected', color: 'violet' },
-  { metric: 'Annual advisory revenue proxy',      baseline: '$182K',   recommended: '$573K',    incremental: '+$391K annualized', color: 'green'  },
-  { metric: 'Complaint / opt-out rate',           baseline: '0.08%',   recommended: '0.11%',    incremental: 'Within guardrail',  color: 'gray'   },
+// Cohort-strategy approval cells
+const CELLS = [
+  { id: 'P1-C1', cohort: 'Eligible nonparticipants', strategy: 'Auto Enrollment', owners: 'Compliance, fiduciary, payroll', status: 'Pending', blocker: 'Notice variables missing', independent: false },
+  { id: 'P1-C2', cohort: 'Below-match participants', strategy: 'Match Stretch', owners: 'Cost owner, payroll', status: 'Approved', blocker: '—', independent: true },
+  { id: 'P1-C3', cohort: 'Stuck-at-default', strategy: 'Auto Escalation', owners: 'Compliance, payroll', status: 'Changes requested', blocker: 'Escalation cap unclear', independent: false },
+  { id: 'P1-C4', cohort: 'Legacy elections', strategy: 'Re-enrollment', owners: 'Fiduciary, compliance', status: 'Pending', blocker: 'QDIA review', independent: false },
+  { id: 'P1-C5', cohort: 'Low-readiness', strategy: 'Education-only', owners: 'Content reviewer', status: 'Approved', blocker: '—', independent: true },
+  { id: 'P1-H',  cohort: 'Holdout cells', strategy: 'No-action', owners: 'Measurement owner', status: 'Approved', blocker: '—', independent: true },
 ]
 
-const SEG_CONTRIBUTIONS = [
-  { label: 'Planning-active, advice-undecided',     pct: 34, note: '% of incremental advisor appointments',  color: 'orange' },
-  { label: 'High-cash, low-conviction',             pct: 22, note: '% of cash-to-investment actions',        color: 'orange' },
-  { label: 'Portfolio complexity builders',          pct: 18, note: '% of portfolio review starts',           color: 'blue'   },
-  { label: 'Retirement income / transition planners',pct: 14, note: '% of advisor consultation starts',       color: 'teal'   },
-  { label: 'Volatility-sensitive recheckers',        pct:  8, note: '% of retention / reduced reactive actions', color: 'blue' },
-  { label: 'Tax-efficiency seekers',                 pct:  3, note: '% of strategy education completions',    color: 'teal'   },
-  { label: 'Service-frustrated digital users',       pct:  1, note: '% of advisory conversion (high service-deflection impact)', color: 'grape' },
+const statusColor = (s) => s === 'Approved' ? 'green' : s === 'Pending' ? 'yellow' : 'orange'
+
+// Shared (portfolio-level) constraints that gate full launch
+const SHARED = [
+  { label: 'Employer cost ceiling', ok: true,  detail: 'Portfolio within +0.5% payroll ceiling' },
+  { label: 'Holdout design',        ok: true,  detail: '5 / 6 cells hold a control group' },
+  { label: 'Compliance review',     ok: false, detail: 'Auto-enroll notice variables outstanding' },
 ]
 
 export default function DecisionApprovalPanel({ step, workflowState, onApprove }) {
-  const pd = step.panelData
-  const [overrideText, setOverrideText] = useState(workflowState.overrideText || pd.defaultOverride)
-  const [segOpen, setSegOpen] = useState(false)
+  const [independentLaunch, setIndependentLaunch] = useState(true)
+
+  const approved = CELLS.filter(c => c.status === 'Approved')
+  const blocked = CELLS.filter(c => c.status !== 'Approved')
+  const sharedBlockers = SHARED.filter(s => !s.ok)
+  const canLaunchApprovedCells = independentLaunch && sharedBlockers.length === 0
+  const portfolioLaunchOk = blocked.length === 0 && sharedBlockers.length === 0
 
   return (
     <Stack gap="md">
       {/* Header */}
       <Paper withBorder p="md" radius="md" style={{ borderLeft: '4px solid var(--mantine-color-yellow-5)', background: 'var(--mantine-color-yellow-light)' }}>
         <Group gap="sm">
-          <ThemeIcon size={40} radius="xl" color="yellow" variant="filled">
-            <IconUserCheck size={20} stroke={1.5} />
-          </ThemeIcon>
+          <ThemeIcon size={40} radius="xl" color="yellow" variant="filled"><IconUserCheck size={20} stroke={1.5} /></ThemeIcon>
           <Stack gap={2}>
-            <Group gap="xs">
-              <Text size="md" fw={800}>Decision Owner Approval Required</Text>
-              <Badge size="sm" color="yellow" variant="filled">APPROVAL GATE</Badge>
-            </Group>
-            <Text size="xs" c="dimmed">Simulation Results — Recommended Action vs Do Nothing</Text>
+            <Group gap="xs"><Text size="md" fw={800}>Portfolio Approval Workspace</Text><Badge size="sm" color="yellow" variant="filled">APPROVAL GATE</Badge></Group>
+            <Text size="xs" c="dimmed">Approval happens at portfolio level and strategy-cell level. Independent cells may launch before the whole portfolio clears.</Text>
           </Stack>
         </Group>
       </Paper>
 
-      {/* Assumptions */}
-      <Paper withBorder p="md" radius="md">
-        <Stack gap="sm">
-          <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Simulation Assumptions</Text>
-          <SimpleGrid cols={3} spacing="xs">
-            {[
-              { label: 'Audience',         value: '42,000 eligible investors' },
-              { label: 'Treatment',        value: '37,800' },
-              { label: 'Holdout',          value: '4,200' },
-              { label: 'Test period',      value: '30 days' },
-              { label: 'Simulation method',value: 'Digital-twin response simulation + historical precedent matching' },
-              { label: 'Confidence',       value: '89%' },
-            ].map(item => (
-              <Stack key={item.label} gap={1}>
-                <Text size="xs" c="dimmed">{item.label}</Text>
-                <Text size="xs" fw={600}>{item.value}</Text>
-              </Stack>
-            ))}
-          </SimpleGrid>
-          <Alert variant="light" color="teal" p="xs">
-            <Group gap="xs">
-              <IconCheck size={14} stroke={2} />
-              <Text size="xs" fw={600}>Recommendation: Proceed to guardrail clearance</Text>
-            </Group>
-          </Alert>
-        </Stack>
-      </Paper>
+      {/* Zone 1 — Portfolio approval summary */}
+      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+        {[
+          { label: 'Cells', value: `${CELLS.length}`, color: 'gray' },
+          { label: 'Approved', value: `${approved.length}`, color: 'green' },
+          { label: 'Blocked / pending', value: `${blocked.length}`, color: 'orange' },
+          { label: 'Shared blockers', value: `${sharedBlockers.length}`, color: sharedBlockers.length ? 'red' : 'green' },
+        ].map(s => (
+          <Paper key={s.label} withBorder p="sm" radius="md"><Stack gap={2}><Text size="lg" fw={900} c={s.color} style={{ lineHeight: 1 }}>{s.value}</Text><Text size="10px" c="dimmed">{s.label}</Text></Stack></Paper>
+        ))}
+      </SimpleGrid>
 
-      {/* Business KPI table */}
+      {/* Zone 2 — Strategy-cell approval table */}
       <Stack gap="xs">
-        <Text size="sm" fw={700}>Business KPI Simulation</Text>
-        <Paper withBorder radius="md" style={{ overflow: 'auto' }}>
-          <Table striped highlightOnHover fz="xs" verticalSpacing="sm" horizontalSpacing="md">
+        <Text size="sm" fw={700}>Strategy-cell approval</Text>
+        <Box style={{ overflowX: 'auto' }}>
+          <Table striped highlightOnHover fz="xs" verticalSpacing="sm" horizontalSpacing="md" style={{ minWidth: 900 }}>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Metric</Table.Th>
-                <Table.Th style={{ textAlign: 'right' }}>Do nothing baseline</Table.Th>
-                <Table.Th style={{ textAlign: 'right' }}>Recommended outreach</Table.Th>
-                <Table.Th style={{ textAlign: 'right' }}>Incremental impact</Table.Th>
+                <Table.Th>Cell</Table.Th><Table.Th>Cohort</Table.Th><Table.Th>Strategy</Table.Th>
+                <Table.Th>Approval owners</Table.Th><Table.Th>Status</Table.Th><Table.Th>Blocking reason</Table.Th>
+                <Table.Th ta="center">Launch independently?</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {KPI_ROWS.map(row => (
-                <Table.Tr key={row.metric}>
-                  <Table.Td fw={500}>{row.metric}</Table.Td>
-                  <Table.Td style={{ textAlign: 'right' }} c="dimmed">{row.baseline}</Table.Td>
-                  <Table.Td style={{ textAlign: 'right' }} fw={600} c={row.color}>{row.recommended}</Table.Td>
-                  <Table.Td style={{ textAlign: 'right' }}>
-                    <Badge size="xs" variant="light" color={row.color}>{row.incremental}</Badge>
-                  </Table.Td>
+              {CELLS.map(c => (
+                <Table.Tr key={c.id}>
+                  <Table.Td fw={600}>{c.id}</Table.Td>
+                  <Table.Td>{c.cohort}</Table.Td>
+                  <Table.Td><Badge size="xs" variant="light" color="blue">{c.strategy}</Badge></Table.Td>
+                  <Table.Td c="dimmed">{c.owners}</Table.Td>
+                  <Table.Td><Badge size="xs" variant="light" color={statusColor(c.status)}>{c.status}</Badge></Table.Td>
+                  <Table.Td c={c.blocker === '—' ? 'dimmed' : 'orange'}>{c.blocker}</Table.Td>
+                  <Table.Td ta="center">{c.independent && c.status === 'Approved' ? <Badge size="xs" color="green" variant="light">Yes</Badge> : <Badge size="xs" color="gray" variant="light">No</Badge>}</Table.Td>
                 </Table.Tr>
               ))}
             </Table.Tbody>
           </Table>
-        </Paper>
+        </Box>
       </Stack>
 
-      {/* Outcome summary */}
-      <Paper withBorder p="md" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-teal-5)', background: 'var(--mantine-color-teal-light)' }}>
+      {/* Zone 3 — Dependency blocker panel */}
+      <Paper withBorder p="md" radius="md" style={{ borderLeft: `3px solid var(--mantine-color-${sharedBlockers.length ? 'red' : 'green'}-5)` }}>
         <Stack gap="sm">
-          <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Outcome Summary</Text>
-          <Stack gap={4}>
-            <Text size="xs" fw={700} c="dimmed">Recommended strategy</Text>
-            <Text size="sm" fw={600}>Behavior-matched, education-first advisory readiness journey.</Text>
-          </Stack>
-          <Stack gap={4}>
-            <Text size="xs" fw={700} c="dimmed">Predicted lift</Text>
-            <Group gap="xs" wrap="wrap">
-              {[
-                '3.3× advisor appointment starts',
-                '2.6× portfolio review starts',
-                '2.7× Digital Advisor assessment starts',
-                'Complaint / opt-out rate within guardrail',
-              ].map(item => (
-                <Badge key={item} size="sm" variant="light" color="teal">{item}</Badge>
-              ))}
+          <Group gap="xs"><ThemeIcon size="sm" variant="light" color={sharedBlockers.length ? 'red' : 'green'}><IconAlertTriangle size={12} /></ThemeIcon><Text size="sm" fw={700}>Shared-constraint dependencies</Text></Group>
+          <Divider />
+          {SHARED.map(s => (
+            <Group key={s.label} gap="xs" align="flex-start" wrap="nowrap">
+              <ThemeIcon size="xs" radius="xl" variant="light" color={s.ok ? 'green' : 'red'} mt={2}>{s.ok ? <IconCheck size={9} /> : <IconShieldX size={9} />}</ThemeIcon>
+              <Box style={{ flex: 1 }}><Text size="xs" fw={600}>{s.label}</Text><Text size="10px" c={s.ok ? 'dimmed' : 'red'}>{s.detail}</Text></Box>
             </Group>
-          </Stack>
+          ))}
+          <Alert color={sharedBlockers.length ? 'orange' : 'teal'} variant="light" p="xs">
+            <Text size="xs">
+              {sharedBlockers.length
+                ? <>Full-portfolio launch is blocked until shared constraints clear (e.g. compliance review). Optimizer suggestion: move part of below-match participants from Match Stretch to Education-only to stay within the cost ceiling.</>
+                : <>All shared constraints satisfied — full portfolio can launch.</>}
+            </Text>
+          </Alert>
+          <Switch checked={independentLaunch} onChange={e => setIndependentLaunch(e.currentTarget.checked)} label="Allow independent launch of approved, independent cells" color="teal" />
         </Stack>
       </Paper>
 
-      {/* Segment contribution */}
-      <Paper withBorder p="md" radius="md">
-        <Group
-          gap="xs"
-          justify="space-between"
-          style={{ cursor: 'pointer' }}
-          onClick={() => setSegOpen(o => !o)}
-          mb={segOpen ? 'sm' : 0}
-        >
-          <Group gap="xs">
-            {segOpen ? <IconChevronDown size={14} /> : <IconChevronRight size={14} />}
-            <Text size="sm" fw={700}>Segment Contribution to Incremental Impact</Text>
-          </Group>
-          <Badge size="xs" variant="light" color="violet">7 segments</Badge>
+      {/* Actions */}
+      <Group justify="space-between">
+        <Text size="xs" c="dimmed">
+          {portfolioLaunchOk
+            ? 'Portfolio ready to launch.'
+            : canLaunchApprovedCells
+              ? `${approved.filter(c => c.independent).length} independent cell(s) can launch now; ${blocked.length} awaiting approval.`
+              : 'Launch blocked — resolve shared constraints or enable independent launch.'}
+        </Text>
+        <Group gap="md">
+          <Button size="md" variant="light" color="red">Decline</Button>
+          <Button
+            size="md"
+            variant="gradient"
+            gradient={{ from: 'indigo', to: 'cyan', deg: 135 }}
+            styles={{ root: { boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)' } }}
+            leftSection={<IconCheck size={16} stroke={2} />}
+            onClick={() => onApprove('')}
+            disabled={!portfolioLaunchOk && !canLaunchApprovedCells}
+          >
+            {portfolioLaunchOk ? 'Approve portfolio & send for clearance' : 'Approve independent cells & continue'}
+          </Button>
         </Group>
-        {segOpen && (
-          <Stack gap="xs">
-            {SEG_CONTRIBUTIONS.map((seg, i) => (
-              <Stack key={seg.label} gap={4}>
-                <Group justify="space-between" wrap="nowrap">
-                  <Group gap={6} wrap="nowrap">
-                    <Text size="xs" c="dimmed" fw={600} style={{ minWidth: 16 }}>{i + 1}.</Text>
-                    <div style={{ width: 3, height: 16, borderRadius: 2, background: `var(--mantine-color-${seg.color}-5)`, flexShrink: 0 }} />
-                    <Text size="xs" fw={600}>{seg.label}</Text>
-                  </Group>
-                  <Group gap="xs" wrap="nowrap">
-                    <Text size="xs" fw={700} c={seg.color}>{seg.pct}%</Text>
-                    <Text size="xs" c="dimmed">{seg.note}</Text>
-                  </Group>
-                </Group>
-                <Progress value={seg.pct} color={seg.color} size="xs" ml={22} />
-              </Stack>
-            ))}
-          </Stack>
-        )}
-      </Paper>
-
-      {/* Approve / Decline */}
-      <Group justify="flex-end" gap="md">
-        <Button size="md" variant="light" color="red">Decline</Button>
-        <Button
-          size="md"
-          variant="gradient"
-          gradient={{ from: 'indigo', to: 'cyan', deg: 135 }}
-          styles={{ root: { boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)' } }}
-          leftSection={<IconCheck size={16} stroke={2} />}
-          onClick={() => onApprove('')}
-        >
-          Approve and send for clearance
-        </Button>
       </Group>
     </Stack>
   )
