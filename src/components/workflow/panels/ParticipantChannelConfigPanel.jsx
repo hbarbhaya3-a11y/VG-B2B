@@ -4,8 +4,8 @@ import {
   SimpleGrid, Chip, Select, NumberInput, Slider, Switch, TextInput, Box,
 } from '@mantine/core'
 import {
-  IconChevronRight, IconInfoCircle, IconShieldX, IconSettings,
-  IconBuildingBank, IconAdjustments, IconCheck, IconAlertTriangle,
+  IconChevronRight, IconInfoCircle, IconSettings,
+  IconBuildingBank, IconAdjustments, IconAlertTriangle,
 } from '@tabler/icons-react'
 
 // ── Current plan design (baseline facts) ────────────────────────────────────
@@ -21,18 +21,14 @@ const CURRENT_PLAN = [
 
 // ── Strategy definitions: required controls + assets ────────────────────────
 const STRATEGIES = [
-  { id: 'auto_enrollment', label: 'Auto Enrollment', required: ['defaultDeferral', 'qdia', 'optOutWindow', 'effectiveDate'],
+  { id: 'auto_enrollment', label: 'Auto Enrollment', required: ['defaultDeferral', 'qdia'],
     assets: ['Committee deck', 'Participant email', 'Portal flow', 'Auto-enroll / QDIA notice'] },
   { id: 'match_stretch', label: 'Match Stretch', required: ['currentFormula', 'proposedFormula', 'matchCap'],
     assets: ['Committee deck', 'Match education', 'Portal calculator', 'Payroll kit'] },
   { id: 'auto_escalation', label: 'Auto Escalation', required: ['annualIncrease', 'cap', 'startMonth'],
     assets: ['Committee deck', 'Escalation email', 'Portal preview', 'Notice draft'] },
-  { id: 'reenrollment', label: 'Re-enrollment', required: ['sweepPopulation', 'defaultInvestment', 'noticeWindow', 'effectiveDate'],
+  { id: 'reenrollment', label: 'Re-enrollment', required: ['sweepPopulation', 'defaultInvestment'],
     assets: ['Committee deck', 'Re-enrollment comms', 'Portal confirmation', 'Notice pack'] },
-  { id: 'education', label: 'Education-only', required: ['messageTheme', 'channel', 'cadence'],
-    assets: ['Email', 'Portal banner', 'SMS / push (optional)'] },
-  { id: 'holdout', label: 'Holdout', required: ['controlPct', 'randomization', 'measurementWindow'],
-    assets: ['Measurement plan', 'Deployment split', 'Readout template'] },
 ]
 
 // ── Projected KPIs per strategy — default values that move with the levers ──
@@ -55,38 +51,8 @@ function projectedKpis(id, v) {
       { label: 'Participation lift', value: '+9pp' },
       { label: 'Re-election rate', value: '71%' },
     ]
-    case 'education': return [
-      { label: 'Engagement lift', value: '+12pp' },
-      { label: 'Content completion', value: '48%' },
-    ]
-    case 'holdout': return [
-      { label: 'Statistical power', value: `${(v.controlPct ?? 10) >= 10 ? '80%' : '70%'}` },
-      { label: 'Control size', value: `${v.controlPct ?? 10}%` },
-    ]
     default: return []
   }
-}
-
-// ── Guardrail checks per strategy ───────────────────────────────────────────
-function guardrails(id, v) {
-  const ok = (pass, label, detail) => ({ pass, label, detail })
-  const base = [
-    ok(true, 'Eligibility rules', 'Scoped to eligible employees per plan document'),
-    ok(true, 'Payroll readiness', 'Deferral + match fields mapped'),
-    ok(true, 'Recordkeeping readiness', 'Cohort + election feeds live'),
-    ok(true, 'Fairness monitor', v.fairness ? 'Enabled — disparity tracked' : 'Disabled'),
-    ok(true, 'Holdout feasibility', 'Sample size sufficient for 80% power'),
-  ]
-  if (id === 'auto_enrollment' || id === 'reenrollment')
-    base.splice(3, 0, ok(!!(v.optOutWindow || v.noticeWindow), 'Notice + opt-out path', 'QDIA/auto-enroll notice window and opt-out required'))
-  if (id === 'match_stretch') {
-    const within = v.costNeutral || (Number(v.costCeiling || 0) >= 120000)
-    base.unshift(ok(within, 'Employer cost', within ? 'Within approved ceiling' : 'Projected match cost exceeds ceiling'))
-  } else {
-    base.unshift(ok(true, 'Employer cost', 'Within approved ceiling'))
-  }
-  if (id === 'education') base.push(ok(true, 'Consent + frequency cap', 'Channel consent verified; within cap'))
-  return base
 }
 
 const FieldLabel = ({ children }) => (
@@ -113,8 +79,6 @@ function StrategyControls({ id, v, set }) {
         <Slider value={v.defaultDeferral ?? 4} onChange={val => set('defaultDeferral', val)} min={1} max={10} step={1} color="orange"
           marks={[{ value: 3, label: '3%' }, { value: 6, label: '6%' }, { value: 10, label: '10%' }]} /></Stack>
       {sel('qdia', 'QDIA / default investment', [{ value: 'tdf', label: 'Target-date series' }, { value: 'balanced', label: 'Balanced fund' }, { value: 'managed', label: 'Managed account' }])}
-      {sel('optOutWindow', 'Opt-out window', [{ value: '30', label: '30 days' }, { value: '60', label: '60 days' }, { value: '90', label: '90 days' }])}
-      {txt('effectiveDate', 'Effective date', 'e.g. 2026-09-01')}
     </>)
     case 'match_stretch': return (<>
       {txt('currentFormula', 'Current formula', '100% of 3%')}
@@ -130,27 +94,10 @@ function StrategyControls({ id, v, set }) {
       <Stack gap={4}><FieldLabel>Cap — {v.cap ?? 10}%</FieldLabel>
         <Slider value={v.cap ?? 10} onChange={val => set('cap', val)} min={6} max={15} step={1} color="teal" /></Stack>
       {sel('startMonth', 'Start month', [{ value: 'jan', label: 'January (plan year)' }, { value: 'anniv', label: 'Hire anniversary' }])}
-      {txt('optOutPath', 'Opt-out / change-election path', 'Portal + payroll')}
     </>)
     case 'reenrollment': return (<>
       {sel('sweepPopulation', 'Sweep population', [{ value: 'legacy', label: 'Legacy election holders' }, { value: 'all', label: 'All non-QDIA' }])}
       {sel('defaultInvestment', 'Default investment', [{ value: 'tdf', label: 'Target-date series' }, { value: 'balanced', label: 'Balanced fund' }])}
-      {sel('noticeWindow', 'Notice window', [{ value: '30', label: '30 days' }, { value: '45', label: '45 days' }])}
-      {txt('exclusions', 'Exclusions', 'Self-directed brokerage, opt-outs')}
-      {txt('effectiveDate', 'Effective date', 'e.g. 2026-10-01')}
-    </>)
-    case 'education': return (<>
-      {txt('messageTheme', 'Message theme', 'Retirement readiness')}
-      {sel('channel', 'Channel', [{ value: 'email', label: 'Email' }, { value: 'portal', label: 'Portal banner' }, { value: 'sms', label: 'SMS / push' }])}
-      {sel('cadence', 'Cadence', [{ value: 'weekly', label: 'Weekly' }, { value: 'biweekly', label: 'Bi-weekly' }, { value: 'monthly', label: 'Monthly' }])}
-      <Alert color="gray" variant="light" icon={<IconInfoCircle size={14} />} p="xs"><Text size="xs">Education-only — no plan-rule change.</Text></Alert>
-    </>)
-    case 'holdout': return (<>
-      <Stack gap={4}><FieldLabel>Control % — {v.controlPct ?? 10}%</FieldLabel>
-        <Slider value={v.controlPct ?? 10} onChange={val => set('controlPct', val)} min={5} max={30} step={1} color="violet" /></Stack>
-      {sel('randomization', 'Randomization method', [{ value: 'employee', label: 'Employee-level random' }, { value: 'site', label: 'Site / division random' }])}
-      {sel('measurementWindow', 'Measurement window', [{ value: '30', label: '30 days' }, { value: '60', label: '60 days' }, { value: '90', label: '90 days' }])}
-      <Alert color="violet" variant="light" icon={<IconInfoCircle size={14} />} p="xs"><Text size="xs">No treatment content — measurement / control only.</Text></Alert>
     </>)
     default: return null
   }
@@ -158,12 +105,10 @@ function StrategyControls({ id, v, set }) {
 
 // Default lever seeds per strategy (applied when a strategy is first selected).
 const SEED = {
-  auto_enrollment: { defaultDeferral: 4, fairness: true },
-  match_stretch:   { matchCap: 6, fairness: true },
-  auto_escalation: { annualIncrease: 1, cap: 10, fairness: true },
-  reenrollment:    { fairness: true },
-  education:       {},
-  holdout:         { controlPct: 10 },
+  auto_enrollment: { defaultDeferral: 4, qdia: 'tdf' },
+  match_stretch:   { currentFormula: '100% of 3%', proposedFormula: '50% of 6%', matchCap: 6, costCeiling: 150000, costNeutral: false },
+  auto_escalation: { annualIncrease: 1, cap: 10, startMonth: 'jan' },
+  reenrollment:    { sweepPopulation: 'legacy', defaultInvestment: 'tdf' },
 }
 
 export default function ParticipantChannelConfigPanel({ step, workflowState, setWorkflowState, onContinue }) {
@@ -187,7 +132,6 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
     return val !== undefined && val !== null && val !== ''
   })
   const allComplete = selected.length > 0 && selected.every(isComplete)
-  const allBlockers = selected.flatMap(id => guardrails(id, values[id] || {}).filter(c => !c.pass))
 
   const handleContinue = () => {
     const primary = selected[0]
@@ -204,20 +148,18 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
 
   return (
     <Stack gap="md">
-      {/* Header + multiselect strategy picker (6 available) */}
+      {/* Header + multiselect strategy picker */}
       <Paper withBorder p="md" radius="md">
         <Group justify="space-between" mb="sm">
           <Group gap="xs">
             <ThemeIcon size={28} radius="md" variant="light" color="orange"><IconSettings size={16} /></ThemeIcon>
             <Text size="lg" fw={700}>Strategy Configuration</Text>
           </Group>
-          <Badge size="sm" variant="light" color={allComplete && allBlockers.length === 0 ? 'green' : 'orange'}>
-            {selected.length === 0 ? 'Select a strategy'
-              : allComplete ? (allBlockers.length === 0 ? 'Ready to simulate' : `${allBlockers.length} guardrail block(s)`)
-              : 'Required controls incomplete'}
+          <Badge size="sm" variant="light" color={allComplete ? 'green' : 'orange'}>
+            {selected.length === 0 ? 'Select a strategy' : allComplete ? 'Ready to simulate' : 'Required controls incomplete'}
           </Badge>
         </Group>
-        <Text size="xs" c="dimmed" mb={8}>Select one or more strategies — 6 available. Levers and projected KPIs update per selected strategy.</Text>
+        <Text size="xs" c="dimmed" mb={8}>Select one or more strategies — 4 available. Levers and projected KPIs update per selected strategy.</Text>
         <Chip.Group multiple value={selected} onChange={onSelect}>
           <Group gap="xs">
             {STRATEGIES.map(s => (
@@ -245,17 +187,15 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
       {selected.map(id => {
         const strat = STRATEGIES.find(s => s.id === id)
         const v = values[id] || {}
-        const checks = guardrails(id, v)
-        const blk = checks.filter(c => !c.pass)
         return (
-          <Paper key={id} withBorder p="md" radius="md" style={{ borderLeft: `3px solid var(--mantine-color-${blk.length ? 'red' : 'orange'}-5)` }}>
+          <Paper key={id} withBorder p="md" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-orange-5)' }}>
             <Group justify="space-between" mb="xs">
               <Group gap="xs"><ThemeIcon size="sm" variant="light" color="orange"><IconAdjustments size={12} /></ThemeIcon><Text size="sm" fw={700}>{strat.label}</Text></Group>
-              <Badge size="xs" variant="light" color={isComplete(id) ? (blk.length ? 'yellow' : 'green') : 'orange'}>
-                {isComplete(id) ? (blk.length ? `${blk.length} block(s)` : 'Ready') : 'Incomplete'}
+              <Badge size="xs" variant="light" color={isComplete(id) ? 'green' : 'orange'}>
+                {isComplete(id) ? 'Ready' : 'Incomplete'}
               </Badge>
             </Group>
-            <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
+            <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
               {/* Levers — editable only for this selected strategy */}
               <Stack gap="sm">
                 <FieldLabel>Proposed levers</FieldLabel>
@@ -273,32 +213,16 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
                 <Divider label="Required assets" labelPosition="left" />
                 <Group gap={6}>{strat.assets.map(a => <Badge key={a} size="xs" variant="outline" color="orange">{a}</Badge>)}</Group>
               </Stack>
-              {/* Guardrail validation */}
-              <Stack gap="sm">
-                <FieldLabel>Guardrail validation</FieldLabel>
-                {checks.map(c => (
-                  <Group key={c.label} gap="xs" align="flex-start" wrap="nowrap">
-                    <ThemeIcon size="xs" radius="xl" variant="light" color={c.pass ? 'green' : 'red'} mt={2}>
-                      {c.pass ? <IconCheck size={9} /> : <IconShieldX size={9} />}
-                    </ThemeIcon>
-                    <Box style={{ flex: 1 }}>
-                      <Text size="xs" fw={600}>{c.label}</Text>
-                      <Text size="10px" c={c.pass ? 'dimmed' : 'red'}>{c.detail}</Text>
-                    </Box>
-                  </Group>
-                ))}
-              </Stack>
             </SimpleGrid>
           </Paper>
         )
       })}
 
       {/* Summary */}
-      <Alert variant="light" color={allComplete && !allBlockers.length ? 'teal' : 'orange'} icon={allComplete && !allBlockers.length ? <IconInfoCircle size={16} /> : <IconAlertTriangle size={16} />}>
+      <Alert variant="light" color={allComplete ? 'teal' : 'orange'} icon={allComplete ? <IconInfoCircle size={16} /> : <IconAlertTriangle size={16} />}>
         <Text size="sm">
           <strong>{selected.length}</strong> strateg{selected.length === 1 ? 'y' : 'ies'} selected — <strong>{selected.map(id => STRATEGIES.find(s => s.id === id).label).join(', ') || 'none'}</strong>.
           {' '}{allComplete ? 'All required controls complete.' : 'Some required controls still needed.'}
-          {allBlockers.length > 0 && <> Guardrail blockers: <strong>{allBlockers.map(b => b.label).join(', ')}</strong>.</>}
         </Text>
       </Alert>
 
@@ -310,7 +234,7 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
         styles={{ root: { boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)' } }}
         style={{ alignSelf: 'flex-end' }}
         onClick={handleContinue}
-        disabled={!allComplete || allBlockers.length > 0}
+        disabled={!allComplete}
       >
         Run Simulation
       </Button>

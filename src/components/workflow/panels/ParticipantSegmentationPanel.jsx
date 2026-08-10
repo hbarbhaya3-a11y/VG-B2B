@@ -175,20 +175,19 @@ const STRATEGY_ELIGIBILITY = {
   'Match Stretch':   ['seg-3'],
   'Auto Escalation': ['seg-4', 'seg-6'],
   'Re-enrollment':   ['seg-5', 'seg-7'],
-  'Education-only':  ['seg-1', 'seg-2', 'seg-3', 'seg-4', 'seg-5', 'seg-6', 'seg-7'],
   'Holdout':         [],
 }
 const STRATEGY_OPTIONS = Object.keys(STRATEGY_ELIGIBILITY)
 
 // Screen 4 — treatment-cell assignment (eligible/preferred/secondary/holdout/overlap)
 const ASSIGN = {
-  'seg-1': { eligible: 'Auto Enrollment, Education-only', preferred: 'Auto Enrollment', secondary: 'Education-only', holdout: '10%', overlap: 'Medium' },
-  'seg-2': { eligible: 'Auto Enrollment, Education-only', preferred: 'Auto Enrollment', secondary: 'Education-only', holdout: '10%', overlap: 'Low' },
-  'seg-3': { eligible: 'Match Stretch, Education-only', preferred: 'Match Stretch', secondary: 'Education-only', holdout: '10%', overlap: 'Low' },
-  'seg-4': { eligible: 'Auto Escalation, Education-only', preferred: 'Auto Escalation', secondary: 'Education-only', holdout: '10%', overlap: 'Medium' },
-  'seg-5': { eligible: 'Re-enrollment, Education-only', preferred: 'Re-enrollment', secondary: 'Education-only', holdout: '10%', overlap: 'High' },
-  'seg-6': { eligible: 'Auto Escalation, Education-only', preferred: 'Auto Escalation', secondary: 'Education-only', holdout: '10%', overlap: 'Medium' },
-  'seg-7': { eligible: 'Education-only', preferred: 'Education-only', secondary: 'None', holdout: '10%', overlap: 'Low' },
+  'seg-1': { eligible: 'Auto Enrollment', preferred: 'Auto Enrollment', holdout: '10%', overlap: 'Medium' },
+  'seg-2': { eligible: 'Auto Enrollment', preferred: 'Auto Enrollment', holdout: '10%', overlap: 'Low' },
+  'seg-3': { eligible: 'Match Stretch', preferred: 'Match Stretch', holdout: '10%', overlap: 'Low' },
+  'seg-4': { eligible: 'Auto Escalation', preferred: 'Auto Escalation', holdout: '10%', overlap: 'Medium' },
+  'seg-5': { eligible: 'Re-enrollment', preferred: 'Re-enrollment', holdout: '10%', overlap: 'High' },
+  'seg-6': { eligible: 'Auto Escalation', preferred: 'Auto Escalation', holdout: '10%', overlap: 'Medium' },
+  'seg-7': { eligible: 'Re-enrollment', preferred: 'Re-enrollment', holdout: '10%', overlap: 'Low' },
 }
 const overlapColor = (o) => o === 'High' ? 'red' : o === 'Medium' ? 'yellow' : 'green'
 
@@ -440,7 +439,6 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
           {highlightStrategy && (
             <Button size="compact-xs" variant="subtle" color="gray" onClick={() => setHighlightStrategy(null)}>Clear</Button>
           )}
-          {highlightStrategy === 'Education-only' && <Badge size="xs" color="gray" variant="light">Non-plan-rule-changing</Badge>}
           {highlightStrategy === 'Holdout' && <Badge size="xs" color="violet" variant="light">Random assignment · content targeting suppressed</Badge>}
         </Group>
       </Paper>
@@ -536,12 +534,12 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
 
       {/* Treatment-cell assignment grid */}
       <Paper withBorder radius="md" style={{ overflow: 'auto' }}>
-        <Group px="md" py="xs" gap="xs"><Text size="sm" fw={700}>Treatment-cell assignment</Text><Badge size="xs" variant="light" color="orange">cohort → eligible / preferred / secondary / holdout</Badge></Group>
+        <Group px="md" py="xs" gap="xs"><Text size="sm" fw={700}>Treatment-cell assignment</Text><Badge size="xs" variant="light" color="orange">cohort → eligible / preferred / holdout</Badge></Group>
         <Table striped fz="xs" verticalSpacing="sm" horizontalSpacing="md" style={{ minWidth: 820 }}>
           <Table.Thead>
             <Table.Tr>
               <Table.Th>Cohort</Table.Th><Table.Th ta="right">Size</Table.Th><Table.Th>Eligible strategies</Table.Th>
-              <Table.Th>Preferred</Table.Th><Table.Th>Secondary</Table.Th><Table.Th ta="center">Holdout %</Table.Th><Table.Th ta="center">Overlap risk</Table.Th>
+              <Table.Th>Preferred</Table.Th><Table.Th ta="center">Holdout %</Table.Th><Table.Th ta="center">Overlap risk</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -553,7 +551,6 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
                   <Table.Td ta="right"><Text size="xs" fw={700} c={t.color}>{t.count.toLocaleString()}</Text></Table.Td>
                   <Table.Td c="dimmed">{a.eligible}</Table.Td>
                   <Table.Td><Badge size="xs" variant="light" color={t.color}>{a.preferred}</Badge></Table.Td>
-                  <Table.Td c="dimmed">{a.secondary}</Table.Td>
                   <Table.Td ta="center">{a.holdout}</Table.Td>
                   <Table.Td ta="center"><Badge size="xs" variant="light" color={overlapColor(a.overlap)}>{a.overlap}</Badge></Table.Td>
                 </Table.Tr>
