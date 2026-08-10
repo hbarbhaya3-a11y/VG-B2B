@@ -186,7 +186,7 @@ const UC_ADVISORY_READINESS = {
           'Portal engagement indicates readiness but no enrollment election',
           'Match utilization below the opportunity threshold',
         ],
-        hypothesis: 'Hypothesis: applying plan-design levers — auto-enrollment, match-stretch, and auto-escalation — to eligible nonparticipants will change participation and deferral behaviour relative to the current voluntary design. TwinX simulates each lever, and combinations, under the sponsor\'s cost, readiness, equity and fiduciary constraints and measures the incremental effect against a holdout. No target is assumed upfront — the simulation determines which lever, at which settings, best fits this workforce before anything is scaled. A governed plan-design decision, not a marketing campaign.',
+        hypothesis: 'Hypothesis: Applying plan-design strategies to eligible nonparticipants will change participation and deferral behaviour relative to the current voluntary design. TwinX simulates each strategy, lever and combinations, under the sponsor\'s cost, readiness, equity and fiduciary constraints and measures the incremental effect against a holdout.',
         continueLabel: 'Continue to Sponsor Decision Objective',
       },
     },
