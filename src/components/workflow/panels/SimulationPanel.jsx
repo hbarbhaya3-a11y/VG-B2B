@@ -455,7 +455,7 @@ const KPI_BY = {
 
 function complianceFor(kind) {
   const base = [
-    'Education-classified — no individualized investment advice or suitability determination is made.',
+    'No individualized investment advice or suitability determination is made.',
     'Required plan disclosures auto-attach; C2PA provenance is embedded on every rendered asset.',
     'Fairness monitor active — reach and messaging tracked for cohort-level disparity (no individual scoring).',
     'Data minimization — cohort IDs and counts only; no raw PII (name/SSN) in any generated payload.',
@@ -618,7 +618,7 @@ function DeckSlides({ slides, color }) {
             </Stack>
           )}
           <Box style={{ flex: 1 }} />
-          <Text size="10px" c="dimmed" mt="md">TwinX for Vanguard · For plan-committee &amp; fiduciary review · Education-classified</Text>
+          <Text size="10px" c="dimmed" mt="md">TwinX for Vanguard · For plan-committee &amp; fiduciary review</Text>
         </Box>
       </Paper>
       <Group justify="space-between">
@@ -685,7 +685,6 @@ function ContentPreviewModal({ seg, onClose }) {
               <Group gap="xs">
                 <Badge size="sm" color={seg.color} variant="filled">{t.label}</Badge>
                 <Badge size="sm" color="gray" variant="outline">{t.format}</Badge>
-                <Badge size="sm" color="teal" variant="light">Education-classified</Badge>
               </Group>
 
               {t.slides ? (
