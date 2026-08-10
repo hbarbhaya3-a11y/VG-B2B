@@ -124,7 +124,6 @@ export default function DecisionApprovalPanel({ step, workflowState, onApprove }
             styles={{ root: { boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)' } }}
             leftSection={<IconCheck size={16} stroke={2} />}
             onClick={() => onApprove('')}
-            disabled={!portfolioLaunchOk && !canLaunchApprovedCells}
           >
             {portfolioLaunchOk ? 'Approve portfolio & send for clearance' : 'Approve independent cells & continue'}
           </Button>

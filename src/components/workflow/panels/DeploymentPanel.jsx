@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Paper, Stack, Group, Text, Badge, SimpleGrid, ThemeIcon, Divider, Button, Alert, List, Modal, Tabs, Table, Loader, Progress, Pagination } from '@mantine/core'
 import { IconCheck, IconChevronRight, IconShieldCheck, IconCertificate, IconBroadcast, IconPackage, IconClock, IconEye } from '@tabler/icons-react'
 import PanelGuide from '../../ui/PanelGuide'
+import { DeploymentControlTower } from './PortfolioPanels'
 
 const DEFAULT_DEPLOYING_LINES = [
   'Optimizing send times for target segments…',
@@ -256,6 +257,8 @@ export default function DeploymentPanel({ step, workflowState, onContinue, activ
   return (
     <Stack gap="md">
       {guide && <PanelGuide {...guide} />}
+      {/* Screen 12 — Parallel Strategy Deployment Control Tower */}
+      <DeploymentControlTower />
       {/* Campaign header */}
       <Paper withBorder p="md" radius="md" style={{ background: 'var(--mantine-color-orange-light)', borderLeft: '3px solid var(--mantine-color-orange-5)' }}>
         <Group justify="space-between" align="flex-start">

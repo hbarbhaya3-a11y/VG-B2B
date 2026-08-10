@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Paper, Stack, Group, Text, Badge, Progress, ThemeIcon, Divider, Button, Loader, Alert } from '@mantine/core'
 import { IconCheck, IconAlertTriangle, IconShieldCheck, IconUserCheck, IconChevronRight } from '@tabler/icons-react'
 import PanelGuide from '../../ui/PanelGuide'
+import { GuardrailMatrix } from './PortfolioPanels'
 
 const RAIL_COLORS = { pass: 'green', flag: 'yellow', escalate: 'orange', fail: 'red' }
 const RAIL_ICONS = { pass: IconCheck, flag: IconAlertTriangle, escalate: IconAlertTriangle, fail: IconAlertTriangle }
@@ -82,6 +83,8 @@ export default function CompliancePanel({ step, onContinue }) {
   return (
     <Stack gap="md">
       {guide && <PanelGuide {...guide} />}
+      {/* Screen 10 — Portfolio Guardrail Matrix */}
+      {phase === 'complete' && <GuardrailMatrix />}
       {/* Header */}
       <Paper withBorder p="md" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-red-5)' }}>
         <Group justify="space-between">

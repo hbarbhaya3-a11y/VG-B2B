@@ -33,6 +33,7 @@ import TrialValidationPanel from './panels/TrialValidationPanel'
 import ParticipantSegmentationPanel from './panels/ParticipantSegmentationPanel'
 import ParticipantChannelConfigPanel from './panels/ParticipantChannelConfigPanel'
 import CampaignObjectivePanel from './panels/CampaignObjectivePanel'
+import { LaunchKitFactory } from './panels/PortfolioPanels'
 
 const STAGE_COLORS = { SENSE: 'teal', SIMULATE: 'violet', GOVERN: 'red', DEPLOY_LEARN: 'green' }
 
@@ -341,6 +342,7 @@ export default function WorkflowRunner({ onExitWorkflow }) {
       case 'simulation':         return <SimulationPanel {...commonProps} />
       case 'human_approval':     return <DecisionApprovalPanel {...commonProps} />
       case 'content_generation': return <ContentGenerationPanel {...commonProps} />
+      case 'launch_kit':         return <LaunchKitFactory onContinue={handleContinue} />
       case 'compliance':         return <CompliancePanel {...commonProps} />
       case 'deployment':         return <DeploymentPanel {...commonProps} />
       case 'attribution':        return <AttributionPanel {...commonProps} onExit={onExitWorkflow || exit} />

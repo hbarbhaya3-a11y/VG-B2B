@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Paper, Stack, Group, Text, Badge, SimpleGrid, ThemeIcon, Accordion, Button, Alert, Divider, Progress, Tabs, Table, Loader } from '@mantine/core'
 import { BarChart, AreaChart } from '@mantine/charts'
+import { PortfolioLearning } from './PortfolioPanels'
 import { IconCheck, IconBrain, IconTrendingUp, IconUsers, IconCurrencyDollar, IconChartBar, IconListCheck, IconTarget } from '@tabler/icons-react'
 
 const MEASURING_LINES = [
@@ -102,6 +103,9 @@ export default function AttributionPanel({ step, onExit }) {
           Signal detected → Cohorts built → Simulation run → Approved → Content generated → Compliance cleared → Deployed → Outcomes measured. Episode archived to TwinX.
         </Text>
       </Alert>
+
+      {/* Screen 13 — Portfolio Learning & Policy Update */}
+      <PortfolioLearning />
 
       {/* Tabs */}
       <Tabs defaultValue="output" variant="outline" radius="md">
