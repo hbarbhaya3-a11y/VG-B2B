@@ -95,10 +95,10 @@ function TopHeader({ navCollapsed, onToggleNav, isWorkflowActive, onExitWorkflow
           </Box>
           <Stack gap={0}>
             <Text size="md" fw={700} lh={1.1} style={{ letterSpacing: '-0.01em' }}>
-              Marketing OS for Vanguard Personal Wealth
+              Plan Sponsor OS for Vanguard Retirement
             </Text>
             <Text size="10px" c="dimmed" lh={1.2} style={{ letterSpacing: '0.04em' }}>
-              From static investor journeys to adaptive decision intelligence · Powered by TwinX™
+              From static plan communications to adaptive plan-design intelligence · Powered by TwinX™
             </Text>
           </Stack>
         </Group>
