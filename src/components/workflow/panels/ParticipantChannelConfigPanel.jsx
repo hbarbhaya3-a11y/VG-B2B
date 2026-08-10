@@ -4,8 +4,8 @@ import {
   SimpleGrid, Chip, Select, NumberInput, Slider, Switch, TextInput, Box,
 } from '@mantine/core'
 import {
-  IconChevronRight, IconInfoCircle, IconSettings,
-  IconBuildingBank, IconAdjustments, IconAlertTriangle,
+  IconChevronRight, IconInfoCircle, IconSettings, IconShieldCheck, IconShieldX,
+  IconBuildingBank, IconAdjustments, IconAlertTriangle, IconCheck,
 } from '@tabler/icons-react'
 
 // ── Current plan design (baseline facts) ────────────────────────────────────
@@ -53,6 +53,26 @@ function projectedKpis(id, v) {
     ]
     default: return []
   }
+}
+
+// ── Guardrail validation — common across ALL selected strategies ────────────
+function aggregateGuardrails(selected, values) {
+  const checks = [
+    { pass: true, label: 'Eligibility rules', detail: 'Scoped to eligible employees per plan document' },
+    { pass: true, label: 'Payroll readiness', detail: 'Deferral + match fields mapped' },
+    { pass: true, label: 'Recordkeeping readiness', detail: 'Cohort + election feeds live' },
+    { pass: true, label: 'Fairness monitor', detail: 'Enabled — disparity tracked across cohorts' },
+    { pass: true, label: 'Holdout feasibility', detail: 'Sample size sufficient for 80% power' },
+  ]
+  // Employer cost depends on the Match Stretch configuration when selected.
+  if (selected.includes('match_stretch')) {
+    const v = values.match_stretch || {}
+    const within = v.costNeutral || Number(v.costCeiling || 0) >= 120000
+    checks.unshift({ pass: within, label: 'Employer cost', detail: within ? 'Within approved ceiling' : 'Projected match cost exceeds approved ceiling' })
+  } else {
+    checks.unshift({ pass: true, label: 'Employer cost', detail: 'Within approved ceiling' })
+  }
+  return checks
 }
 
 const FieldLabel = ({ children }) => (
@@ -132,6 +152,9 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
     return val !== undefined && val !== null && val !== ''
   })
   const allComplete = selected.length > 0 && selected.every(isComplete)
+  const guardChecks = aggregateGuardrails(selected, values)
+  const blockers = guardChecks.filter(c => !c.pass)
+  const ready = allComplete && blockers.length === 0
 
   const handleContinue = () => {
     const primary = selected[0]
@@ -155,8 +178,11 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
             <ThemeIcon size={28} radius="md" variant="light" color="orange"><IconSettings size={16} /></ThemeIcon>
             <Text size="lg" fw={700}>Strategy Configuration</Text>
           </Group>
-          <Badge size="sm" variant="light" color={allComplete ? 'green' : 'orange'}>
-            {selected.length === 0 ? 'Select a strategy' : allComplete ? 'Ready to simulate' : 'Required controls incomplete'}
+          <Badge size="sm" variant="light" color={ready ? 'green' : 'orange'}>
+            {selected.length === 0 ? 'Select a strategy'
+              : ready ? 'Ready to simulate'
+              : !allComplete ? 'Required controls incomplete'
+              : `${blockers.length} guardrail block(s)`}
           </Badge>
         </Group>
         <Text size="xs" c="dimmed" mb={8}>Select one or more strategies — 4 available. Levers and projected KPIs update per selected strategy.</Text>
@@ -218,11 +244,36 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
         )
       })}
 
+      {/* Guardrail validation — one common panel across all selected strategies */}
+      {selected.length > 0 && (
+        <Paper withBorder p="md" radius="md" style={{ borderLeft: `3px solid var(--mantine-color-${blockers.length ? 'red' : 'green'}-5)` }}>
+          <Group gap="xs" mb="xs">
+            <ThemeIcon size="sm" variant="light" color={blockers.length ? 'red' : 'green'}><IconShieldCheck size={12} /></ThemeIcon>
+            <Text size="sm" fw={700}>Guardrail validation</Text>
+            <Badge size="xs" variant="light" color="gray">across all selected strategies</Badge>
+          </Group>
+          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="sm">
+            {guardChecks.map(c => (
+              <Group key={c.label} gap="xs" align="flex-start" wrap="nowrap">
+                <ThemeIcon size="xs" radius="xl" variant="light" color={c.pass ? 'green' : 'red'} mt={2}>
+                  {c.pass ? <IconCheck size={9} /> : <IconShieldX size={9} />}
+                </ThemeIcon>
+                <Box style={{ flex: 1 }}>
+                  <Text size="xs" fw={600}>{c.label}</Text>
+                  <Text size="10px" c={c.pass ? 'dimmed' : 'red'}>{c.detail}</Text>
+                </Box>
+              </Group>
+            ))}
+          </SimpleGrid>
+        </Paper>
+      )}
+
       {/* Summary */}
-      <Alert variant="light" color={allComplete ? 'teal' : 'orange'} icon={allComplete ? <IconInfoCircle size={16} /> : <IconAlertTriangle size={16} />}>
+      <Alert variant="light" color={ready ? 'teal' : 'orange'} icon={ready ? <IconInfoCircle size={16} /> : <IconAlertTriangle size={16} />}>
         <Text size="sm">
           <strong>{selected.length}</strong> strateg{selected.length === 1 ? 'y' : 'ies'} selected — <strong>{selected.map(id => STRATEGIES.find(s => s.id === id).label).join(', ') || 'none'}</strong>.
           {' '}{allComplete ? 'All required controls complete.' : 'Some required controls still needed.'}
+          {blockers.length > 0 && <> Guardrail blockers: <strong>{blockers.map(b => b.label).join(', ')}</strong>.</>}
         </Text>
       </Alert>
 
@@ -234,7 +285,7 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
         styles={{ root: { boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)' } }}
         style={{ alignSelf: 'flex-end' }}
         onClick={handleContinue}
-        disabled={!allComplete}
+        disabled={!ready}
       >
         Run Simulation
       </Button>
