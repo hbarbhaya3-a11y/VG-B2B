@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Paper, Stack, Group, Text, Badge, SimpleGrid, Progress, Button, Alert, Divider, ThemeIcon, Loader, NumberInput, Select, Table, Modal, ActionIcon } from '@mantine/core'
+import { Paper, Stack, Group, Text, Badge, SimpleGrid, Progress, Button, Alert, Divider, ThemeIcon, Loader, NumberInput, Select, Table, Modal, ActionIcon, Slider, Switch, SegmentedControl } from '@mantine/core'
 import { IconChartBar, IconChevronRight, IconAlertTriangle, IconCheck, IconPlayerPlay, IconPencil, IconLock, IconAdjustments, IconGift, IconSend, IconSparkles, IconFileText, IconVideo, IconMail, IconDeviceMobile, IconPhone, IconShield, IconChevronDown, IconChevronUp, IconEye } from '@tabler/icons-react'
 import { useUseCase } from '../../../contexts/UseCaseContext'
 
@@ -737,6 +737,162 @@ function SegmentDetailCard({ seg }) {
 }
 
 // ── Main component ────────────────────────────────────────────────────────
+// ── Screen 6: Simulation Lab — scenario builder + KPI outputs ───────────────
+const LAB_STRATEGIES = [
+  { value: 'auto_enrollment', label: 'Auto Enrollment' },
+  { value: 'match_stretch', label: 'Match Stretch' },
+  { value: 'auto_escalation', label: 'Auto Escalation' },
+  { value: 'reenrollment', label: 'Re-enrollment' },
+  { value: 'education', label: 'Education-only' },
+  { value: 'holdout', label: 'Holdout' },
+]
+const LAB_COHORTS = [
+  { value: 'eligible_nonparticipants', label: 'Eligible nonparticipants' },
+  { value: 'new_hires', label: 'New hires' },
+  { value: 'below_match', label: 'Below-match participants' },
+  { value: 'low_deferral', label: 'Low-deferral participants' },
+  { value: 'legacy', label: 'Legacy election holders' },
+]
+
+// Deterministic illustrative model
+function computeLabKpis(strategy, lab) {
+  const treatPop = Math.round(11800 * (lab.treatment / 100))
+  let liftPp, deferralPp, optOut, cost, readiness, fairness = 'Neutral'
+  switch (strategy) {
+    case 'auto_enrollment':  liftPp = 8 + (lab.defaultDeferral - 3) * 0.8; deferralPp = 0.6; optOut = 6 + lab.defaultDeferral; cost = 0.35; readiness = 92; fairness = 'Improves'; break
+    case 'match_stretch':    liftPp = 1.5; deferralPp = 0.9 + (lab.matchCap - 6) * 0.1; optOut = 3; cost = lab.costNeutral ? 0.0 : 0.25; readiness = 88; break
+    case 'auto_escalation':  liftPp = 2; deferralPp = 1.0 * lab.annualIncrease; optOut = 8; cost = 0.15; readiness = 85; break
+    case 'reenrollment':     liftPp = 5; deferralPp = 0.5; optOut = 7; cost = 0.10; readiness = 80; break
+    case 'education':        liftPp = 1; deferralPp = 0.2; optOut = 0; cost = 0.02; readiness = 78; break
+    case 'holdout':          liftPp = 0; deferralPp = 0; optOut = 0; cost = 0; readiness = 100; fairness = 'n/a'; break
+    default:                 liftPp = 0; deferralPp = 0; optOut = 0; cost = 0; readiness = 80
+  }
+  const incrementalEnroll = Math.round(treatPop * (liftPp / 100) * 5.2)
+  const employerCostDollars = Math.round(cost / 100 * 42000 * 62000) // illustrative payroll base
+  const costPerEnroll = incrementalEnroll > 0 ? Math.round(employerCostDollars / incrementalEnroll) : 0
+  const holdoutFeasible = lab.holdout >= 5 && (11800 * lab.holdout / 100) >= 500
+  const warnings = []
+  if (cost > 0.5) warnings.push('Employer cost exceeds the +0.5% payroll ceiling')
+  if (optOut > 12) warnings.push('Projected opt-out rate above the 12% ceiling')
+  if ((strategy === 'auto_enrollment' || strategy === 'reenrollment') && !lab.noticeReady) warnings.push('Required participant notice window not confirmed')
+  if (!holdoutFeasible) warnings.push('Holdout too small for statistical feasibility (min 500 / 5%)')
+  if (lab.treatment + lab.holdout > 100) warnings.push('Treatment % + holdout % exceed 100%')
+  return {
+    liftPp: liftPp.toFixed(1), deferralPp: deferralPp.toFixed(1), optOut: optOut.toFixed(0),
+    costPct: cost.toFixed(2), employerCostDollars, costPerEnroll, incrementalEnroll,
+    readiness, fairness, ci: lab.ci, holdoutFeasible, warnings,
+  }
+}
+
+function ScenarioLab({ strategy: initialStrategy }) {
+  const [lab, setLab] = useState({
+    strategy: initialStrategy || 'auto_enrollment', cohort: 'eligible_nonparticipants',
+    treatment: 90, holdout: 10, window: '60', ci: 95, weightParticipation: 60,
+    defaultDeferral: 4, matchCap: 6, annualIncrease: 1, costNeutral: false, noticeReady: true,
+  })
+  const set = (k, v) => setLab(p => ({ ...p, [k]: v }))
+  const k = computeLabKpis(lab.strategy, lab)
+
+  const kpiCards = [
+    { label: 'Participation lift', value: `+${k.liftPp}pp`, color: 'green' },
+    { label: 'Incremental enrollments', value: `+${k.incrementalEnroll.toLocaleString()}`, color: 'teal' },
+    { label: 'Deferral lift', value: `+${k.deferralPp}pp`, color: 'blue' },
+    { label: 'Employer cost', value: `+${k.costPct}%`, color: 'orange' },
+    { label: 'Cost / incremental enroll', value: k.costPerEnroll ? `$${k.costPerEnroll.toLocaleString()}` : '—', color: 'grape' },
+    { label: 'Opt-out risk', value: `${k.optOut}%`, color: 'red' },
+    { label: 'Readiness score', value: `${k.readiness}`, color: 'teal' },
+    { label: 'Fairness impact', value: k.fairness, color: 'pink' },
+    { label: 'Confidence interval', value: `${k.ci}%`, color: 'violet' },
+    { label: 'Holdout feasibility', value: k.holdoutFeasible ? 'OK' : 'Low', color: k.holdoutFeasible ? 'green' : 'red' },
+  ]
+
+  return (
+    <Paper withBorder p="md" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-violet-5)' }}>
+      <Stack gap="md">
+        <Group gap="xs">
+          <ThemeIcon size="sm" variant="light" color="violet"><IconAdjustments size={12} /></ThemeIcon>
+          <Text size="sm" fw={700}>Simulation Lab — scenario builder</Text>
+        </Group>
+
+        {/* Scenario builder */}
+        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
+          <Stack gap={4}><Text size="xs" fw={700} tt="uppercase" c="dimmed">Strategy package</Text>
+            <Select data={LAB_STRATEGIES} value={lab.strategy} onChange={v => set('strategy', v)} radius="md" /></Stack>
+          <Stack gap={4}><Text size="xs" fw={700} tt="uppercase" c="dimmed">Cohort</Text>
+            <Select data={LAB_COHORTS} value={lab.cohort} onChange={v => set('cohort', v)} radius="md" /></Stack>
+          <Stack gap={4}><Text size="xs" fw={700} tt="uppercase" c="dimmed">Measurement window</Text>
+            <SegmentedControl fullWidth data={['30', '60', '90']} value={lab.window} onChange={v => set('window', v)} /></Stack>
+          <Stack gap={4}><Text size="xs" fw={700} tt="uppercase" c="dimmed">Treatment — {lab.treatment}%</Text>
+            <Slider value={lab.treatment} onChange={v => set('treatment', v)} min={50} max={100} color="teal" /></Stack>
+          <Stack gap={4}><Text size="xs" fw={700} tt="uppercase" c="dimmed">Holdout — {lab.holdout}%</Text>
+            <Slider value={lab.holdout} onChange={v => set('holdout', v)} min={0} max={30} color="violet" /></Stack>
+          <Stack gap={4}><Text size="xs" fw={700} tt="uppercase" c="dimmed">Confidence interval — {lab.ci}%</Text>
+            <Slider value={lab.ci} onChange={v => set('ci', v)} min={80} max={99} color="grape" /></Stack>
+        </SimpleGrid>
+
+        <Stack gap={4}><Text size="xs" fw={700} tt="uppercase" c="dimmed">Objective weighting — participation {lab.weightParticipation}% / deferral {100 - lab.weightParticipation}%</Text>
+          <Slider value={lab.weightParticipation} onChange={v => set('weightParticipation', v)} min={0} max={100} color="orange" /></Stack>
+
+        {/* Dynamic per-strategy parameter controls */}
+        <Divider label="Strategy parameters" labelPosition="left" />
+        {lab.strategy === 'auto_enrollment' && (
+          <Group grow>
+            <Stack gap={4}><Text size="xs" c="dimmed">Default deferral — {lab.defaultDeferral}%</Text>
+              <Slider value={lab.defaultDeferral} onChange={v => set('defaultDeferral', v)} min={1} max={10} color="orange" /></Stack>
+            <Switch checked={lab.noticeReady} onChange={e => set('noticeReady', e.currentTarget.checked)} label="QDIA / notice ready" color="teal" />
+          </Group>
+        )}
+        {lab.strategy === 'match_stretch' && (
+          <Group grow>
+            <Stack gap={4}><Text size="xs" c="dimmed">Match cap — {lab.matchCap}%</Text>
+              <Slider value={lab.matchCap} onChange={v => set('matchCap', v)} min={3} max={10} color="blue" /></Stack>
+            <Switch checked={lab.costNeutral} onChange={e => set('costNeutral', e.currentTarget.checked)} label="Cost-neutral" color="teal" />
+          </Group>
+        )}
+        {lab.strategy === 'auto_escalation' && (
+          <Stack gap={4}><Text size="xs" c="dimmed">Annual increase — {lab.annualIncrease}%</Text>
+            <Slider value={lab.annualIncrease} onChange={v => set('annualIncrease', v)} min={1} max={3} color="teal" /></Stack>
+        )}
+        {lab.strategy === 'holdout' && (
+          <Alert color="violet" variant="light" p="xs"><Text size="xs">No intervention content — random assignment, measurement only.</Text></Alert>
+        )}
+
+        {/* KPI output cards */}
+        <Divider label="Projected KPIs (illustrative)" labelPosition="left" />
+        <SimpleGrid cols={{ base: 2, sm: 5 }} spacing="sm">
+          {kpiCards.map(c => (
+            <Paper key={c.label} withBorder p="sm" radius="md" style={{ borderTop: `3px solid var(--mantine-color-${c.color}-5)` }}>
+              <Stack gap={2}>
+                <Text size="lg" fw={900} c={c.color} style={{ lineHeight: 1 }}>{c.value}</Text>
+                <Text size="10px" c="dimmed" style={{ lineHeight: 1.2 }}>{c.label}</Text>
+              </Stack>
+            </Paper>
+          ))}
+        </SimpleGrid>
+
+        {/* Baseline vs proposed */}
+        <SimpleGrid cols={2} spacing="md">
+          <Paper withBorder p="sm" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-gray-4)' }}>
+            <Text size="xs" fw={700} tt="uppercase" c="dimmed" mb={4}>Baseline (do-nothing)</Text>
+            <Text size="xs">Participation 67% · avg deferral 5.1% · employer cost flat</Text>
+          </Paper>
+          <Paper withBorder p="sm" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-teal-5)' }}>
+            <Text size="xs" fw={700} tt="uppercase" c="teal" mb={4}>Proposed ({LAB_STRATEGIES.find(s => s.value === lab.strategy)?.label})</Text>
+            <Text size="xs">Participation {(67 + Number(k.liftPp)).toFixed(1)}% · avg deferral {(5.1 + Number(k.deferralPp)).toFixed(1)}% · cost +{k.costPct}% of payroll</Text>
+          </Paper>
+        </SimpleGrid>
+
+        {/* Constraint warnings */}
+        {k.warnings.length > 0 && (
+          <Alert color="orange" variant="light" icon={<IconAlertTriangle size={16} />} title={`${k.warnings.length} constraint warning(s)`}>
+            <Stack gap={2}>{k.warnings.map((w, i) => <Text key={i} size="xs">• {w}</Text>)}</Stack>
+          </Alert>
+        )}
+      </Stack>
+    </Paper>
+  )
+}
+
 export default function SimulationPanel({ step, workflowState, setWorkflowState, onContinue }) {
   const { activeUseCase } = useUseCase()
   const pd = step.panelData
@@ -801,6 +957,9 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
             </Button>
           </Group>
         </Paper>
+
+        {/* Screen 6 — Simulation Lab scenario builder */}
+        <ScenarioLab strategy={workflowState?.strategyConfig?.strategy} />
 
         {/* Step 5 configuration summary */}
         <OfferChannelSummary workflowState={workflowState} activeUseCase={activeUseCase} />

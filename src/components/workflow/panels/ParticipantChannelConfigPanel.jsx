@@ -1,242 +1,233 @@
 import { useState } from 'react'
 import {
-  Paper, Stack, Group, Text, Badge, Checkbox, Button, ThemeIcon, Alert,
-  Progress, Divider, SimpleGrid, Box
+  Paper, Stack, Group, Text, Badge, Button, ThemeIcon, Alert, Divider,
+  SimpleGrid, Tabs, Select, NumberInput, Slider, Switch, TextInput, SegmentedControl, Box,
 } from '@mantine/core'
 import {
-  IconChevronRight, IconInfoCircle, IconGift, IconSparkles,
-  IconChartBar, IconWifi, IconDeviceMobile, IconMail, IconPhone,
-  IconBrowser, IconBell, IconMessage
+  IconChevronRight, IconInfoCircle, IconShieldCheck, IconShieldX, IconSettings,
+  IconBuildingBank, IconAdjustments, IconCheck, IconAlertTriangle,
 } from '@tabler/icons-react'
 
-const CHANNEL_TILES = [
-  { id: 'secure-site-card',    label: 'Secure-site card',        icon: IconBrowser,       color: 'blue'   },
-  { id: 'email',               label: 'Email',                   icon: IconMail,           color: 'orange' },
-  { id: 'app-push',            label: 'App push',                icon: IconBell,           color: 'violet' },
-  { id: 'advisor-crm',         label: 'Committee / payroll task',      icon: IconPhone,          color: 'green'  },
-  { id: 'secure-site-insight', label: 'Secure-site insight',     icon: IconBrowser,        color: 'teal'   },
-  { id: 'in-app-notification', label: 'In-app notification',     icon: IconDeviceMobile,   color: 'cyan'   },
-  { id: 'article',             label: 'Article / blog',          icon: IconMessage,        color: 'grape'  },
+// ── Current plan design (baseline facts) ────────────────────────────────────
+const CURRENT_PLAN = [
+  { label: 'Enrollment design', value: 'Voluntary (opt-in)' },
+  { label: 'Default deferral', value: 'None' },
+  { label: 'Auto-escalation', value: 'Not enabled' },
+  { label: 'Match formula', value: '100% of first 3%' },
+  { label: 'QDIA', value: 'Target-date series' },
+  { label: 'Participation', value: '67% (vs 82% benchmark)' },
+  { label: 'Average deferral', value: '5.1%' },
 ]
 
-function RangeBar({ range, color }) {
-  if (!range) return <Text size="xs" c="dimmed">—</Text>
-  const low = Math.round(range[0] * 100)
-  const high = Math.round(range[1] * 100)
-  return (
-    <Group gap={6} wrap="nowrap" align="center">
-      <Text size="xs" fw={600} c={`${color}.7`} style={{ minWidth: 52 }}>{low}–{high}%</Text>
-      <Progress.Root size={6} w={44} radius="xl">
-        <Progress.Section value={high} color={`${color}.3`} />
-        <Progress.Section value={low} color={color} />
-      </Progress.Root>
-    </Group>
+// ── Strategy definitions: required controls + assets ────────────────────────
+const STRATEGIES = [
+  { id: 'auto_enrollment', label: 'Auto Enrollment', required: ['defaultDeferral', 'qdia', 'optOutWindow', 'effectiveDate'],
+    assets: ['Committee deck', 'Participant email', 'Portal flow', 'Auto-enroll / QDIA notice'] },
+  { id: 'match_stretch', label: 'Match Stretch', required: ['currentFormula', 'proposedFormula', 'matchCap'],
+    assets: ['Committee deck', 'Match education', 'Portal calculator', 'Payroll kit'] },
+  { id: 'auto_escalation', label: 'Auto Escalation', required: ['annualIncrease', 'cap', 'startMonth'],
+    assets: ['Committee deck', 'Escalation email', 'Portal preview', 'Notice draft'] },
+  { id: 'reenrollment', label: 'Re-enrollment', required: ['sweepPopulation', 'defaultInvestment', 'noticeWindow', 'effectiveDate'],
+    assets: ['Committee deck', 'Re-enrollment comms', 'Portal confirmation', 'Notice pack'] },
+  { id: 'education', label: 'Education-only', required: ['messageTheme', 'channel', 'cadence'],
+    assets: ['Email', 'Portal banner', 'SMS / push (optional)'] },
+  { id: 'holdout', label: 'Holdout', required: ['controlPct', 'randomization', 'measurementWindow'],
+    assets: ['Measurement plan', 'Deployment split', 'Readout template'] },
+]
+
+// ── Guardrail checks per strategy ───────────────────────────────────────────
+function guardrails(id, v) {
+  const ok = (pass, label, detail) => ({ pass, label, detail })
+  const base = [
+    ok(true, 'Eligibility rules', 'Scoped to eligible employees per plan document'),
+    ok(true, 'Payroll readiness', 'Deferral + match fields mapped'),
+    ok(true, 'Recordkeeping readiness', 'Cohort + election feeds live'),
+    ok(true, 'Fairness monitor', v.fairness ? 'Enabled — disparity tracked' : 'Disabled'),
+    ok(true, 'Holdout feasibility', 'Sample size sufficient for 80% power'),
+  ]
+  if (id === 'auto_enrollment' || id === 'reenrollment')
+    base.splice(3, 0, ok(!!(v.optOutWindow || v.noticeWindow), 'Notice + opt-out path', 'QDIA/auto-enroll notice window and opt-out required'))
+  if (id === 'match_stretch') {
+    const within = v.costNeutral || (Number(v.costCeiling || 0) >= 120000)
+    base.unshift(ok(within, 'Employer cost', within ? 'Within approved ceiling' : 'Projected match cost exceeds ceiling'))
+  } else {
+    base.unshift(ok(true, 'Employer cost', 'Within approved ceiling'))
+  }
+  if (id === 'education') base.push(ok(true, 'Consent + frequency cap', 'Channel consent verified; within cap'))
+  return base
+}
+
+const FieldLabel = ({ children }) => (
+  <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>{children}</Text>
+)
+
+// ── Per-strategy proposed controls ──────────────────────────────────────────
+function StrategyControls({ id, v, set }) {
+  const num = (k, label, props = {}) => (
+    <Stack gap={4}><FieldLabel>{label}</FieldLabel>
+      <NumberInput value={v[k] ?? ''} onChange={val => set(k, val)} radius="md" {...props} /></Stack>
   )
+  const sel = (k, label, data) => (
+    <Stack gap={4}><FieldLabel>{label}</FieldLabel>
+      <Select value={v[k] ?? null} onChange={val => set(k, val)} data={data} radius="md" placeholder="Select…" /></Stack>
+  )
+  const txt = (k, label, ph) => (
+    <Stack gap={4}><FieldLabel>{label}</FieldLabel>
+      <TextInput value={v[k] ?? ''} onChange={e => set(k, e.currentTarget.value)} radius="md" placeholder={ph} /></Stack>
+  )
+  switch (id) {
+    case 'auto_enrollment': return (<>
+      <Stack gap={4}><FieldLabel>Default deferral — {v.defaultDeferral ?? 4}%</FieldLabel>
+        <Slider value={v.defaultDeferral ?? 4} onChange={val => set('defaultDeferral', val)} min={1} max={10} step={1} color="orange"
+          marks={[{ value: 3, label: '3%' }, { value: 6, label: '6%' }, { value: 10, label: '10%' }]} /></Stack>
+      {sel('qdia', 'QDIA / default investment', [{ value: 'tdf', label: 'Target-date series' }, { value: 'balanced', label: 'Balanced fund' }, { value: 'managed', label: 'Managed account' }])}
+      {sel('optOutWindow', 'Opt-out window', [{ value: '30', label: '30 days' }, { value: '60', label: '60 days' }, { value: '90', label: '90 days' }])}
+      {txt('effectiveDate', 'Effective date', 'e.g. 2026-09-01')}
+    </>)
+    case 'match_stretch': return (<>
+      {txt('currentFormula', 'Current formula', '100% of 3%')}
+      {txt('proposedFormula', 'Proposed formula', '50% of 6%')}
+      <Stack gap={4}><FieldLabel>Match cap — {v.matchCap ?? 6}% of pay</FieldLabel>
+        <Slider value={v.matchCap ?? 6} onChange={val => set('matchCap', val)} min={3} max={10} step={1} color="blue" /></Stack>
+      <Switch checked={!!v.costNeutral} onChange={e => set('costNeutral', e.currentTarget.checked)} label="Cost-neutral toggle" color="teal" />
+      {num('costCeiling', 'Employer cost ceiling ($)', { step: 10000, thousandSeparator: ',' })}
+    </>)
+    case 'auto_escalation': return (<>
+      <Stack gap={4}><FieldLabel>Annual increase — {v.annualIncrease ?? 1}%</FieldLabel>
+        <Slider value={v.annualIncrease ?? 1} onChange={val => set('annualIncrease', val)} min={1} max={3} step={1} color="teal" /></Stack>
+      <Stack gap={4}><FieldLabel>Cap — {v.cap ?? 10}%</FieldLabel>
+        <Slider value={v.cap ?? 10} onChange={val => set('cap', val)} min={6} max={15} step={1} color="teal" /></Stack>
+      {sel('startMonth', 'Start month', [{ value: 'jan', label: 'January (plan year)' }, { value: 'anniv', label: 'Hire anniversary' }])}
+      {txt('optOutPath', 'Opt-out / change-election path', 'Portal + payroll')}
+    </>)
+    case 'reenrollment': return (<>
+      {sel('sweepPopulation', 'Sweep population', [{ value: 'legacy', label: 'Legacy election holders' }, { value: 'all', label: 'All non-QDIA' }])}
+      {sel('defaultInvestment', 'Default investment', [{ value: 'tdf', label: 'Target-date series' }, { value: 'balanced', label: 'Balanced fund' }])}
+      {sel('noticeWindow', 'Notice window', [{ value: '30', label: '30 days' }, { value: '45', label: '45 days' }])}
+      {txt('exclusions', 'Exclusions', 'Self-directed brokerage, opt-outs')}
+      {txt('effectiveDate', 'Effective date', 'e.g. 2026-10-01')}
+    </>)
+    case 'education': return (<>
+      {txt('messageTheme', 'Message theme', 'Retirement readiness')}
+      {sel('channel', 'Channel', [{ value: 'email', label: 'Email' }, { value: 'portal', label: 'Portal banner' }, { value: 'sms', label: 'SMS / push' }])}
+      {sel('cadence', 'Cadence', [{ value: 'weekly', label: 'Weekly' }, { value: 'biweekly', label: 'Bi-weekly' }, { value: 'monthly', label: 'Monthly' }])}
+      <Alert color="gray" variant="light" icon={<IconInfoCircle size={14} />} p="xs"><Text size="xs">Education-only — no plan-rule change.</Text></Alert>
+    </>)
+    case 'holdout': return (<>
+      <Stack gap={4}><FieldLabel>Control % — {v.controlPct ?? 10}%</FieldLabel>
+        <Slider value={v.controlPct ?? 10} onChange={val => set('controlPct', val)} min={5} max={30} step={1} color="violet" /></Stack>
+      {sel('randomization', 'Randomization method', [{ value: 'employee', label: 'Employee-level random' }, { value: 'site', label: 'Site / division random' }])}
+      {sel('measurementWindow', 'Measurement window', [{ value: '30', label: '30 days' }, { value: '60', label: '60 days' }, { value: '90', label: '90 days' }])}
+      <Alert color="violet" variant="light" icon={<IconInfoCircle size={14} />} p="xs"><Text size="xs">No treatment content — measurement / control only.</Text></Alert>
+    </>)
+    default: return null
+  }
 }
 
 export default function ParticipantChannelConfigPanel({ step, workflowState, setWorkflowState, onContinue }) {
   const pd = step.panelData
-  const offers = pd.offers || []
-  const segments = pd.segments || []
+  const [active, setActive] = useState('auto_enrollment')
+  const [values, setValues] = useState({ auto_enrollment: { defaultDeferral: 4, fairness: true }, match_stretch: { matchCap: 6, fairness: true }, auto_escalation: { annualIncrease: 1, cap: 10, fairness: true }, reenrollment: { fairness: true }, education: {}, holdout: { controlPct: 10 } })
 
-  const [selectedOffers,   setSelectedOffers]   = useState(() => offers.map(o => o.id))
-  const [selectedSegs,     setSelectedSegs]      = useState(() => segments.map(s => s.id))
-  const [selectedChannels, setSelectedChannels]  = useState(() => CHANNEL_TILES.map(c => c.id))
+  const strat = STRATEGIES.find(s => s.id === active)
+  const v = values[active] || {}
+  const set = (k, val) => setValues(prev => ({ ...prev, [active]: { ...prev[active], [k]: val } }))
 
-  const toggleOffer   = (id) => setSelectedOffers(ids => ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id])
-  const toggleSeg     = (id) => setSelectedSegs(ids => ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id])
-  const toggleChannel = (id) => setSelectedChannels(ids => ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id])
-
-  const totalVariants = segments.filter(s => selectedSegs.includes(s.id)).reduce((sum, s) => sum + s.variants, 0)
-  const totalReach    = segments.filter(s => selectedSegs.includes(s.id)).reduce((sum, s) => sum + s.count, 0)
+  const complete = strat.required.every(k => {
+    const val = v[k]
+    return val !== undefined && val !== null && val !== ''
+  })
+  const checks = guardrails(active, v)
+  const blockers = checks.filter(c => !c.pass)
 
   const handleContinue = () => {
-    setWorkflowState(s => ({ ...s, selectedOffers, selectedSegments: selectedSegs, selectedChannels }))
+    // Preserve downstream contract (simulation reads these)
+    setWorkflowState(s => ({
+      ...s,
+      strategyConfig: { strategy: active, values: v },
+      selectedOffers: (pd.offers || []).map(o => o.id),
+      selectedSegments: (pd.segments || []).map(sg => sg.id),
+      selectedChannels: ['committee', 'email', 'portal'],
+    }))
     onContinue()
   }
 
   return (
     <Stack gap="md">
-      {/* Header */}
+      {/* Header + strategy package selector */}
       <Paper withBorder p="md" radius="md">
-        <Group justify="space-between" mb={4}>
-          <Text size="lg" fw={700}>Offer & Channel Configuration</Text>
+        <Group justify="space-between" mb="sm">
           <Group gap="xs">
-            <Badge size="sm" variant="light" color="orange">{selectedOffers.length} offers</Badge>
-            <Badge size="sm" variant="light" color="teal">{selectedChannels.length} channels</Badge>
-            <Badge size="sm" variant="light" color="blue">{selectedSegs.length} segments</Badge>
-            <Badge size="sm" variant="light" color="green">{totalVariants} variants</Badge>
+            <ThemeIcon size={28} radius="md" variant="light" color="orange"><IconSettings size={16} /></ThemeIcon>
+            <Text size="lg" fw={700}>Strategy Configuration</Text>
           </Group>
+          <Badge size="sm" variant="light" color={complete && blockers.length === 0 ? 'green' : 'orange'}>
+            {complete ? (blockers.length === 0 ? 'Ready to simulate' : `${blockers.length} guardrail block(s)`) : 'Required controls incomplete'}
+          </Badge>
         </Group>
-        <Text size="sm" c="dimmed">
-          Select offers, activate channels, and confirm segment configuration. Engagement rates are historical estimates.
-        </Text>
+        <Tabs value={active} onChange={setActive} variant="pills" radius="md" color="orange">
+          <Tabs.List>
+            {STRATEGIES.map(s => <Tabs.Tab key={s.id} value={s.id}>{s.label}</Tabs.Tab>)}
+          </Tabs.List>
+        </Tabs>
       </Paper>
 
-      {/* Offer configuration */}
-      <Stack gap="xs">
-        <Group gap="xs">
-          <ThemeIcon size={20} radius="md" variant="light" color="orange">
-            <IconGift size={12} stroke={1.5} />
-          </ThemeIcon>
-          <Text size="sm" fw={700}>Offer Configuration</Text>
-          <Badge size="xs" color="orange" variant="light">{selectedOffers.length} of {offers.length} selected</Badge>
-        </Group>
-
-        <SimpleGrid cols={2} spacing="sm">
-          {offers.map(offer => {
-            const isSelected = selectedOffers.includes(offer.id)
-            return (
-              <Paper
-                key={offer.id}
-                withBorder p="md" radius="md"
-                style={{
-                  borderLeft: `3px solid var(--mantine-color-${offer.color}-5)`,
-                  opacity: isSelected ? 1 : 0.45,
-                  cursor: 'pointer',
-                  transition: 'opacity 150ms ease',
-                }}
-                onClick={() => toggleOffer(offer.id)}
-              >
-                <Stack gap="sm">
-                  <Group gap="xs">
-                    <Checkbox
-                      size="xs"
-                      checked={isSelected}
-                      onChange={() => toggleOffer(offer.id)}
-                      color={offer.color}
-                      onClick={e => e.stopPropagation()}
-                    />
-                    <Text size="sm" fw={700}>{offer.label}</Text>
-                  </Group>
-                  <Text size="xs" c="dimmed" style={{ lineHeight: 1.5 }}>{offer.description}</Text>
-                  <Divider label="Primary KPI" labelPosition="left" />
-                  <Group gap="xs">
-                    <IconChartBar size={11} stroke={1.5} style={{ color: `var(--mantine-color-${offer.color}-6)` }} />
-                    <Text size="xs" fw={600}>{offer.primaryKpi}</Text>
-                  </Group>
-                </Stack>
-              </Paper>
-            )
-          })}
-        </SimpleGrid>
-      </Stack>
-
-      {/* Channel selection tiles */}
-      <Stack gap="xs">
-        <Group gap="xs">
-          <ThemeIcon size={20} radius="md" variant="light" color="teal">
-            <IconWifi size={12} stroke={1.5} />
-          </ThemeIcon>
-          <Text size="sm" fw={700}>Channel Selection</Text>
-          <Badge size="xs" color="teal" variant="light">{selectedChannels.length} of {CHANNEL_TILES.length} active</Badge>
-        </Group>
-        <SimpleGrid cols={4} spacing="sm">
-          {CHANNEL_TILES.map(ch => {
-            const isActive = selectedChannels.includes(ch.id)
-            const Icon = ch.icon
-            return (
-              <Paper
-                key={ch.id}
-                withBorder p="sm" radius="md"
-                style={{
-                  borderTop: `3px solid var(--mantine-color-${ch.color}-${isActive ? '5' : '2'})`,
-                  opacity: isActive ? 1 : 0.45,
-                  cursor: 'pointer',
-                  transition: 'all 150ms ease',
-                  background: isActive ? `var(--mantine-color-${ch.color}-light)` : undefined,
-                }}
-                onClick={() => toggleChannel(ch.id)}
-              >
-                <Stack gap="xs" align="center">
-                  <ThemeIcon size={28} radius="md" variant={isActive ? 'filled' : 'light'} color={ch.color}>
-                    <Icon size={14} stroke={1.5} />
-                  </ThemeIcon>
-                  <Text size="xs" fw={600} ta="center" style={{ lineHeight: 1.3 }}>{ch.label}</Text>
-                  {isActive && <Badge size="xs" color={ch.color} variant="light">Active</Badge>}
-                </Stack>
-              </Paper>
-            )
-          })}
-        </SimpleGrid>
-      </Stack>
-
-      {/* Segment engagement table */}
-      <Stack gap="xs">
-        <Group gap="xs">
-          <ThemeIcon size={20} radius="md" variant="light" color="blue">
-            <IconSparkles size={12} stroke={1.5} />
-          </ThemeIcon>
-          <Text size="sm" fw={700}>Segment Configuration</Text>
-          <Badge size="xs" color="blue" variant="light">{totalReach.toLocaleString()} participants · {totalVariants} variants</Badge>
-        </Group>
-
-        <Paper withBorder radius="md" style={{ overflow: 'hidden' }}>
-          <Box px="md" py="xs" style={{ background: 'var(--mantine-color-default-hover)', borderBottom: '1px solid var(--mantine-color-default-border)' }}>
-            <Group gap={0}>
-              <Box style={{ width: 28 }} />
-              <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ flex: 1, letterSpacing: '0.05em' }}>Segment</Text>
-              <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ width: 80, textAlign: 'right', letterSpacing: '0.05em' }}>Count</Text>
-              <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ width: 60, textAlign: 'center', letterSpacing: '0.05em' }}>Variants</Text>
-              <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ width: 130, textAlign: 'right', letterSpacing: '0.05em' }}>Open rate</Text>
-              <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ width: 130, textAlign: 'right', letterSpacing: '0.05em' }}>Click rate</Text>
-            </Group>
-          </Box>
-
-          {segments.map((seg, idx) => {
-            const isSelected = selectedSegs.includes(seg.id)
-            return (
-              <Box
-                key={seg.id}
-                px="md" py="sm"
-                style={{
-                  borderBottom: idx < segments.length - 1 ? '1px solid var(--mantine-color-default-border)' : 'none',
-                  opacity: isSelected ? 1 : 0.4,
-                  cursor: 'pointer',
-                  transition: 'opacity 150ms ease',
-                  background: isSelected ? 'transparent' : 'var(--mantine-color-default-hover)',
-                }}
-                onClick={() => toggleSeg(seg.id)}
-              >
-                <Group gap={0} align="center">
-                  <Box style={{ width: 28 }}>
-                    <Checkbox
-                      size="xs"
-                      checked={isSelected}
-                      onChange={() => toggleSeg(seg.id)}
-                      color={seg.color}
-                      onClick={e => e.stopPropagation()}
-                    />
-                  </Box>
-                  <Group gap={6} style={{ flex: 1 }}>
-                    <div style={{ width: 3, height: 28, borderRadius: 2, background: `var(--mantine-color-${seg.color}-5)`, flexShrink: 0 }} />
-                    <Text size="sm" fw={600}>{seg.label}</Text>
-                  </Group>
-                  <Text size="sm" fw={700} c={seg.color} style={{ width: 80, textAlign: 'right' }}>
-                    {seg.count.toLocaleString()}
-                  </Text>
-                  <Text size="sm" fw={600} c="dimmed" style={{ width: 60, textAlign: 'center' }}>{seg.variants}</Text>
-                  <Box style={{ width: 130, display: 'flex', justifyContent: 'flex-end' }}>
-                    <RangeBar range={seg.openRate} color={seg.color} />
-                  </Box>
-                  <Box style={{ width: 130, display: 'flex', justifyContent: 'flex-end' }}>
-                    <RangeBar range={seg.clickRate} color={seg.color} />
-                  </Box>
-                </Group>
-              </Box>
-            )
-          })}
+      {/* 3-column: current | proposed | guardrails */}
+      <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
+        {/* Left — current plan design */}
+        <Paper withBorder p="md" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-gray-4)' }}>
+          <Stack gap="sm">
+            <Group gap="xs"><ThemeIcon size="sm" variant="light" color="gray"><IconBuildingBank size={12} /></ThemeIcon><Text size="sm" fw={700}>Current plan design</Text></Group>
+            <Divider />
+            {CURRENT_PLAN.map(r => (
+              <Group key={r.label} justify="space-between" wrap="nowrap">
+                <Text size="xs" c="dimmed">{r.label}</Text>
+                <Text size="xs" fw={600} ta="right">{r.value}</Text>
+              </Group>
+            ))}
+          </Stack>
         </Paper>
-      </Stack>
 
-      {/* Summary */}
-      <Alert variant="light" color="teal" icon={<IconInfoCircle size={16} />}>
+        {/* Center — proposed controls */}
+        <Paper withBorder p="md" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-orange-5)' }}>
+          <Stack gap="sm">
+            <Group gap="xs"><ThemeIcon size="sm" variant="light" color="orange"><IconAdjustments size={12} /></ThemeIcon><Text size="sm" fw={700}>Proposed — {strat.label}</Text></Group>
+            <Divider />
+            <StrategyControls id={active} v={v} set={set} />
+            <Divider label="Required assets" labelPosition="left" />
+            <Group gap={6}>
+              {strat.assets.map(a => <Badge key={a} size="xs" variant="outline" color="orange">{a}</Badge>)}
+            </Group>
+          </Stack>
+        </Paper>
+
+        {/* Right — guardrail validation */}
+        <Paper withBorder p="md" radius="md" style={{ borderLeft: `3px solid var(--mantine-color-${blockers.length ? 'red' : 'green'}-5)` }}>
+          <Stack gap="sm">
+            <Group gap="xs"><ThemeIcon size="sm" variant="light" color={blockers.length ? 'red' : 'green'}><IconShieldCheck size={12} /></ThemeIcon><Text size="sm" fw={700}>Guardrail validation</Text></Group>
+            <Divider />
+            {checks.map(c => (
+              <Group key={c.label} gap="xs" align="flex-start" wrap="nowrap">
+                <ThemeIcon size="xs" radius="xl" variant="light" color={c.pass ? 'green' : 'red'} mt={2}>
+                  {c.pass ? <IconCheck size={9} /> : <IconShieldX size={9} />}
+                </ThemeIcon>
+                <Box style={{ flex: 1 }}>
+                  <Text size="xs" fw={600}>{c.label}</Text>
+                  <Text size="10px" c={c.pass ? 'dimmed' : 'red'}>{c.detail}</Text>
+                </Box>
+              </Group>
+            ))}
+          </Stack>
+        </Paper>
+      </SimpleGrid>
+
+      {/* Bottom — generated configuration summary */}
+      <Alert variant="light" color={complete && !blockers.length ? 'teal' : 'orange'} icon={complete && !blockers.length ? <IconInfoCircle size={16} /> : <IconAlertTriangle size={16} />}>
         <Text size="sm">
-          <strong>{selectedOffers.length}</strong> offers via{' '}
-          <strong>{selectedChannels.length}</strong> channels across{' '}
-          <strong>{selectedSegs.length}</strong> segments reaching{' '}
-          <strong>{totalReach.toLocaleString()}</strong> participants.{' '}
-          TwinX will generate <strong>{totalVariants}</strong> content variants.
+          <strong>{strat.label}</strong> configured for eligible cohorts with{' '}
+          <strong>{strat.required.length}</strong> required controls
+          {complete ? ' complete' : ` — ${strat.required.filter(k => !(v[k] !== undefined && v[k] !== null && v[k] !== '')).length} still required`}.
+          {blockers.length > 0 && <> Guardrail blockers: <strong>{blockers.map(b => b.label).join(', ')}</strong>.</>}
         </Text>
       </Alert>
 
@@ -244,14 +235,13 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
         size="md"
         variant="gradient"
         gradient={{ from: 'indigo', to: 'cyan', deg: 135 }}
-        leftSection={<IconSparkles size={16} stroke={1.5} />}
         rightSection={<IconChevronRight size={16} stroke={2} />}
         styles={{ root: { boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)' } }}
         style={{ alignSelf: 'flex-end' }}
         onClick={handleContinue}
-        disabled={selectedOffers.length === 0 || selectedSegs.length === 0 || selectedChannels.length === 0}
+        disabled={!complete || blockers.length > 0}
       >
-        Recommend and Simulate
+        Run Simulation
       </Button>
     </Stack>
   )

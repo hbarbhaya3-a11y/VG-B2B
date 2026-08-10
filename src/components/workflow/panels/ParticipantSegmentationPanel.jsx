@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import {
   Paper, Stack, Group, Text, Badge, SimpleGrid, ThemeIcon, Divider, Button,
-  Alert, NumberInput, Select, Slider, Modal, ScrollArea, Loader, Progress, Textarea, Card, Checkbox
+  Alert, NumberInput, Select, Slider, Modal, ScrollArea, Loader, Progress, Textarea, Card, Checkbox,
+  Chip, Table
 } from '@mantine/core'
 import {
   IconUsers, IconPhone, IconMail, IconBell, IconShieldCheck, IconChevronRight,
@@ -154,8 +155,30 @@ const SCORING_LINES = [
 ]
 
 const AI_SEGMENTS = [
-  { id: 'ai-seg-1', tier: 1, color: 'violet', label: 'High-Net-Worth Planning Actives (55+)', count: 8200, channel: 'Secure site card + email', description: 'Investors aged 55+ with >$250K AUM, 3+ planning-tool uses in 30 days, no advisor relationship in 12 months.', kpi: 'Advisory consultation starts, AUM under advice' },
+  { id: 'ai-seg-1', tier: 1, color: 'violet', label: 'Lower-Compensation Under-Enrolled', count: 3900, channel: 'Committee deck + participant email', description: 'Eligible employees in lower compensation bands participating below plan average — fairness-flagged cohort.', kpi: 'Participation lift, equity index' },
 ]
+
+// Screen 4 — per-cohort plan-health metrics + strategy eligibility (keyed by tier id)
+const COHORT_META = {
+  'seg-1': { baseline: '0%',  deferral: '—',   match: '0%',  readiness: 'High',   fairness: false, strategy: 'Auto Enrollment' },
+  'seg-2': { baseline: '18%', deferral: '2.0%', match: '22%', readiness: 'High',   fairness: false, strategy: 'Auto Enrollment' },
+  'seg-3': { baseline: '100%',deferral: '3.0%', match: '54%', readiness: 'High',   fairness: false, strategy: 'Match Stretch' },
+  'seg-4': { baseline: '100%',deferral: '3.0%', match: '61%', readiness: 'Medium', fairness: false, strategy: 'Auto Escalation' },
+  'seg-5': { baseline: '82%', deferral: '4.2%', match: '70%', readiness: 'Medium', fairness: false, strategy: 'Re-enrollment' },
+  'seg-6': { baseline: '58%', deferral: '3.4%', match: '48%', readiness: 'Medium', fairness: true,  strategy: 'Auto Escalation' },
+  'seg-7': { baseline: '0%',  deferral: '—',   match: '0%',  readiness: 'Low',    fairness: false, strategy: 'Re-enrollment' },
+}
+
+// Which cohorts each strategy targets (for dynamic highlighting)
+const STRATEGY_ELIGIBILITY = {
+  'Auto Enrollment': ['seg-1', 'seg-2'],
+  'Match Stretch':   ['seg-3'],
+  'Auto Escalation': ['seg-4', 'seg-6'],
+  'Re-enrollment':   ['seg-5', 'seg-7'],
+  'Education-only':  ['seg-1', 'seg-2', 'seg-3', 'seg-4', 'seg-5', 'seg-6', 'seg-7'],
+  'Holdout':         [],
+}
+const STRATEGY_OPTIONS = Object.keys(STRATEGY_ELIGIBILITY)
 
 export default function ParticipantSegmentationPanel({ step, workflowState, setWorkflowState, onContinue }) {
   const pd = step.panelData
@@ -165,11 +188,12 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
   const [sampleTier, setSampleTier] = useState(null)
   const { activeUseCase } = useUseCase()
   const [convMode, setConvMode] = useState(false)
-  const [convInput, setConvInput] = useState('Find self-directed investors with $250K+ investable assets, 3+ planning-tool visits, no advisor, and rising cash balance.')
+  const [convInput, setConvInput] = useState('Find eligible employees in lower compensation bands, hired within 12 months, with no active deferral election.')
   const [convSegments, setConvSegments] = useState(null)
   const [convLoading, setConvLoading] = useState(false)
   const [activeTiers, setActiveTiers] = useState(null)
   const [selectedTierIds, setSelectedTierIds] = useState(() => pd.tiers.map(t => t.id))
+  const [highlightStrategy, setHighlightStrategy] = useState(null)
 
   useEffect(() => {
     if (phase !== 'scoring') return
@@ -322,7 +346,7 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
               <Text size="sm" fw={700}>Conversational Segment Builder</Text>
               <Badge size="xs" color="violet" variant="light">AI</Badge>
             </Group>
-            <Text size="xs" c="dimmed">Describe your target audience in plain language — TwinX will generate behavioral segments automatically.</Text>
+            <Text size="xs" c="dimmed">Describe a workforce cohort in plain language — TwinX will build it from recordkeeping + payroll facts.</Text>
           </Stack>
           {convMode && (
             <Button size="xs" variant="subtle" color="gray" onClick={(e) => { e.stopPropagation(); setConvMode(false); setConvSegments(null) }}>
@@ -380,45 +404,51 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
         )}
       </Card>
 
-      {/* Test Hypothesis */}
-      <Paper withBorder radius="md" p="md" style={{ borderLeft: '3px solid var(--mantine-color-indigo-6)' }}>
-        <Stack gap="sm">
-          <Group gap="xs">
-            <ThemeIcon size={22} radius="md" variant="light" color="indigo">
-              <IconTargetArrow size={13} stroke={1.8} />
-            </ThemeIcon>
-            <Text fw={700} size="sm">Test Strategy — Participation Gap</Text>
-          </Group>
-          <Stack gap={6}>
-            <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Objective</Text>
-            <Badge size="sm" variant="light" color="vanguardRed" style={{ alignSelf: 'flex-start' }}>
-              Cross-sell to advisory
-            </Badge>
-            <Text size="xs" c="dimmed">Increase advisory journey conversion among planning-intent, unadvised investors.</Text>
-          </Stack>
-          <Stack gap={6}>
-            <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Pre-selected Hypothesis</Text>
-            <Paper p="sm" radius="sm" style={{ background: 'var(--mantine-color-indigo-light)', borderLeft: '2px solid var(--mantine-color-indigo-4)' }}>
-              <Text size="xs" fs="italic" style={{ lineHeight: 1.6 }}>
-                "When self-directed investors show repeated planning intent but do not start an advisory relationship, a behavior-matched sequence of education, portfolio review, and optional advice access will increase advisory appointment starts versus no action."
-              </Text>
-            </Paper>
-          </Stack>
-        </Stack>
+      {/* Filters (illustrative controls) */}
+      <Paper withBorder p="sm" radius="md">
+        <Group gap="xs">
+          <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Filters</Text>
+          {['Eligibility', 'Tenure band', 'Compensation band', 'Participation status', 'Deferral band', 'Match utilization', 'Portal engagement', 'Comm. exposure', 'Service indicator', 'Exclusions', 'Prior campaigns', 'Location / division'].map(f => (
+            <Badge key={f} size="xs" variant="outline" color="gray">{f}</Badge>
+          ))}
+        </Group>
       </Paper>
 
-      {/* Audience tiles */}
+      {/* Strategy highlight selector — dims non-eligible cohorts */}
+      <Paper withBorder p="sm" radius="md" style={{ background: 'var(--mantine-color-default-hover)' }}>
+        <Group gap="sm" wrap="wrap">
+          <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Highlight cohorts for strategy</Text>
+          <Chip.Group value={highlightStrategy} onChange={setHighlightStrategy}>
+            <Group gap={6}>
+              {STRATEGY_OPTIONS.map(s => (
+                <Chip key={s} value={s} size="xs" variant="outline" color="orange" radius="md">{s}</Chip>
+              ))}
+            </Group>
+          </Chip.Group>
+          {highlightStrategy && (
+            <Button size="compact-xs" variant="subtle" color="gray" onClick={() => setHighlightStrategy(null)}>Clear</Button>
+          )}
+          {highlightStrategy === 'Education-only' && <Badge size="xs" color="gray" variant="light">Non-plan-rule-changing</Badge>}
+          {highlightStrategy === 'Holdout' && <Badge size="xs" color="violet" variant="light">Random assignment · content targeting suppressed</Badge>}
+        </Group>
+      </Paper>
+
+      {/* Cohort tiles */}
       <SimpleGrid cols={3} spacing="md">
         {tiersToRender.map((tier) => {
           const isSelected = selectedTierIds.includes(tier.id)
+          const m = COHORT_META[tier.id] || {}
+          const eligible = highlightStrategy ? STRATEGY_ELIGIBILITY[highlightStrategy]?.includes(tier.id) : true
+          const dim = !isSelected || !eligible
           return (
             <Paper
               key={tier.id}
               withBorder p="md" radius="md"
               style={{
                 borderLeft: `3px solid var(--mantine-color-${tier.color}-5)`,
-                opacity: isSelected ? 1 : 0.5,
-                transition: 'opacity 150ms ease',
+                outline: highlightStrategy && eligible ? '2px solid var(--mantine-color-orange-5)' : 'none',
+                opacity: dim ? 0.45 : 1,
+                transition: 'opacity 150ms ease, outline 150ms ease',
               }}
             >
               <Stack gap="sm">
@@ -435,22 +465,66 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
                 </Group>
 
                 <Stack gap={0}>
-                  <Text style={{ fontSize: 34, fontWeight: 900, lineHeight: 1, color: `var(--mantine-color-${tier.color}-7)` }}>
+                  <Text style={{ fontSize: 30, fontWeight: 900, lineHeight: 1, color: `var(--mantine-color-${tier.color}-7)` }}>
                     {tier.count.toLocaleString()}
                   </Text>
-                  <Text size="xs" c="dimmed">participants</Text>
+                  <Text size="xs" c="dimmed">employees</Text>
                 </Stack>
 
-                <Text size="sm" fw={700} style={{ lineHeight: 1.3 }}>{tier.label}</Text>
+                <Group gap={6} align="center">
+                  <Text size="sm" fw={700} style={{ lineHeight: 1.3, flex: 1 }}>{tier.label}</Text>
+                  {m.fairness && <Badge size="xs" color="pink" variant="filled">Fairness flag</Badge>}
+                </Group>
 
-                <Divider label="Behavioral signal" labelPosition="left" />
-                <Text size="xs" c="dimmed">{tier.behavioralSignal || tier.description}</Text>
+                <SimpleGrid cols={2} spacing={4}>
+                  <Text size="xs" c="dimmed">Baseline part.: <Text span fw={700} c="dark">{m.baseline ?? '—'}</Text></Text>
+                  <Text size="xs" c="dimmed">Median defer.: <Text span fw={700} c="dark">{m.deferral ?? '—'}</Text></Text>
+                  <Text size="xs" c="dimmed">Match util.: <Text span fw={700} c="dark">{m.match ?? '—'}</Text></Text>
+                  <Text size="xs" c="dimmed">Readiness: <Text span fw={700} c="dark">{m.readiness ?? '—'}</Text></Text>
+                </SimpleGrid>
 
+                <Divider label="Recommended strategy" labelPosition="left" />
+                <Badge size="xs" variant="light" color={tier.color} style={{ alignSelf: 'flex-start' }}>{m.strategy || '—'}</Badge>
               </Stack>
             </Paper>
           )
         })}
       </SimpleGrid>
+
+      {/* Cohort summary table */}
+      <Paper withBorder radius="md" style={{ overflow: 'auto' }}>
+        <Table striped highlightOnHover fz="xs" verticalSpacing="sm" horizontalSpacing="md" style={{ minWidth: 720 }}>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>Cohort</Table.Th>
+              <Table.Th style={{ textAlign: 'right' }}>Size</Table.Th>
+              <Table.Th>Baseline part.</Table.Th>
+              <Table.Th>Median deferral</Table.Th>
+              <Table.Th>Match util.</Table.Th>
+              <Table.Th>Readiness</Table.Th>
+              <Table.Th>Fairness</Table.Th>
+              <Table.Th>Recommended strategy</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {tiersToRender.map((tier) => {
+              const m = COHORT_META[tier.id] || {}
+              return (
+                <Table.Tr key={tier.id}>
+                  <Table.Td><Group gap={6} wrap="nowrap"><div style={{ width: 3, height: 20, borderRadius: 2, background: `var(--mantine-color-${tier.color}-5)` }} /><Text size="xs" fw={600}>{tier.label}</Text></Group></Table.Td>
+                  <Table.Td style={{ textAlign: 'right' }}><Text size="xs" fw={700} c={tier.color}>{tier.count.toLocaleString()}</Text></Table.Td>
+                  <Table.Td>{m.baseline ?? '—'}</Table.Td>
+                  <Table.Td>{m.deferral ?? '—'}</Table.Td>
+                  <Table.Td>{m.match ?? '—'}</Table.Td>
+                  <Table.Td>{m.readiness ?? '—'}</Table.Td>
+                  <Table.Td>{m.fairness ? <Badge size="xs" color="pink" variant="light">Flag</Badge> : <Text size="xs" c="dimmed">—</Text>}</Table.Td>
+                  <Table.Td><Badge size="xs" variant="light" color={tier.color}>{m.strategy || '—'}</Badge></Table.Td>
+                </Table.Tr>
+              )
+            })}
+          </Table.Tbody>
+        </Table>
+      </Paper>
 
       {/* Model insight */}
       <Paper withBorder p="md" radius="md">
@@ -461,7 +535,7 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
               <Text size="xs" c="dimmed">Audience groups identified</Text>
             </Stack>
             <Group gap="xs" wrap="wrap">
-              {['Age cohort', 'Risk profile', 'Behavioral signals', 'Plan type', 'Anxiety score'].map(f => (
+              {['Eligibility', 'Tenure', 'Compensation band', 'Deferral', 'Match utilization'].map(f => (
                 <Badge key={f} size="xs" variant="light" color="teal">{f}</Badge>
               ))}
             </Group>
@@ -606,7 +680,7 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
         styles={{ root: { boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)' } }}
         style={{ alignSelf: 'flex-end' }}
       >
-        Configure Offers & Channels
+        Configure Strategy
       </Button>
     </Stack>
   )
