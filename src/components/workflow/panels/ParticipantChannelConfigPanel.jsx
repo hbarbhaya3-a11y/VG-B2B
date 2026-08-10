@@ -15,7 +15,7 @@ const CURRENT_PLAN = [
   { label: 'Auto-escalation', value: 'Not enabled' },
   { label: 'Match formula', value: '100% of first 3%' },
   { label: 'QDIA', value: 'Target-date series' },
-  { label: 'Participation', value: '67% (vs 82% benchmark)' },
+  { label: 'Participation', value: '72% (vs 82% benchmark)' },
   { label: 'Average deferral', value: '5.1%' },
 ]
 

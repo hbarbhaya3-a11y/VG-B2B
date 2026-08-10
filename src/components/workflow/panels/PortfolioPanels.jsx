@@ -16,10 +16,10 @@ export const ALLOC = [
 ]
 
 const PORTFOLIOS = [
-  { id: 'A', title: 'Default-led participation lift', mix: 'Auto Enrollment + Auto Escalation', note: 'Best for a broad participation gap', lift: '+14pp', cost: '+0.4%', conf: 0.87, best: false },
+  { id: 'A', title: 'Default-led participation lift', mix: 'Auto Enrollment + Auto Escalation', note: 'Best for a broad participation gap', lift: '+21pp', cost: '+0.4%', conf: 0.87, best: false },
   { id: 'B', title: 'Cost-aware savings improvement', mix: 'Match Stretch + Auto Escalation', note: 'Best where the cost ceiling is tight', lift: '+4pp', cost: '+0.1%', conf: 0.79, best: false },
   { id: 'C', title: 'Legacy reset package', mix: 'Re-enrollment + notices + portal confirmation', note: 'Best for outdated / inactive elections', lift: '+6pp', cost: '+0.1%', conf: 0.80, best: false },
-  { id: 'D', title: 'TwinX Optimized Portfolio', mix: 'Cohort-specific strategy mix', note: 'Maximizes lift within all constraints', lift: '+15pp', cost: '+0.4%', conf: 0.86, best: true },
+  { id: 'D', title: 'TwinX Optimized Portfolio', mix: 'Cohort-specific strategy mix', note: 'Maximizes lift within all constraints', lift: '+22pp', cost: '+0.4%', conf: 0.86, best: true },
 ]
 
 const STRATEGY_MIX = [
@@ -46,7 +46,7 @@ const HC = { g: 'green', w: 'yellow', b: 'red' }
 const OPTIMIZER = ['Participation lift', 'Deferral lift', 'Employer cost', 'Readiness', 'Fairness', 'Confidence', 'Holdout coverage']
 
 const PORTFOLIO_KPIS = [
-  { label: 'Participation lift', value: '+15pp', color: 'green' },
+  { label: 'Participation lift', value: '+21pp', color: 'green' },
   { label: 'Incremental enrollments', value: '+8,900', color: 'teal' },
   { label: 'Deferral lift', value: '+1.3pp', color: 'blue' },
   { label: 'Employer cost impact', value: '+0.4%', color: 'orange' },
@@ -206,7 +206,7 @@ export function PortfolioLab() {
 const REC_SUMMARY = [
   { label: 'Cohorts assigned', value: '6' },
   { label: 'Strategies in parallel', value: '5' },
-  { label: 'Participation lift', value: '+15pp' },
+  { label: 'Participation lift', value: '+21pp' },
   { label: 'Deferral lift', value: '+1.3pp' },
   { label: 'Employer cost', value: '+0.4%' },
   { label: 'Holdout coverage', value: '5 / 6' },
@@ -549,7 +549,7 @@ const LEARN_DASH = [
   { label: 'Measurement window', value: '60 days', color: 'gray' },
   { label: 'Treatment cells', value: '5', color: 'teal' },
   { label: 'Holdout cells', value: '5 / 6', color: 'grape' },
-  { label: 'Participation lift vs holdout', value: '+13.8pp', color: 'green' },
+  { label: 'Participation lift vs holdout', value: '+20.5pp', color: 'green' },
   { label: 'Deferral lift vs holdout', value: '+1.2pp', color: 'blue' },
   { label: 'Employer cost variance', value: '−2% vs plan', color: 'orange' },
   { label: 'Fairness movement', value: '+ improves', color: 'pink' },
@@ -557,7 +557,7 @@ const LEARN_DASH = [
   { label: 'Reusable policy readiness', value: '4 / 6 cells', color: 'teal' },
 ]
 const LEARN_ROWS = [
-  { cohort: 'Eligible nonparticipants', strategy: 'Auto Enrollment', pred: '+13pp', treat: '81%', hold: '67%', lift: '+14pp', cost: '+0.35%', rec: 'Scale', recColor: 'green', color: 'orange' },
+  { cohort: 'Eligible nonparticipants', strategy: 'Auto Enrollment', pred: '+20pp', treat: '93%', hold: '72%', lift: '+21pp', cost: '+0.35%', rec: 'Scale', recColor: 'green', color: 'orange' },
   { cohort: 'Below-match participants', strategy: 'Match Stretch', pred: '+0.9pp def.', treat: '6.1%', hold: '5.1%', lift: '+1.0pp def.', cost: '+0.02%', rec: 'Refine formula', recColor: 'yellow', color: 'blue' },
   { cohort: 'Stuck-at-default', strategy: 'Auto Escalation', pred: '+1.0pp def.', treat: '6.3%', hold: '5.2%', lift: '+1.1pp def.', cost: '+0.15%', rec: 'Continue', recColor: 'teal', color: 'teal' },
   { cohort: 'Legacy elections', strategy: 'Re-enrollment', pred: '+6pp', treat: '88%', hold: '82%', lift: '+6pp', cost: '+0.10%', rec: 'Governance review', recColor: 'grape', color: 'grape' },

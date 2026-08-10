@@ -768,7 +768,7 @@ function computeLabKpis(strategy, lab) {
     case 'holdout':          liftPp = 0; deferralPp = 0; optOut = 0; cost = 0; readiness = 100; fairness = 'n/a'; break
     default:                 liftPp = 0; deferralPp = 0; optOut = 0; cost = 0; readiness = 80
   }
-  const incrementalEnroll = Math.round(treatPop * (liftPp / 100) * 5.2)
+  const incrementalEnroll = Math.round(42000 * (liftPp / 100))
   const employerCostDollars = Math.round(cost / 100 * 42000 * 62000) // illustrative payroll base
   const costPerEnroll = incrementalEnroll > 0 ? Math.round(employerCostDollars / incrementalEnroll) : 0
   const holdoutFeasible = lab.holdout >= 5 && (11800 * lab.holdout / 100) >= 500
@@ -875,7 +875,7 @@ function ScenarioLab({ strategy: initialStrategy }) {
         <SimpleGrid cols={2} spacing="md">
           <Paper withBorder p="sm" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-gray-4)' }}>
             <Text size="xs" fw={700} tt="uppercase" c="dimmed" mb={4}>Baseline (do-nothing)</Text>
-            <Text size="xs">Participation 67% · avg deferral 5.1% · employer cost flat</Text>
+            <Text size="xs">Participation 72% · avg deferral 5.1% · employer cost flat</Text>
           </Paper>
           <Paper withBorder p="sm" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-teal-5)' }}>
             <Text size="xs" fw={700} tt="uppercase" c="teal" mb={4}>Proposed ({LAB_STRATEGIES.find(s => s.value === lab.strategy)?.label})</Text>
@@ -1116,8 +1116,8 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
       {/* KPI Impact tiles */}
       <SimpleGrid cols={4} spacing="sm">
         {[
-          { label: 'Participation lift',       value: '+14pp', sub: 'vs do-nothing baseline', color: 'green' },
-          { label: 'Incremental enrollments',  value: '+8,400', sub: 'net new participants', color: 'violet' },
+          { label: 'Participation lift',       value: '+21pp', sub: 'vs do-nothing baseline', color: 'green' },
+          { label: 'Incremental enrollments',  value: '+8,900', sub: 'net new participants', color: 'violet' },
           { label: 'Average deferral lift',    value: '+1.3pp', sub: 'toward readiness target', color: 'teal' },
           { label: 'Employer cost impact',     value: '+0.4%', sub: 'of payroll, within ceiling', color: 'orange' },
         ].map(kpi => (

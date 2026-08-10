@@ -37,7 +37,7 @@ const LIVE_SIGNALS = [
     severityColor: 'orange',
     stage: 'SENSE',
     title: 'Participation Gap — 11,800 Eligible Employees Not Enrolled',
-    description: 'Plan Sponsor Radar detects participation at 67% against an 82% benchmark: 11,800 eligible employees hold no deferral election on the payroll feed. Reaction/eligibility-based signal only — cohort-level, no individual scoring. Auto-enrollment + auto-escalation eligible.',
+    description: 'Plan Sponsor Radar detects participation at 72% against an 82% peer benchmark: 11,800 eligible employees hold no deferral election on the payroll feed. Reaction/eligibility-based signal only — cohort-level, no individual scoring. Auto-enrollment + auto-escalation eligible.',
     sourceChip: 'PLAN SPONSOR RADAR · RECORDKEEPING · PAYROLL · ELIGIBILITY FILE',
     agent: 'Market Sentinel',
     date: '5/12/2026',
@@ -48,7 +48,7 @@ const LIVE_SIGNALS = [
     precedentNote: null,
     confidence: 91,
     window: '30-day decision window',
-    trendLabel: 'PARTICIPATION GAP VS BENCHMARK (15pp)',
+    trendLabel: 'PARTICIPATION GAP VS BENCHMARK (10pp)',
     trendData: [
       { x: 'W-6', v: 0 }, { x: 'W-5', v: 200 }, { x: 'W-4', v: 800 },
       { x: 'W-3', v: 2400 }, { x: 'W-2', v: 8000 }, { x: 'W-1', v: 10600 }, { x: 'Now', v: 11800 },
@@ -140,13 +140,13 @@ const LIVE_SIGNALS = [
     severity: 'HIGH',
     severityColor: 'orange',
     stage: 'SENSE',
-    title: 'Renewal Risk — Participation Lagging Sector Benchmark by 15pp',
-    description: 'Benchmarking shows plan participation (67%) trailing the sector median (82%) — a renewal/retention risk at the next plan review. A plan-design change (auto-enrollment + escalation) is the highest-lift, reversible response.',
+    title: 'Renewal Risk — Participation Lagging Sector Benchmark by 10pp',
+    description: 'Benchmarking shows plan participation (72%) trailing the sector median (82%) — a renewal/retention risk at the next plan review. A plan-design change (auto-enrollment + escalation) is the highest-lift, reversible response.',
     sourceChip: 'BENCHMARK ENGINE · PLAN HEALTH INDEX',
     agent: 'Market Sentinel',
     date: '5/05/2026',
     investorCount: 42000,
-    investorLabel: '67%',
+    investorLabel: '72%',
     investorSub: 'vs 82% benchmark',
     precedents: 3,
     precedentNote: null,
@@ -327,40 +327,6 @@ export default function UseCaseCatalog({ onRunScenario }) {
             ))}
           </Group>
         </Group>
-      </Card>
-
-      {/* ── Portfolio summary strip ─────────────────────────────────── */}
-      <SimpleGrid cols={{ base: 2, sm: 5 }} spacing="sm">
-        {[
-          { label: 'Active signals', value: '4 participation signals', color: 'orange' },
-          { label: 'Affected cohorts', value: '6 workforce cohorts', color: 'blue' },
-          { label: 'Candidate strategies', value: '5 strategies + holdout', color: 'teal' },
-          { label: 'Portfolio readiness', value: '72% · 2 blockers', color: 'yellow' },
-          { label: 'Holdout coverage', value: 'Cell-level holdout eligible', color: 'grape' },
-        ].map(s => (
-          <Card key={s.label} withBorder radius="md" p="sm" style={{ borderTop: `3px solid var(--mantine-color-${s.color}-5)` }}>
-            <Text size="sm" fw={800} c={s.color} style={{ lineHeight: 1.1 }}>{s.value}</Text>
-            <Text size="10px" c="dimmed">{s.label}</Text>
-          </Card>
-        ))}
-      </SimpleGrid>
-
-      {/* ── Signal co-occurrence matrix ─────────────────────────────── */}
-      <Card withBorder radius="md" p="md">
-        <Text size="xs" fw={700} tt="uppercase" c="dimmed" mb="xs">Signal co-occurrence — signal → cohort → candidate strategies → constraint risk</Text>
-        <Box style={{ overflowX: 'auto' }}>
-          <Table striped fz="xs" verticalSpacing="xs" horizontalSpacing="md" style={{ minWidth: 720 }}>
-            <Table.Thead><Table.Tr><Table.Th>Signal</Table.Th><Table.Th>Cohorts affected</Table.Th><Table.Th>Candidate strategies</Table.Th><Table.Th>Constraint risk</Table.Th></Table.Tr></Table.Thead>
-            <Table.Tbody>
-              {[
-                ['Participation Gap', 'Eligible nonparticipants', 'Auto Enrollment / Education-only', 'Notice readiness'],
-                ['Match Leakage', 'Below-match participants', 'Match Stretch / Education', 'Employer cost'],
-                ['Escalation Stall', 'Stuck-at-default', 'Auto Escalation', 'Payroll readiness'],
-                ['Legacy Elections', 'Re-enrollment candidates', 'Re-enrollment', 'QDIA / fiduciary'],
-              ].map(r => <Table.Tr key={r[0]}><Table.Td fw={600}>{r[0]}</Table.Td><Table.Td c="dimmed">{r[1]}</Table.Td><Table.Td><Badge size="9px" variant="light" color="teal">{r[2]}</Badge></Table.Td><Table.Td c="orange">{r[3]}</Table.Td></Table.Tr>)}
-            </Table.Tbody>
-          </Table>
-        </Box>
       </Card>
 
       {/* ════════════════ LIVE SIGNALS ════════════════════════════════ */}

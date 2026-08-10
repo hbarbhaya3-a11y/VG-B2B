@@ -238,8 +238,8 @@ export default function AttributionPanel({ step, onExit }) {
             {/* Primary KPI tiles — matches simulation results */}
             <SimpleGrid cols={4} spacing="sm">
               {[
-                { label: 'Participation lift',       value: '+14pp', sub: 'vs do-nothing baseline', color: 'green' },
-                { label: 'Incremental enrollments',  value: '+8,400', sub: 'net new participants', color: 'violet' },
+                { label: 'Participation lift',       value: '+21pp', sub: 'vs do-nothing baseline', color: 'green' },
+                { label: 'Incremental enrollments',  value: '+8,900', sub: 'net new participants', color: 'violet' },
                 { label: 'Average deferral lift',    value: '+1.3pp', sub: 'toward readiness target', color: 'teal' },
                 { label: 'Employer cost impact',     value: '+0.4%', sub: 'of payroll, within ceiling', color: 'orange' },
               ].map(kpi => (
@@ -262,7 +262,7 @@ export default function AttributionPanel({ step, onExit }) {
                   <SimpleGrid cols={2} spacing="xs">
                     <Stack gap={2}>
                       <Text size="xs" c="dimmed">Incremental enrollments</Text>
-                      <Text size="xl" fw={800} c="teal" style={{ lineHeight: 1 }}>8,400</Text>
+                      <Text size="xl" fw={800} c="teal" style={{ lineHeight: 1 }}>8,900</Text>
                       <Text size="xs" c="dimmed">vs 0 baseline</Text>
                     </Stack>
                     <Stack gap={2}>
@@ -484,7 +484,7 @@ export default function AttributionPanel({ step, onExit }) {
           <Accordion.Control icon={<IconCurrencyDollar size={16} stroke={1.5} />}>
             <Group gap="xs">
               <Text size="sm" fw={600}>Participation outcomes — Days 30–90</Text>
-              <Badge size="xs" color="green" variant="filled">+8,400 enrollments</Badge>
+              <Badge size="xs" color="green" variant="filled">+8,900 enrollments</Badge>
             </Group>
           </Accordion.Control>
           <Accordion.Panel>
