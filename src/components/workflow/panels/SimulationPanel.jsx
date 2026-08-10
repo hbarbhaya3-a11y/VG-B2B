@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Paper, Stack, Group, Text, Badge, SimpleGrid, Progress, Button, Alert, Divider, ThemeIcon, Loader, NumberInput, Select, Table, Modal, ActionIcon, Slider, Switch, SegmentedControl, Box } from '@mantine/core'
+import { Paper, Stack, Group, Text, Badge, SimpleGrid, Progress, Button, Alert, Divider, ThemeIcon, Loader, NumberInput, Select, Table, Modal, ActionIcon, Slider, Switch, SegmentedControl, Box, Tabs } from '@mantine/core'
 import { IconChartBar, IconChevronRight, IconAlertTriangle, IconCheck, IconPlayerPlay, IconPencil, IconLock, IconAdjustments, IconGift, IconSend, IconSparkles, IconFileText, IconVideo, IconMail, IconDeviceMobile, IconPhone, IconShield, IconChevronDown, IconChevronUp, IconEye } from '@tabler/icons-react'
 import { useUseCase } from '../../../contexts/UseCaseContext'
 import { PortfolioLab, PortfolioRecommendation, ALLOC } from './PortfolioPanels'
@@ -422,169 +422,90 @@ const VARIANT_CONTENT = {
   },
 }
 
-// ── Consulting-grade Variant Preview Modal ────────────────────────────────
-function VariantPreviewModal({ variant, seg, onClose }) {
-  if (!variant || !seg) return null
-  const content = VARIANT_CONTENT[seg.id]?.[variant]
-  if (!content) return null
+// ── Channel-aware content preview (all variants in tabs) ──────────────────
+const PREVIEW_CHANNELS = [
+  { kind: 'deck',       label: 'Deck',       format: 'Sponsor committee deck',        re: /deck|committee/i },
+  { kind: 'email',      label: 'Email',      format: 'Participant email',             re: /email/i },
+  { kind: 'portal',     label: 'Portal',     format: 'Portal banner / card',          re: /portal|banner/i },
+  { kind: 'notice',     label: 'Notice',     format: 'Required participant notice',    re: /notice/i },
+  { kind: 'onboarding', label: 'Onboarding', format: 'Onboarding packet insert',       re: /onboarding|packet/i },
+  { kind: 'push',       label: 'Push',       format: 'App push / SMS',                re: /push|sms/i },
+  { kind: 'outreach',   label: 'Outreach',   format: 'Committee-approved outreach',    re: /outreach|FAQ|service/i },
+]
 
-  const variantColor = variant === 'A' ? seg.color : 'gray'
+// Build relevant plan-design content for a segment × channel × variant.
+function buildTabContent(seg, ch, variant) {
+  const headline = (variant === 'A' ? seg.variantA : seg.variantB).replace(/^"|"$/g, '')
+  const sponsorFacing = ch.kind === 'deck' || ch.kind === 'notice'
+  const body = sponsorFacing
+    ? [
+        `Cohort: ${seg.label} — ${seg.count.toLocaleString()} eligible employees.`,
+        `Recommended plan-design action: ${seg.offer}. ${seg.why}`,
+        `Rollout: ${seg.path.join(' → ')}.`,
+      ]
+    : [
+        `As part of ${seg.offer}, here's what this means for you.`,
+        seg.why,
+        `This is a reversible step — you can opt out at any time.`,
+      ]
+  const cta = {
+    deck: 'Approve for committee', notice: 'Read the required notice', email: 'Review my enrollment',
+    portal: 'See details', onboarding: 'Get started', push: 'Learn more', outreach: 'Learn more',
+  }[ch.kind] || 'Learn more'
+  return { headline, body, cta, format: ch.format }
+}
 
-  const SECTION = ({ label, children }) => (
-    <Stack gap="xs">
-      <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>{label}</Text>
-      {children}
-    </Stack>
-  )
+function ContentPreviewModal({ seg, onClose }) {
+  const matched = PREVIEW_CHANNELS.filter(c => c.re.test(seg.channel))
+  const channels = matched.length ? matched : [PREVIEW_CHANNELS[1]]
+  const tabs = channels.flatMap(ch => ['A', 'B'].map(vr => ({
+    value: `${ch.kind}-${vr}`,
+    label: `${ch.label} ${vr === 'A' ? 'V1' : 'V2'}`,
+    ...buildTabContent(seg, ch, vr),
+  })))
+  const [tab, setTab] = useState(tabs[0].value)
 
   return (
     <Modal
-      opened
-      onClose={onClose}
-      size="xl"
-      radius="md"
+      opened onClose={onClose} size="xl" radius="md"
       title={
         <Group gap="sm">
           <div style={{ width: 4, height: 36, borderRadius: 2, background: `var(--mantine-color-${seg.color}-5)`, flexShrink: 0 }} />
           <Stack gap={2}>
-            <Group gap="xs">
-              <Badge size="sm" color={seg.color} variant="filled">Variant {variant}</Badge>
-              <Badge size="sm" color="teal" variant="light">Education-classified</Badge>
-              <Badge size="sm" color="gray" variant="outline">{content.format}</Badge>
-            </Group>
             <Text size="sm" fw={700}>{seg.label}</Text>
+            <Text size="xs" c="dimmed">Suggested content · {seg.channel}</Text>
           </Stack>
         </Group>
       }
     >
-      <Stack gap="lg">
-        {/* Context strip */}
-        <Paper withBorder p="sm" radius="md" style={{ background: 'var(--mantine-color-default-hover)' }}>
-          <Group gap="xl" wrap="wrap">
-            <Stack gap={2}>
-              <Text size="xs" c="dimmed" fw={600}>Segment</Text>
+      <Tabs value={tab} onChange={setTab} color={seg.color} variant="pills" radius="md">
+        <Tabs.List mb="md">
+          {tabs.map(t => <Tabs.Tab key={t.value} value={t.value}>{t.label}</Tabs.Tab>)}
+        </Tabs.List>
+        {tabs.map(t => (
+          <Tabs.Panel key={t.value} value={t.value}>
+            <Stack gap="md">
               <Group gap="xs">
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: `var(--mantine-color-${seg.color}-5)` }} />
-                <Text size="xs" fw={700}>{seg.label}</Text>
+                <Badge size="sm" color={seg.color} variant="filled">{t.label}</Badge>
+                <Badge size="sm" color="gray" variant="outline">{t.format}</Badge>
+                <Badge size="sm" color="teal" variant="light">Education-classified</Badge>
               </Group>
-            </Stack>
-            <Stack gap={2}>
-              <Text size="xs" c="dimmed" fw={600}>Channel</Text>
-              <Text size="xs" fw={700}>{seg.channel}</Text>
-            </Stack>
-            <Stack gap={2}>
-              <Text size="xs" c="dimmed" fw={600}>Offer</Text>
-              <Text size="xs" fw={700}>{seg.offer}</Text>
-            </Stack>
-            <Stack gap={2}>
-              <Text size="xs" c="dimmed" fw={600}>Reach</Text>
-              <Text size="xs" fw={700}>{seg.count.toLocaleString()} investors</Text>
-            </Stack>
-          </Group>
-        </Paper>
-
-        {/* The message */}
-        <SECTION label="The Message">
-          <Paper withBorder p="md" radius="md" style={{ borderLeft: `3px solid var(--mantine-color-${seg.color}-5)` }}>
-            <Stack gap="sm">
-              {content.subject && (
-                <Group gap="xs" align="flex-start">
-                  <Badge size="xs" color="gray" variant="outline" style={{ flexShrink: 0, marginTop: 2 }}>Subject</Badge>
-                  <Text size="sm" fw={600} style={{ lineHeight: 1.4 }}>{content.subject}</Text>
-                </Group>
-              )}
-              <Stack gap={2}>
-                <Text size="xs" c="dimmed" fw={600}>Headline</Text>
-                <Text size="lg" fw={800} style={{ lineHeight: 1.3 }}>{content.headline}</Text>
-              </Stack>
-              {content.subhead && (
-                <Text size="sm" c="dimmed" style={{ lineHeight: 1.4 }}>{content.subhead}</Text>
-              )}
-              <Divider />
-              <Stack gap="xs">
-                {content.body.map((para, i) => (
-                  <Text key={i} size="sm" style={{ lineHeight: 1.7 }}>{para}</Text>
-                ))}
-              </Stack>
-              <Divider />
-              <Group gap="xs" align="center">
-                <Badge size="sm" color={seg.color} variant="light" style={{ cursor: 'default' }}>→ {content.cta}</Badge>
-                <Text size="xs" c="dimmed">Primary CTA</Text>
-              </Group>
-            </Stack>
-          </Paper>
-        </SECTION>
-
-        <SimpleGrid cols={2} spacing="md">
-          {/* Why this works */}
-          <SECTION label="Why This Works for This Segment">
-            <Paper withBorder p="sm" radius="md">
-              <Stack gap="xs">
-                <Text size="xs" style={{ lineHeight: 1.6 }}>{seg.why}</Text>
-                <Divider />
-                <Text size="xs" fw={600}>Behavioral signal that triggered this variant:</Text>
-                <Text size="xs" c="dimmed" style={{ lineHeight: 1.5 }}>{seg.signal}</Text>
-              </Stack>
-            </Paper>
-          </SECTION>
-
-          {/* How to send it */}
-          <SECTION label="How to Send It — Channel Delivery Spec">
-            <Paper withBorder p="sm" radius="md">
-              <Stack gap="xs">
-                <Group gap="xs">
-                  <Badge size="xs" color="blue" variant="light">Format</Badge>
-                  <Text size="xs">{content.format}</Text>
-                </Group>
-                <Divider />
-                <Text size="xs" fw={600}>Delivery path:</Text>
-                <Stack gap={4}>
-                  {seg.path.map((step, i) => (
-                    <Group key={i} gap="xs" align="flex-start">
-                      <Badge size="xs" color={seg.color} variant="filled" style={{ minWidth: 18, flexShrink: 0 }}>{i + 1}</Badge>
-                      <Text size="xs" style={{ lineHeight: 1.4 }}>{step}</Text>
-                    </Group>
-                  ))}
+              <Paper withBorder p="md" radius="md" style={{ borderLeft: `3px solid var(--mantine-color-${seg.color}-5)` }}>
+                <Stack gap="sm">
+                  <Text size="lg" fw={800} style={{ lineHeight: 1.3 }}>{t.headline}</Text>
+                  <Divider />
+                  {t.body.map((para, i) => <Text key={i} size="sm" style={{ lineHeight: 1.7 }}>{para}</Text>)}
+                  <Divider />
+                  <Group gap="xs"><Badge size="sm" color={seg.color} variant="light">→ {t.cta}</Badge><Text size="xs" c="dimmed">Primary CTA</Text></Group>
                 </Stack>
-              </Stack>
-            </Paper>
-          </SECTION>
-
-          {/* Messaging discipline */}
-          <SECTION label="Messaging Discipline — What to Avoid">
-            <Paper withBorder p="sm" radius="md">
-              <Stack gap={6}>
-                {seg.avoid.map((a, i) => (
-                  <Group key={i} gap="xs" align="flex-start">
-                    <Text size="xs" c="red" fw={800}>✕</Text>
-                    <Text size="xs" c="dimmed" style={{ lineHeight: 1.4 }}>{a}</Text>
-                  </Group>
-                ))}
-              </Stack>
-            </Paper>
-          </SECTION>
-
-          {/* Compliance notes */}
-          <SECTION label="Compliance & Guardrail Notes">
-            <Paper withBorder p="sm" radius="md" style={{ background: 'var(--mantine-color-teal-light)' }}>
-              <Stack gap="xs">
-                <Group gap="xs">
-                  <Badge size="xs" color="teal" variant="filled">Education-classified</Badge>
-                  <Badge size="xs" color="green" variant="light">Disclosure auto-attaches</Badge>
-                  <Badge size="xs" color="gray" variant="outline">C2PA provenance</Badge>
-                </Group>
-                <Divider />
-                <Text size="xs" style={{ lineHeight: 1.6 }}>{content.complianceNote}</Text>
-              </Stack>
-            </Paper>
-          </SECTION>
-        </SimpleGrid>
-
-        <Group justify="flex-end" gap="xs">
-          <Button size="sm" variant="light" color="gray" onClick={onClose}>Close</Button>
-          <Button size="sm" variant="light" color="green">Approve Variant {variant}</Button>
-        </Group>
-      </Stack>
+              </Paper>
+            </Stack>
+          </Tabs.Panel>
+        ))}
+      </Tabs>
+      <Group justify="flex-end" mt="md">
+        <Button size="sm" variant="light" color="gray" onClick={onClose}>Close</Button>
+      </Group>
     </Modal>
   )
 }
@@ -937,7 +858,7 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
   const [phase, setPhase] = useState('config')
   const [runLine, setRunLine] = useState(0)
   const [editMode, setEditMode] = useState(false)
-  const [variantPreview, setVariantPreview] = useState(null) // { seg, variant: 'A'|'B' }
+  const [previewSeg, setPreviewSeg] = useState(null) // segment whose content is open
   const [params, setParams] = useState({
     confidenceThreshold: 80,
     minEngagement: 15,
@@ -1028,11 +949,10 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
   // ── Results phase ─────────────────────────────────────────────────────────
   return (
     <Stack gap="md">
-      {variantPreview && (
-        <VariantPreviewModal
-          variant={variantPreview.variant}
-          seg={variantPreview.seg}
-          onClose={() => setVariantPreview(null)}
+      {previewSeg && (
+        <ContentPreviewModal
+          seg={previewSeg}
+          onClose={() => setPreviewSeg(null)}
         />
       )}
       {/* Header */}
@@ -1084,8 +1004,7 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
               <Table.Th>Behavioral signal</Table.Th>
               <Table.Th>Recommended offer</Table.Th>
               <Table.Th>Best channel</Table.Th>
-              <Table.Th style={{ textAlign: 'center', width: 60 }}>Var A</Table.Th>
-              <Table.Th style={{ textAlign: 'center', width: 60 }}>Var B</Table.Th>
+              <Table.Th style={{ textAlign: 'center', width: 120 }}>Suggested content</Table.Th>
               <Table.Th>Why this segment matters</Table.Th>
             </Table.Tr>
           </Table.Thead>
@@ -1106,14 +1025,10 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
                 <Table.Td><Badge size="xs" variant="light" color={seg.color}>{seg.offer}</Badge></Table.Td>
                 <Table.Td><Text size="xs">{seg.channel}</Text></Table.Td>
                 <Table.Td style={{ textAlign: 'center' }}>
-                  <ActionIcon size="sm" variant="light" color={seg.color} radius="sm" title="Preview Variant A" onClick={() => setVariantPreview({ seg, variant: 'A' })}>
-                    <IconEye size={12} stroke={1.5} />
-                  </ActionIcon>
-                </Table.Td>
-                <Table.Td style={{ textAlign: 'center' }}>
-                  <ActionIcon size="sm" variant="light" color="gray" radius="sm" title="Preview Variant B" onClick={() => setVariantPreview({ seg, variant: 'B' })}>
-                    <IconEye size={12} stroke={1.5} />
-                  </ActionIcon>
+                  <Button size="compact-xs" variant="light" color={seg.color} radius="sm"
+                    leftSection={<IconEye size={12} stroke={1.5} />} onClick={() => setPreviewSeg(seg)}>
+                    View content
+                  </Button>
                 </Table.Td>
                 <Table.Td><Text size="xs" c="dimmed" style={{ lineHeight: 1.5 }}>{seg.why}</Text></Table.Td>
               </Table.Tr>
@@ -1121,7 +1036,7 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
             <Table.Tr>
               <Table.Td colSpan={2}><Text size="xs" fw={700}>Total</Text></Table.Td>
               <Table.Td style={{ textAlign: 'right' }}><Text size="xs" fw={800} c="violet">42,000</Text></Table.Td>
-              <Table.Td colSpan={6} />
+              <Table.Td colSpan={5} />
             </Table.Tr>
           </Table.Tbody>
         </Table>
