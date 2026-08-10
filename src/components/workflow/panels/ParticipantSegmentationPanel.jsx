@@ -514,8 +514,6 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
               <Table.Th>Median deferral</Table.Th>
               <Table.Th>Match util.</Table.Th>
               <Table.Th>Readiness</Table.Th>
-              <Table.Th>Fairness</Table.Th>
-              <Table.Th>Recommended strategy</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -529,8 +527,6 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
                   <Table.Td>{m.deferral ?? '—'}</Table.Td>
                   <Table.Td>{m.match ?? '—'}</Table.Td>
                   <Table.Td>{m.readiness ?? '—'}</Table.Td>
-                  <Table.Td>{m.fairness ? <Badge size="xs" color="pink" variant="light">Flag</Badge> : <Text size="xs" c="dimmed">—</Text>}</Table.Td>
-                  <Table.Td><Badge size="xs" variant="light" color={tier.color}>{m.strategy || '—'}</Badge></Table.Td>
                 </Table.Tr>
               )
             })}
