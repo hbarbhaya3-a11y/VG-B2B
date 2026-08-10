@@ -376,6 +376,24 @@ const KIT_PACKAGES = [
   { id: 'holdout', label: 'Holdout / measurement', cohort: 'Holdout', channel: 'Suppressed', version: 'M-v1.0', owner: 'Measurement owner', status: 'Locked', missing: '—', claims: 'None (measurement only)', dep: 'Measurement plan', color: 'gray',
     assets: ['Measurement plan', 'Suppression list', 'Readout template'] },
 ]
+// Correction 3 — per-asset activation-connector metadata
+const ACTIVATION_META = {
+  auto_enrollment: { system: 'Recordkeeping + SFMC', backup: 'Direct mail (notice)', consent: 'Notice required', cap: '2 / 30d', suppress: 'Opt-outs, DND' },
+  match_stretch:   { system: 'SFMC / Adobe Campaign', backup: 'Portal banner', consent: 'Marketing consent', cap: '2 / 30d', suppress: 'Frequency cap' },
+  auto_escalation: { system: 'Recordkeeping + AJO', backup: 'Portal preview', consent: 'Notice required', cap: '2 / 30d', suppress: 'Opt-outs' },
+  reenrollment:    { system: 'Recordkeeping + SFMC', backup: 'Direct mail (notice)', consent: 'Notice required', cap: '1 / cycle', suppress: 'Exclusions, opt-outs' },
+  education:       { system: 'AJO / secure-site', backup: 'SMS (consented)', consent: 'Marketing consent', cap: '4 / 30d', suppress: 'Frequency, fatigue' },
+  holdout:         { system: 'Measurement only', backup: 'None', consent: 'N/A', cap: 'Suppressed', suppress: 'All treatment' },
+}
+
+// Correction 2 — Plan Sponsor channel taxonomy
+const CHANNEL_TAXONOMY = [
+  { group: 'Sponsor-facing', color: 'grape', items: ['Committee presentation', 'Relationship Executive / consultant briefing', 'Benefits / HR admin checklist'] },
+  { group: 'Participant-facing', color: 'blue', items: ['Participant email', 'Secure portal / web', 'Mobile app push', 'SMS (consented)', 'Secure message', 'Direct mail / offline notice'] },
+  { group: 'Operational', color: 'orange', items: ['Payroll handoff', 'Recordkeeping configuration', 'CRM / relationship task', 'Campaign platform connector'] },
+  { group: 'Servicing', color: 'teal', items: ['Call center prompt', 'Advisor / crew desktop task'] },
+]
+
 const APPROVED_CLAIMS = [
   { label: 'Claims approved for committee deck', color: 'green' },
   { label: 'Claims approved for participant content', color: 'green' },
@@ -417,6 +435,14 @@ export function LaunchKitFactory({ onContinue }) {
             </SimpleGrid>
             <Divider label="Required assets" labelPosition="left" />
             <Stack gap={4}>{pkg.assets.map(a => <Group key={a} gap={6}><ThemeIcon size="xs" radius="xl" variant="light" color={pkg.color}><IconCheck size={9} /></ThemeIcon><Text size="xs">{a}</Text></Group>)}</Stack>
+            <Divider label="Activation connector" labelPosition="left" />
+            <SimpleGrid cols={2} spacing={4}>
+              {(() => { const m = ACTIVATION_META[pkg.id] || {}; return [
+                ['Primary channel', pkg.channel], ['Backup channel', m.backup],
+                ['Activation system', m.system], ['Consent', m.consent],
+                ['Frequency cap', m.cap], ['Suppression', m.suppress],
+              ].map(([k, val]) => <Text key={k} size="9px" c="dimmed">{k}: <Text span fw={600} c="dark">{val}</Text></Text>) })()}
+            </SimpleGrid>
             <Text size="10px" c="dimmed" mt={4}>Approved claims: {pkg.claims}</Text>
           </Stack>
         </Paper>
@@ -427,6 +453,19 @@ export function LaunchKitFactory({ onContinue }) {
           <Alert color="grape" variant="light" mt="md" p="xs"><Text size="10px">One sponsor committee deck is generated: portfolio-level rationale + a strategy page per segment.</Text></Alert>
         </Paper>
       </SimpleGrid>
+      {/* Plan Sponsor channel taxonomy */}
+      <Paper withBorder p="md" radius="md">
+        <Text size="xs" fw={700} tt="uppercase" c="dimmed" mb="xs">Plan Sponsor channel taxonomy</Text>
+        <SimpleGrid cols={{ base: 2, md: 4 }} spacing="sm">
+          {CHANNEL_TAXONOMY.map(g => (
+            <Paper key={g.group} withBorder p="sm" radius="md" style={{ borderTop: `3px solid var(--mantine-color-${g.color}-5)` }}>
+              <Text size="xs" fw={700} c={g.color} mb={4}>{g.group}</Text>
+              <Stack gap={2}>{g.items.map(i => <Text key={i} size="10px" c="dimmed">• {i}</Text>)}</Stack>
+            </Paper>
+          ))}
+        </SimpleGrid>
+      </Paper>
+
       {onContinue && (
         <Button size="md" variant="gradient" gradient={{ from: 'indigo', to: 'cyan', deg: 135 }} style={{ alignSelf: 'flex-end' }} onClick={onContinue}>
           Send kits to deployment →
