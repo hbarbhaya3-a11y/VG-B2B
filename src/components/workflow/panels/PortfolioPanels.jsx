@@ -18,8 +18,7 @@ export const ALLOC = [
 const PORTFOLIOS = [
   { id: 'A', title: 'Default-led participation lift', mix: 'Auto Enrollment + Auto Escalation', note: 'Best for a broad participation gap', lift: '+21pp', cost: '+0.4%', conf: 0.87, best: false },
   { id: 'B', title: 'Cost-aware savings improvement', mix: 'Match Stretch + Auto Escalation', note: 'Best where the cost ceiling is tight', lift: '+4pp', cost: '+0.1%', conf: 0.79, best: false },
-  { id: 'C', title: 'Legacy reset package', mix: 'Re-enrollment + notices + portal confirmation', note: 'Best for outdated / inactive elections', lift: '+6pp', cost: '+0.1%', conf: 0.80, best: false },
-  { id: 'D', title: 'TwinX Optimized Portfolio', mix: 'Cohort-specific strategy mix', note: 'Maximizes lift within all constraints', lift: '+22pp', cost: '+0.4%', conf: 0.86, best: true },
+  { id: 'C', title: 'TwinX Optimized Portfolio', mix: 'Cohort-specific strategy mix', note: 'Maximizes lift within all constraints', lift: '+22pp', cost: '+0.4%', conf: 0.86, best: true },
 ]
 
 const STRATEGY_MIX = [
@@ -86,7 +85,7 @@ export function PortfolioLab() {
         </SimpleGrid>
 
         {/* Portfolio scenario cards */}
-        <SimpleGrid cols={{ base: 1, sm: 4 }} spacing="sm">
+        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
           {PORTFOLIOS.map(pf => (
             <Paper key={pf.id} withBorder p="sm" radius="md"
               style={{ borderLeft: `3px solid var(--mantine-color-${pf.best ? 'violet' : 'gray'}-5)`, outline: pf.best ? '2px solid var(--mantine-color-violet-5)' : 'none' }}>
@@ -105,96 +104,6 @@ export function PortfolioLab() {
           ))}
         </SimpleGrid>
 
-        {/* Optimizer controls */}
-        <Paper withBorder p="sm" radius="md" style={{ background: 'var(--mantine-color-default-hover)' }}>
-          <Group gap="sm" wrap="wrap">
-            <Group gap={4}><IconAdjustments size={13} /><Text size="xs" fw={700} tt="uppercase" c="dimmed">Optimize for</Text></Group>
-            <Chip.Group multiple value={weights} onChange={setWeights}>
-              <Group gap={6}>{OPTIMIZER.map(o => <Chip key={o} value={o} size="xs" variant="outline" color="violet" radius="md">{o}</Chip>)}</Group>
-            </Chip.Group>
-          </Group>
-        </Paper>
-
-        {/* Cohort × Strategy × Channel allocation matrix */}
-        <Box style={{ overflowX: 'auto' }}>
-          <Table striped highlightOnHover fz="xs" verticalSpacing="sm" horizontalSpacing="md" style={{ minWidth: 1000 }}>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Cohort</Table.Th><Table.Th ta="right">Size</Table.Th><Table.Th>Baseline issue</Table.Th>
-                <Table.Th>Candidates tested</Table.Th><Table.Th>Recommended</Table.Th><Table.Th>Channel mix</Table.Th>
-                <Table.Th>Holdout design</Table.Th><Table.Th>Guardrail</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {ALLOC.map(r => (
-                <Table.Tr key={r.id}>
-                  <Table.Td><Group gap={6} wrap="nowrap"><div style={{ width: 3, height: 20, borderRadius: 2, background: `var(--mantine-color-${r.color}-5)` }} /><Text size="xs" fw={600}>{r.cohort}</Text></Group></Table.Td>
-                  <Table.Td ta="right"><Text size="xs" fw={700} c={r.color}>{r.size.toLocaleString()}</Text></Table.Td>
-                  <Table.Td c="dimmed">{r.issue}</Table.Td>
-                  <Table.Td c="dimmed">{r.candidates}</Table.Td>
-                  <Table.Td><Badge size="xs" variant="light" color={r.color}>{r.strategy}</Badge></Table.Td>
-                  <Table.Td c="dimmed">{r.channels}</Table.Td>
-                  <Table.Td c="dimmed">{r.holdout}</Table.Td>
-                  <Table.Td><Badge size="xs" variant="light" color={guardColor(r.guardrail)}>{r.guardrail}</Badge></Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </Box>
-
-        {/* Charts: frontier + contribution + strategy mix + heatmap */}
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-          {/* Frontier */}
-          <Paper withBorder p="sm" radius="md">
-            <Text size="xs" fw={700} tt="uppercase" c="dimmed" mb="xs">Portfolio frontier — cost vs participation lift</Text>
-            <Box style={{ position: 'relative', height: 140, borderLeft: '1px solid var(--mantine-color-default-border)', borderBottom: '1px solid var(--mantine-color-default-border)' }}>
-              {PORTFOLIOS.map(pf => {
-                const x = (parseFloat(pf.cost) / 0.5) * 90
-                const y = (parseFloat(pf.lift) / 16) * 90
-                return <Box key={pf.id} title={pf.title} style={{ position: 'absolute', left: `${x}%`, bottom: `${y}%`, width: 22, height: 22, borderRadius: '50%', background: `var(--mantine-color-${pf.best ? 'violet' : 'gray'}-5)`, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700 }}>{pf.id}</Box>
-              })}
-            </Box>
-            <Group justify="space-between"><Text size="9px" c="dimmed">→ employer cost</Text><Text size="9px" c="dimmed">↑ participation lift</Text></Group>
-          </Paper>
-
-          {/* Cohort contribution stacked bar */}
-          <Paper withBorder p="sm" radius="md">
-            <Text size="xs" fw={700} tt="uppercase" c="dimmed" mb="xs">Cohort contribution to total lift</Text>
-            <Group gap={0} style={{ height: 22, borderRadius: 6, overflow: 'hidden' }}>
-              {ALLOC.map(r => r.contribution > 0 && (
-                <div key={r.id} title={`${r.cohort} ${r.contribution}%`} style={{ flex: r.contribution, background: `var(--mantine-color-${r.color}-5)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {r.contribution >= 10 && <Text size="9px" c="white" fw={700}>{r.contribution}%</Text>}
-                </div>
-              ))}
-            </Group>
-            <Text size="xs" fw={700} tt="uppercase" c="dimmed" mt="md" mb="xs">Strategy mix (% of population)</Text>
-            <Stack gap={4}>
-              {STRATEGY_MIX.map(s => (
-                <Group key={s.label} gap="xs" wrap="nowrap"><Text size="10px" style={{ width: 100 }}>{s.label}</Text><Progress value={s.pct} color={s.color} size="sm" style={{ flex: 1 }} /><Text size="10px" c="dimmed" style={{ width: 28 }}>{s.pct}%</Text></Group>
-              ))}
-            </Stack>
-          </Paper>
-        </SimpleGrid>
-
-        {/* Constraint heatmap */}
-        <Paper withBorder p="sm" radius="md">
-          <Text size="xs" fw={700} tt="uppercase" c="dimmed" mb="xs">Constraint heatmap</Text>
-          <Box style={{ overflowX: 'auto' }}>
-            <Table fz="xs" withColumnBorders style={{ minWidth: 620 }}>
-              <Table.Thead><Table.Tr><Table.Th>Cohort</Table.Th>{CONSTRAINT_COLS.map(c => <Table.Th key={c} ta="center">{c}</Table.Th>)}</Table.Tr></Table.Thead>
-              <Table.Tbody>
-                {ALLOC.map(r => (
-                  <Table.Tr key={r.id}>
-                    <Table.Td><Text size="10px" fw={600}>{r.cohort}</Text></Table.Td>
-                    {(HEATMAP[r.id] || []).map((s, i) => (
-                      <Table.Td key={i} ta="center"><div style={{ width: 14, height: 14, borderRadius: 3, margin: '0 auto', background: `var(--mantine-color-${HC[s]}-5)` }} /></Table.Td>
-                    ))}
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Box>
-        </Paper>
       </Stack>
     </Paper>
   )
@@ -243,37 +152,6 @@ export function PortfolioRecommendation() {
           TwinX does not recommend one universal plan-design action. It recommends a <strong>portfolio</strong>: Auto Enrollment for eligible nonparticipants, Match Stretch for below-match savers, Auto Escalation for stuck-at-default participants, Re-enrollment for legacy elections, Education-only for low-readiness cohorts, and holdout cells for causal proof.
         </Text>
 
-        {/* Recommendation matrix */}
-        <Box style={{ overflowX: 'auto' }}>
-          <Table striped highlightOnHover fz="xs" verticalSpacing="sm" horizontalSpacing="md" style={{ minWidth: 980 }}>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>#</Table.Th><Table.Th>Cohort</Table.Th><Table.Th>Recommended strategy</Table.Th>
-                <Table.Th>Primary KPI</Table.Th><Table.Th>Channels</Table.Th><Table.Th>Rationale</Table.Th>
-                <Table.Th ta="center">Holdout</Table.Th><Table.Th>Approval path</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {ALLOC.map((r, i) => (
-                <Table.Tr key={r.id}>
-                  <Table.Td>{i + 1}</Table.Td>
-                  <Table.Td><Group gap={6} wrap="nowrap"><div style={{ width: 3, height: 20, borderRadius: 2, background: `var(--mantine-color-${r.color}-5)` }} /><Text size="xs" fw={600}>{r.cohort}</Text></Group></Table.Td>
-                  <Table.Td><Badge size="xs" variant="light" color={r.color}>{r.strategy}</Badge></Table.Td>
-                  <Table.Td c="dimmed">{r.kpi}</Table.Td>
-                  <Table.Td c="dimmed">{r.channels}</Table.Td>
-                  <Table.Td c="dimmed">{r.rationale}</Table.Td>
-                  <Table.Td ta="center">{r.id === 'H' ? <Badge size="xs" color="gray" variant="filled">Locked</Badge> : r.id === 'C5' ? <Badge size="xs" color="teal" variant="light">A/B</Badge> : <Badge size="xs" color="violet" variant="light">Yes</Badge>}</Table.Td>
-                  <Table.Td c="dimmed">{r.approval}</Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </Box>
-
-        {/* Why not one strategy */}
-        <Alert color="indigo" variant="light" icon={<IconInfoCircle size={16} />} title="Why TwinX recommends a portfolio, not one strategy">
-          <Stack gap={2}>{WHY_NOT_ONE.map((w, i) => <Text key={i} size="xs">• {w}</Text>)}</Stack>
-        </Alert>
       </Stack>
     </Paper>
   )
