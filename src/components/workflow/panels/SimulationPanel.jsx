@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Paper, Stack, Group, Text, Badge, SimpleGrid, Progress, Button, Alert, Divider, ThemeIcon, Loader, NumberInput, Select, Table, Modal, ActionIcon, Slider, Switch, SegmentedControl, Box, Tabs } from '@mantine/core'
-import { IconChartBar, IconChevronRight, IconAlertTriangle, IconCheck, IconPlayerPlay, IconPencil, IconLock, IconAdjustments, IconGift, IconSend, IconSparkles, IconFileText, IconVideo, IconMail, IconDeviceMobile, IconPhone, IconShield, IconChevronDown, IconChevronUp, IconEye } from '@tabler/icons-react'
+import { IconChartBar, IconChevronRight, IconAlertTriangle, IconCheck, IconPlayerPlay, IconPencil, IconLock, IconAdjustments, IconGift, IconSend, IconSparkles, IconFileText, IconVideo, IconMail, IconDeviceMobile, IconPhone, IconShield, IconChevronDown, IconChevronUp, IconEye, IconInfoCircle } from '@tabler/icons-react'
 import { useUseCase } from '../../../contexts/UseCaseContext'
 import { PortfolioLab, PortfolioRecommendation, ALLOC } from './PortfolioPanels'
 
@@ -433,27 +433,159 @@ const PREVIEW_CHANNELS = [
   { kind: 'outreach',   label: 'Outreach',   format: 'Committee-approved outreach',    re: /outreach|FAQ|service/i },
 ]
 
-// Build relevant plan-design content for a segment × channel × variant.
+// Derive the strategy family from the recommended offer (drives KPI + compliance).
+function strategyKind(offer) {
+  const o = offer.toLowerCase()
+  if (o.includes('re-enroll')) return 'reenroll'
+  if (o.includes('escal')) return 'escalation'
+  if (o.includes('match')) return 'match'
+  if (o.includes('catch-up') || o.includes('education')) return 'education'
+  if (o.includes('enroll')) return 'autoenroll'
+  return 'general'
+}
+
+const KPI_BY = {
+  autoenroll: 'Enrollment-rate lift vs holdout; opt-out rate; time-to-first-deferral',
+  escalation: 'Average deferral-rate lift; escalation opt-out rate; % reaching target cap',
+  match: 'Full-match capture rate; average deferral lift; incremental employer match utilized',
+  reenroll: 'Re-election / QDIA-mapping completion; opt-out rate; default-fund adoption',
+  education: 'Content engagement depth; downstream election starts; eligibility-confirmed actions',
+  general: 'Participation and deferral lift vs holdout',
+}
+
+function complianceFor(kind) {
+  const base = [
+    'Education-classified — no individualized investment advice or suitability determination is made.',
+    'Required plan disclosures auto-attach; C2PA provenance is embedded on every rendered asset.',
+    'Fairness monitor active — reach and messaging tracked for cohort-level disparity (no individual scoring).',
+    'Data minimization — cohort IDs and counts only; no raw PII (name/SSN) in any generated payload.',
+  ]
+  const extra = {
+    autoenroll: [
+      'QDIA / auto-enrollment notice must be delivered within the plan advance-notice window before the first deferral.',
+      'Default deferral percentage and the employer match formula are stated explicitly and accurately.',
+      'Opt-out path is disclosed prominently with the deadline to change or decline the election.',
+    ],
+    escalation: [
+      'The annual-increase amount, the maximum cap, and the effective date are disclosed up front.',
+      'An opt-out / change-election path is offered before each escalation cycle.',
+    ],
+    match: [
+      'Match-formula change requires employer-cost modeling and committee cost review before release.',
+      'No language implying guaranteed returns — the match is an employer contribution, not investment performance.',
+    ],
+    reenroll: [
+      'The re-enrollment notice states the participant’s right to keep existing elections.',
+      'The minimum notice period is observed before any QDIA mapping takes effect.',
+    ],
+    education: [
+      'Eligibility (e.g., age-50+ catch-up) is confirmed before any individualized figures are shown.',
+      'No urgency or fear-based framing — content is strictly educational.',
+    ],
+    general: [],
+  }[kind] || []
+  return [...extra, ...base]
+}
+
+// Build exhaustive, granular plan-design content for a segment × channel × variant.
 function buildTabContent(seg, ch, variant) {
-  const headline = (variant === 'A' ? seg.variantA : seg.variantB).replace(/^"|"$/g, '')
+  const theme = (variant === 'A' ? seg.variantA : seg.variantB).replace(/^"|"$/g, '')
+  const kind = strategyKind(seg.offer)
   const sponsorFacing = ch.kind === 'deck' || ch.kind === 'notice'
-  const body = sponsorFacing
+  const shortOffer = seg.offer.replace(/\(.*\)/, '').trim()
+
+  const subhead = sponsorFacing
+    ? `${seg.label} · ${seg.count.toLocaleString()} eligible employees · ${seg.offer}`
+    : (variant === 'A' ? 'A clear, reversible step toward your retirement goals.' : 'Here’s what’s changing — and the choice that stays yours.')
+
+  const objective = sponsorFacing
+    ? `Secure ${ch.kind === 'notice' ? 'participant-notice compliance' : 'plan-committee and fiduciary approval'} for ${seg.offer} across the ${seg.label} cohort, with impact evidenced against a do-nothing holdout.`
+    : `Help ${seg.label.toLowerCase()} understand and act on ${shortOffer}, while making the opt-out choice explicit and easy.`
+
+  const audience = `${seg.label} — ${seg.count.toLocaleString()} employees. Triggering behavioral signal: ${seg.signal}. Reaction/eligibility-based, cohort-level only.`
+
+  const keyMessages = sponsorFacing
     ? [
-        `Cohort: ${seg.label} — ${seg.count.toLocaleString()} eligible employees.`,
-        `Recommended plan-design action: ${seg.offer}. ${seg.why}`,
-        `Rollout: ${seg.path.join(' → ')}.`,
+        `Recommended plan-design action: ${seg.offer}.`,
+        `Why this cohort: ${seg.why}`,
+        `Rollout dependencies: ${seg.path.join(' → ')}.`,
+        `Measurement: ${KPI_BY[kind]}, attributed against a randomized holdout for causal proof.`,
+        `Pre-launch guardrails: employer-cost ceiling, eligibility scope, participant notice, opt-out availability, and fiduciary review.`,
       ]
     : [
-        `As part of ${seg.offer}, here's what this means for you.`,
-        seg.why,
-        `This is a reversible step — you can opt out at any time.`,
+        `What is happening: ${shortOffer}.`,
+        `Why you are seeing this: ${seg.signal}.`,
+        `What it means for you: ${seg.why}`,
+        `Your choice: no action is needed to participate — and you can opt out or change your election at any time.`,
       ]
+
+  const body = sponsorFacing
+    ? [
+        `This ${ch.format.toLowerCase()} presents the ${seg.offer} recommendation for the ${seg.label} cohort (${seg.count.toLocaleString()} eligible employees) for ${ch.kind === 'notice' ? 'required participant notification' : 'plan-committee and fiduciary approval'}.`,
+        `Rationale: ${seg.why}`,
+        `Execution sequence: ${seg.path.map((s, i) => `(${i + 1}) ${s}`).join('; ')}.`,
+        `Impact is measured on ${KPI_BY[kind].toLowerCase()}, isolated with a randomized holdout so reported lift is causal rather than correlational.`,
+        ch.kind === 'notice'
+          ? 'This notice satisfies the plan’s advance-notice requirement and states the opt-out deadline and the participant’s right to decline or change the election.'
+          : 'On approval, TwinX stages the assets per cohort and holds deployment until every guardrail returns green; nothing launches on a fiduciary-sensitive cohort without explicit authorization.',
+      ]
+    : [
+        'Hi [First Name],',
+        variant === 'A'
+          ? `${seg.why} That is why your retirement plan is introducing ${shortOffer}.`
+          : `Your retirement plan is changing in a small but meaningful way: ${shortOffer}. Here is the plain-language version of what that means for you.`,
+        `In practice: ${seg.path.slice(1).join(', ')}. You do not need to do anything to take part — it happens automatically on the effective date.`,
+        'If it is not right for you, you stay in control: you can opt out or adjust your election at any time, and we will always tell you before anything takes effect.',
+        'This message is for education only. It is not investment advice, and no recommendation about your individual situation is being made.',
+      ]
+
+  const personalization = sponsorFacing
+    ? ['{{cohort_name}}', '{{eligible_count}}', '{{effective_date}}', '{{default_deferral}}', '{{match_formula}}', '{{holdout_pct}}']
+    : ['[First Name]', '{{current_deferral}}', '{{new_deferral}}', '{{effective_date}}', '{{opt_out_deadline}}']
+
+  const deliverySpec = {
+    timing: sponsorFacing
+      ? (ch.kind === 'notice' ? 'Delivered within the plan advance-notice window before the effective date' : 'Circulated in the committee review cycle, pre-launch')
+      : (variant === 'A' ? 'Triggered on the eligibility / signal flag' : 'Reminder — 7 days after V1 if no action taken'),
+    frequency: ch.kind === 'push' ? 'Max 2 per 30 days' : ch.kind === 'notice' ? 'Once per election event' : '1 primary send + 1 reminder',
+    fallback: ch.kind === 'push' ? 'Portal banner if push is undelivered' : ch.kind === 'notice' ? 'Direct mail for notice-required cohorts' : 'Portal banner reinforcement',
+    consent: ch.kind === 'notice' ? 'Notice-required (no marketing consent needed)' : 'Marketing/communication consent verified; suppression list applied',
+    path: seg.path,
+  }
+
   const cta = {
-    deck: 'Approve for committee', notice: 'Read the required notice', email: 'Review my enrollment',
-    portal: 'See details', onboarding: 'Get started', push: 'Learn more', outreach: 'Learn more',
+    deck: 'Approve for committee', notice: 'Read the required notice & opt-out steps',
+    email: variant === 'A' ? 'Review my enrollment' : 'See my options',
+    portal: 'See details', onboarding: 'Get started', push: 'Learn more', outreach: 'Explore my options',
   }[ch.kind] || 'Learn more'
-  return { headline, body, cta, format: ch.format }
+  const secondaryCta = sponsorFacing ? 'Request changes' : 'Opt out or change election'
+
+  const subject = ch.kind === 'notice'
+    ? `Important notice about your ${shortOffer}`
+    : (!sponsorFacing && (ch.kind === 'email' || ch.kind === 'outreach')) ? theme : null
+
+  return {
+    format: ch.format, headline: theme, subhead, subject, objective, audience, keyMessages, body,
+    personalization, deliverySpec, cta, secondaryCta, compliance: complianceFor(kind),
+    avoid: seg.avoid, successMetric: KPI_BY[kind],
+    variantNote: variant === 'A'
+      ? 'V1 — primary framing: direct, benefit-forward, action-oriented.'
+      : 'V2 — alternate framing: reassurance-first, choice-forward, lower-pressure (A/B tested against V1).',
+  }
 }
+
+const CSECTION = ({ label, children }) => (
+  <Stack gap={6}>
+    <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>{label}</Text>
+    {children}
+  </Stack>
+)
+const CRow = ({ label, value }) => (
+  <Group justify="space-between" wrap="nowrap" align="flex-start">
+    <Text size="xs" c="dimmed" style={{ flexShrink: 0 }}>{label}</Text>
+    <Text size="xs" fw={600} ta="right">{value}</Text>
+  </Group>
+)
 
 function ContentPreviewModal({ seg, onClose }) {
   // Committee deck is mandatory approval content for every segment (not a
@@ -470,13 +602,13 @@ function ContentPreviewModal({ seg, onClose }) {
 
   return (
     <Modal
-      opened onClose={onClose} size="xl" radius="md"
+      opened onClose={onClose} size="xl" radius="md" scrollAreaComponent={Modal.NativeScrollArea}
       title={
         <Group gap="sm">
           <div style={{ width: 4, height: 36, borderRadius: 2, background: `var(--mantine-color-${seg.color}-5)`, flexShrink: 0 }} />
           <Stack gap={2}>
             <Text size="sm" fw={700}>{seg.label}</Text>
-            <Text size="xs" c="dimmed">Suggested content · {seg.channel}</Text>
+            <Text size="xs" c="dimmed">Suggested content · Committee deck (mandatory) + {seg.channel}</Text>
           </Stack>
         </Group>
       }
@@ -493,21 +625,117 @@ function ContentPreviewModal({ seg, onClose }) {
                 <Badge size="sm" color="gray" variant="outline">{t.format}</Badge>
                 <Badge size="sm" color="teal" variant="light">Education-classified</Badge>
               </Group>
+
+              {/* Rendered message */}
               <Paper withBorder p="md" radius="md" style={{ borderLeft: `3px solid var(--mantine-color-${seg.color}-5)` }}>
                 <Stack gap="sm">
+                  {t.subject && (
+                    <Group gap="xs" align="flex-start">
+                      <Badge size="xs" color="gray" variant="outline" style={{ flexShrink: 0, marginTop: 2 }}>Subject</Badge>
+                      <Text size="sm" fw={600} style={{ lineHeight: 1.4 }}>{t.subject}</Text>
+                    </Group>
+                  )}
                   <Text size="lg" fw={800} style={{ lineHeight: 1.3 }}>{t.headline}</Text>
+                  {t.subhead && <Text size="sm" c="dimmed" style={{ lineHeight: 1.4 }}>{t.subhead}</Text>}
                   <Divider />
                   {t.body.map((para, i) => <Text key={i} size="sm" style={{ lineHeight: 1.7 }}>{para}</Text>)}
                   <Divider />
-                  <Group gap="xs"><Badge size="sm" color={seg.color} variant="light">→ {t.cta}</Badge><Text size="xs" c="dimmed">Primary CTA</Text></Group>
+                  <Group gap="xs">
+                    <Badge size="sm" color={seg.color} variant="light">→ {t.cta}</Badge>
+                    <Badge size="sm" color="gray" variant="outline">↳ {t.secondaryCta}</Badge>
+                  </Group>
                 </Stack>
               </Paper>
+
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                <CSECTION label="Objective">
+                  <Paper withBorder p="sm" radius="md"><Text size="xs" style={{ lineHeight: 1.6 }}>{t.objective}</Text></Paper>
+                </CSECTION>
+                <CSECTION label="Audience & Signal">
+                  <Paper withBorder p="sm" radius="md"><Text size="xs" style={{ lineHeight: 1.6 }}>{t.audience}</Text></Paper>
+                </CSECTION>
+              </SimpleGrid>
+
+              <CSECTION label="Key Messages">
+                <Paper withBorder p="sm" radius="md">
+                  <Stack gap={6}>
+                    {t.keyMessages.map((m, i) => (
+                      <Group key={i} gap="xs" align="flex-start" wrap="nowrap">
+                        <ThemeIcon size="xs" radius="xl" variant="light" color={seg.color} mt={2}><IconCheck size={9} /></ThemeIcon>
+                        <Text size="xs" style={{ lineHeight: 1.5 }}>{m}</Text>
+                      </Group>
+                    ))}
+                  </Stack>
+                </Paper>
+              </CSECTION>
+
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                <CSECTION label="Delivery Spec">
+                  <Paper withBorder p="sm" radius="md">
+                    <Stack gap={4}>
+                      <CRow label="Timing" value={t.deliverySpec.timing} />
+                      <CRow label="Frequency" value={t.deliverySpec.frequency} />
+                      <CRow label="Consent" value={t.deliverySpec.consent} />
+                      <CRow label="Fallback" value={t.deliverySpec.fallback} />
+                      <Divider label="Delivery path" labelPosition="left" />
+                      {t.deliverySpec.path.map((s, i) => (
+                        <Group key={i} gap="xs" align="flex-start" wrap="nowrap">
+                          <Badge size="xs" color={seg.color} variant="filled" style={{ minWidth: 18, flexShrink: 0 }}>{i + 1}</Badge>
+                          <Text size="xs" style={{ lineHeight: 1.4 }}>{s}</Text>
+                        </Group>
+                      ))}
+                    </Stack>
+                  </Paper>
+                </CSECTION>
+                <CSECTION label="Personalization & Measurement">
+                  <Paper withBorder p="sm" radius="md">
+                    <Stack gap={6}>
+                      <Text size="xs" c="dimmed">Merge tokens</Text>
+                      <Group gap={6}>{t.personalization.map(p => <Badge key={p} size="xs" variant="light" color="gray">{p}</Badge>)}</Group>
+                      <Divider label="Success metric" labelPosition="left" />
+                      <Text size="xs" style={{ lineHeight: 1.5 }}>{t.successMetric}</Text>
+                    </Stack>
+                  </Paper>
+                </CSECTION>
+              </SimpleGrid>
+
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                <CSECTION label="Compliance & Disclosures">
+                  <Paper withBorder p="sm" radius="md" style={{ background: 'var(--mantine-color-teal-light)' }}>
+                    <Stack gap={6}>
+                      {t.compliance.map((c, i) => (
+                        <Group key={i} gap="xs" align="flex-start" wrap="nowrap">
+                          <ThemeIcon size="xs" radius="xl" variant="light" color="teal" mt={2}><IconCheck size={9} /></ThemeIcon>
+                          <Text size="xs" style={{ lineHeight: 1.5 }}>{c}</Text>
+                        </Group>
+                      ))}
+                    </Stack>
+                  </Paper>
+                </CSECTION>
+                <CSECTION label="Messaging Discipline — What to Avoid">
+                  <Paper withBorder p="sm" radius="md">
+                    <Stack gap={6}>
+                      {t.avoid.map((a, i) => (
+                        <Group key={i} gap="xs" align="flex-start" wrap="nowrap">
+                          <Text size="xs" c="red" fw={800}>✕</Text>
+                          <Text size="xs" c="dimmed" style={{ lineHeight: 1.5 }}>{a}</Text>
+                        </Group>
+                      ))}
+                    </Stack>
+                  </Paper>
+                </CSECTION>
+              </SimpleGrid>
+
+              <Alert color="gray" variant="light" icon={<IconInfoCircle size={16} />}>
+                <Text size="xs">{t.variantNote}</Text>
+              </Alert>
             </Stack>
           </Tabs.Panel>
         ))}
       </Tabs>
       <Group justify="flex-end" mt="md">
         <Button size="sm" variant="light" color="gray" onClick={onClose}>Close</Button>
+        <Button size="sm" variant="light" color="green">Approve this variant</Button>
       </Group>
     </Modal>
   )
