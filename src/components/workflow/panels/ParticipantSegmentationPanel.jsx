@@ -180,6 +180,18 @@ const STRATEGY_ELIGIBILITY = {
 }
 const STRATEGY_OPTIONS = Object.keys(STRATEGY_ELIGIBILITY)
 
+// Screen 4 — treatment-cell assignment (eligible/preferred/secondary/holdout/overlap)
+const ASSIGN = {
+  'seg-1': { eligible: 'Auto Enrollment, Education-only', preferred: 'Auto Enrollment', secondary: 'Education-only', holdout: '10%', overlap: 'Medium' },
+  'seg-2': { eligible: 'Auto Enrollment, Education-only', preferred: 'Auto Enrollment', secondary: 'Education-only', holdout: '10%', overlap: 'Low' },
+  'seg-3': { eligible: 'Match Stretch, Education-only', preferred: 'Match Stretch', secondary: 'Education-only', holdout: '10%', overlap: 'Low' },
+  'seg-4': { eligible: 'Auto Escalation, Education-only', preferred: 'Auto Escalation', secondary: 'Education-only', holdout: '10%', overlap: 'Medium' },
+  'seg-5': { eligible: 'Re-enrollment, Education-only', preferred: 'Re-enrollment', secondary: 'Education-only', holdout: '10%', overlap: 'High' },
+  'seg-6': { eligible: 'Auto Escalation, Education-only', preferred: 'Auto Escalation', secondary: 'Education-only', holdout: '10%', overlap: 'Medium' },
+  'seg-7': { eligible: 'Education-only', preferred: 'Education-only', secondary: 'None', holdout: '10%', overlap: 'Low' },
+}
+const overlapColor = (o) => o === 'High' ? 'red' : o === 'Medium' ? 'yellow' : 'green'
+
 export default function ParticipantSegmentationPanel({ step, workflowState, setWorkflowState, onContinue }) {
   const pd = step.panelData
   const [editMode, setEditMode] = useState(false)
@@ -525,6 +537,40 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
           </Table.Tbody>
         </Table>
       </Paper>
+
+      {/* Treatment-cell assignment grid */}
+      <Paper withBorder radius="md" style={{ overflow: 'auto' }}>
+        <Group px="md" py="xs" gap="xs"><Text size="sm" fw={700}>Treatment-cell assignment</Text><Badge size="xs" variant="light" color="orange">cohort → eligible / preferred / secondary / holdout</Badge></Group>
+        <Table striped fz="xs" verticalSpacing="sm" horizontalSpacing="md" style={{ minWidth: 820 }}>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>Cohort</Table.Th><Table.Th ta="right">Size</Table.Th><Table.Th>Eligible strategies</Table.Th>
+              <Table.Th>Preferred</Table.Th><Table.Th>Secondary</Table.Th><Table.Th ta="center">Holdout %</Table.Th><Table.Th ta="center">Overlap risk</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {tiersToRender.map(t => {
+              const a = ASSIGN[t.id] || {}
+              return (
+                <Table.Tr key={t.id}>
+                  <Table.Td><Group gap={6} wrap="nowrap"><div style={{ width: 3, height: 18, borderRadius: 2, background: `var(--mantine-color-${t.color}-5)` }} /><Text size="xs" fw={600}>{t.label}</Text></Group></Table.Td>
+                  <Table.Td ta="right"><Text size="xs" fw={700} c={t.color}>{t.count.toLocaleString()}</Text></Table.Td>
+                  <Table.Td c="dimmed">{a.eligible}</Table.Td>
+                  <Table.Td><Badge size="xs" variant="light" color={t.color}>{a.preferred}</Badge></Table.Td>
+                  <Table.Td c="dimmed">{a.secondary}</Table.Td>
+                  <Table.Td ta="center">{a.holdout}</Table.Td>
+                  <Table.Td ta="center"><Badge size="xs" variant="light" color={overlapColor(a.overlap)}>{a.overlap}</Badge></Table.Td>
+                </Table.Tr>
+              )
+            })}
+          </Table.Tbody>
+        </Table>
+      </Paper>
+
+      {/* Overlap resolution */}
+      <Alert color="yellow" variant="light" icon={<IconShieldCheck size={16} />} title="Overlap resolution">
+        <Text size="xs">1,420 employees qualify for both the Auto Escalation and Re-enrollment cells. TwinX recommends assigning them to <strong>Re-enrollment</strong> first — the election-reset signal is stronger and the strategy requires a separate notice path. One employee is never assigned conflicting plan-design actions.</Text>
+      </Alert>
 
       {/* Model insight */}
       <Paper withBorder p="md" radius="md">

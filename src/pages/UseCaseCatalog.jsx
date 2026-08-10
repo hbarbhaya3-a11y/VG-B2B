@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   Stack, Group, Text, Badge, Button, Box, ThemeIcon, Title,
-  Card, Divider, ScrollArea, TextInput, Select,
+  Card, Divider, ScrollArea, TextInput, Select, Table, SimpleGrid,
 } from '@mantine/core'
 import {
   IconSparkles, IconRoute2, IconRadar, IconUsers, IconChartBar,
@@ -55,6 +55,7 @@ const LIVE_SIGNALS = [
     ],
     scenario: 'Participation Gap',
     scenarioSub: 'Eligible non-enrollees → auto-enrollment + escalation → participation lift',
+    candidates: ['Auto Enrollment','Education-only','Holdout'],
   },
   {
     ucId: 'uc-advisory-readiness',
@@ -80,6 +81,7 @@ const LIVE_SIGNALS = [
     ],
     scenario: 'Participation Gap',
     scenarioSub: 'Below-match participants → match stretch → match utilization lift',
+    candidates: ['Match Stretch','Match Education','Holdout'],
   },
   {
     ucId: 'uc-advisory-readiness',
@@ -105,6 +107,7 @@ const LIVE_SIGNALS = [
     ],
     scenario: 'Participation Gap',
     scenarioSub: 'Low-deferral participants → auto-escalation → average deferral lift',
+    candidates: ['Auto Escalation','Education-only','Holdout'],
   },
   {
     ucId: 'uc-advisory-readiness',
@@ -130,6 +133,7 @@ const LIVE_SIGNALS = [
     ],
     scenario: 'Participation Gap',
     scenarioSub: 'Legacy elections → re-enrollment into QDIA → participation restore',
+    candidates: ['Re-enrollment','Education-only','Holdout'],
   },
   {
     ucId: 'uc-advisory-readiness',
@@ -155,6 +159,7 @@ const LIVE_SIGNALS = [
     ],
     scenario: 'Participation Gap',
     scenarioSub: 'Plan lagging benchmark → plan-design change → participation lift',
+    candidates: ['Portfolio package','Committee deck','Relationship brief'],
   },
   {
     ucId: 'uc-advisory-readiness',
@@ -180,6 +185,7 @@ const LIVE_SIGNALS = [
     ],
     scenario: 'Participation Gap',
     scenarioSub: 'Disparity across segments → auto-enrollment defaults → equity lift',
+    candidates: ['Auto Enrollment','Targeted education','Fairness monitor'],
   },
 ]
 
@@ -306,11 +312,11 @@ export default function UseCaseCatalog({ onRunScenario }) {
                 <IconSparkles size={12} color="white" />
               </ThemeIcon>
               <Text fw={800} size="sm" tt="uppercase" style={{ letterSpacing: '0.06em' }}>
-                Personal Wealth Signal Scenarios for Vanguard's Investors
+                Plan Sponsor Signals — Participation & Plan-Health Radar
               </Text>
             </Group>
             <Text size="xs" c="dimmed" maw={580}>
-              Behavioral-finance-informed guidance · education-first outreach · ERISA-aligned fiduciary posture
+              Multiple signals can coexist and together create a portfolio opportunity · reaction/eligibility-based · ERISA-aligned fiduciary posture
             </Text>
           </Box>
           <Group gap="xs" wrap="wrap">
@@ -321,6 +327,40 @@ export default function UseCaseCatalog({ onRunScenario }) {
             ))}
           </Group>
         </Group>
+      </Card>
+
+      {/* ── Portfolio summary strip ─────────────────────────────────── */}
+      <SimpleGrid cols={{ base: 2, sm: 5 }} spacing="sm">
+        {[
+          { label: 'Active signals', value: '4 participation signals', color: 'orange' },
+          { label: 'Affected cohorts', value: '6 workforce cohorts', color: 'blue' },
+          { label: 'Candidate strategies', value: '5 strategies + holdout', color: 'teal' },
+          { label: 'Portfolio readiness', value: '72% · 2 blockers', color: 'yellow' },
+          { label: 'Holdout coverage', value: 'Cell-level holdout eligible', color: 'grape' },
+        ].map(s => (
+          <Card key={s.label} withBorder radius="md" p="sm" style={{ borderTop: `3px solid var(--mantine-color-${s.color}-5)` }}>
+            <Text size="sm" fw={800} c={s.color} style={{ lineHeight: 1.1 }}>{s.value}</Text>
+            <Text size="10px" c="dimmed">{s.label}</Text>
+          </Card>
+        ))}
+      </SimpleGrid>
+
+      {/* ── Signal co-occurrence matrix ─────────────────────────────── */}
+      <Card withBorder radius="md" p="md">
+        <Text size="xs" fw={700} tt="uppercase" c="dimmed" mb="xs">Signal co-occurrence — signal → cohort → candidate strategies → constraint risk</Text>
+        <Box style={{ overflowX: 'auto' }}>
+          <Table striped fz="xs" verticalSpacing="xs" horizontalSpacing="md" style={{ minWidth: 720 }}>
+            <Table.Thead><Table.Tr><Table.Th>Signal</Table.Th><Table.Th>Cohorts affected</Table.Th><Table.Th>Candidate strategies</Table.Th><Table.Th>Constraint risk</Table.Th></Table.Tr></Table.Thead>
+            <Table.Tbody>
+              {[
+                ['Participation Gap', 'Eligible nonparticipants', 'Auto Enrollment / Education-only', 'Notice readiness'],
+                ['Match Leakage', 'Below-match participants', 'Match Stretch / Education', 'Employer cost'],
+                ['Escalation Stall', 'Stuck-at-default', 'Auto Escalation', 'Payroll readiness'],
+                ['Legacy Elections', 'Re-enrollment candidates', 'Re-enrollment', 'QDIA / fiduciary'],
+              ].map(r => <Table.Tr key={r[0]}><Table.Td fw={600}>{r[0]}</Table.Td><Table.Td c="dimmed">{r[1]}</Table.Td><Table.Td><Badge size="9px" variant="light" color="teal">{r[2]}</Badge></Table.Td><Table.Td c="orange">{r[3]}</Table.Td></Table.Tr>)}
+            </Table.Tbody>
+          </Table>
+        </Box>
       </Card>
 
       {/* ════════════════ LIVE SIGNALS ════════════════════════════════ */}
@@ -472,9 +512,17 @@ export default function UseCaseCatalog({ onRunScenario }) {
                 {selectedSignal.window}
               </Text>
 
-              {/* Ready-to-run */}
+              {/* Candidate strategies for this signal */}
+              {selectedSignal.candidates && (
+                <Box mb="xs">
+                  <Text size="10px" c="dimmed" fw={700} tt="uppercase" mb={4} style={{ letterSpacing: '0.07em' }}>Candidate strategies</Text>
+                  <Group gap={4}>{selectedSignal.candidates.map(c => <Badge key={c} size="xs" variant="light" color="teal">{c}</Badge>)}</Group>
+                </Box>
+              )}
+
+              {/* Build portfolio opportunity */}
               <Box style={{ background: 'var(--mantine-color-default-hover)', borderRadius: 8, padding: '10px 14px' }}>
-                <Text size="10px" c="dimmed" mb={4}>Ready-to-run scenario</Text>
+                <Text size="10px" c="dimmed" mb={4}>Portfolio opportunity</Text>
                 <Group justify="space-between" align="center">
                   <Box>
                     <Text fw={700} size="sm">{selectedSignal.scenario}</Text>
@@ -487,7 +535,7 @@ export default function UseCaseCatalog({ onRunScenario }) {
                     leftSection={<IconPlayerPlay size={12} stroke={1.8} />}
                     onClick={() => handleRunByTitle(selectedSignal.scenario)}
                   >
-                    Run scenario
+                    Build portfolio opportunity
                   </Button>
                 </Group>
               </Box>

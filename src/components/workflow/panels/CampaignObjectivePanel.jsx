@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   Stack, Group, Text, Badge, Button, Select, MultiSelect, Paper, Divider, Box,
-  ThemeIcon, SimpleGrid, NumberInput, Slider, Switch, Chip, TextInput,
+  ThemeIcon, SimpleGrid, NumberInput, Slider, Switch, Chip, TextInput, SegmentedControl,
 } from '@mantine/core'
 import { DatePickerInput } from '@mantine/dates'
 import {
@@ -129,6 +129,14 @@ export default function CampaignObjectivePanel({ panelData: pd = {}, onContinue 
   const [window, setWindow]             = useState('60')
   const [owner, setOwner]               = useState('Sponsor Relationship Executive')
   const [reviewers, setReviewers]       = useState(['compliance', 'fiduciary', 'benefits'])
+  const [mode, setMode]                 = useState('Portfolio allocator')
+  const [weights, setWeights]           = useState({ Participation: 60, Deferral: 40, Cost: 50, Readiness: 50, Fairness: 50, Confidence: 50, Holdout: 70 })
+  const [maxStrategies, setMaxStrategies] = useState(5)
+  const [partialLaunch, setPartialLaunch] = useState(true)
+  const [eduLayer, setEduLayer]         = useState(true)
+  const [overlapRule, setOverlapRule]   = useState('highest_lift')
+  const setWeight = (k, v) => setWeights(w => ({ ...w, [k]: v }))
+  const portfolio = mode === 'Portfolio allocator'
 
   const objLabel = (v) => PRIMARY_OBJECTIVES.find(o => o.value === v)?.label || v
   const cohortLabel = (v) => TARGET_COHORTS.find(o => o.value === v)?.label || v
@@ -142,10 +150,51 @@ export default function CampaignObjectivePanel({ panelData: pd = {}, onContinue 
           <IconTarget size={18} stroke={1.5} />
         </ThemeIcon>
         <Box>
-          <Text size="xl" fw={800}>Sponsor Decision Objective</Text>
-          <Text size="sm" c="dimmed">One sponsor · one cohort · one decision — with agreed metric, guardrails, and holdout design.</Text>
+          <Text size="xl" fw={800}>Portfolio Decision Objective</Text>
+          <Text size="sm" c="dimmed">Configure the portfolio objective function — multiple cohorts, multiple strategies, cell-level holdouts.</Text>
         </Box>
       </Group>
+
+      {/* Objective mode toggle */}
+      <Stack gap="xs">
+        <FieldLabel>Objective mode</FieldLabel>
+        <SegmentedControl value={mode} onChange={setMode} data={['Single-cohort pilot', 'Portfolio allocator']} />
+      </Stack>
+
+      {/* Portfolio objective weighting + constraints */}
+      {portfolio && (
+        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
+          <Paper withBorder p="md" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-violet-5)' }}>
+            <Stack gap="sm">
+              <FieldLabel>Objective weighting</FieldLabel>
+              {Object.keys(weights).map(k => (
+                <Stack key={k} gap={2}>
+                  <Group justify="space-between"><Text size="xs">{k} {k === 'Cost' ? '(control)' : k === 'Holdout' ? 'coverage' : 'lift'}</Text><Text size="xs" c="dimmed">{weights[k]}</Text></Group>
+                  <Slider value={weights[k]} onChange={v => setWeight(k, v)} min={0} max={100} size="xs" color="violet" />
+                </Stack>
+              ))}
+            </Stack>
+          </Paper>
+          <Paper withBorder p="md" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-orange-5)' }}>
+            <Stack gap="sm">
+              <FieldLabel>Portfolio constraints</FieldLabel>
+              <Stack gap={2}><Text size="xs">Total employer cost ceiling ($)</Text>
+                <NumberInput value={costCeiling} onChange={setCostCeiling} radius="md" min={0} step={10000} thousandSeparator="," size="xs" /></Stack>
+              <Stack gap={2}><Text size="xs">Max strategies active — {maxStrategies}</Text>
+                <Slider value={maxStrategies} onChange={setMaxStrategies} min={1} max={6} size="xs" color="orange" marks={[{ value: 1, label: '1' }, { value: 6, label: '6' }]} /></Stack>
+              <Stack gap={2}><Text size="xs">Minimum holdout per cell — {holdout}%</Text>
+                <Slider value={holdout} onChange={setHoldout} min={0} max={30} size="xs" color="violet" /></Stack>
+              <Switch checked={fairness} onChange={e => setFairness(e.currentTarget.checked)} label="Required fairness monitor" color="teal" size="xs" />
+              <Switch checked={partialLaunch} onChange={e => setPartialLaunch(e.currentTarget.checked)} label="Partial launch allowed" color="teal" size="xs" />
+              <Switch checked={eduLayer} onChange={e => setEduLayer(e.currentTarget.checked)} label="Education layer allowed with plan-design strategies" color="teal" size="xs" />
+              <Stack gap={2}><Text size="xs">Overlap resolution rule</Text>
+                <Select size="xs" value={overlapRule} onChange={setOverlapRule} data={[
+                  { value: 'highest_lift', label: 'Highest lift' }, { value: 'lowest_cost', label: 'Lowest cost' },
+                  { value: 'highest_readiness', label: 'Highest readiness' }, { value: 'manual', label: 'Manual' }]} /></Stack>
+            </Stack>
+          </Paper>
+        </SimpleGrid>
+      )}
 
       {/* Sponsor + decision type */}
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">

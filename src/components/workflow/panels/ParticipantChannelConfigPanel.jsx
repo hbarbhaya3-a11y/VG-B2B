@@ -172,6 +172,34 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
         </Tabs>
       </Paper>
 
+      {/* Parallel strategy package board */}
+      <SimpleGrid cols={{ base: 2, sm: 3, md: 6 }} spacing="sm">
+        {STRATEGIES.map(s => {
+          const board = {
+            auto_enrollment: { cohorts: 'Nonparticipants, New hires', assets: 4, approvals: 'Compliance, fiduciary, payroll', guard: 'Warn', dep: 'Notice pack', fallback: 'Education-only' },
+            match_stretch:   { cohorts: 'Below-match', assets: 4, approvals: 'Cost, payroll', guard: 'Cost review', dep: 'Payroll formula', fallback: 'Education-only' },
+            auto_escalation: { cohorts: 'Stuck-at-default', assets: 4, approvals: 'Compliance, payroll', guard: 'Notice review', dep: 'Payroll schedule', fallback: 'Education-only' },
+            reenrollment:    { cohorts: 'Legacy elections', assets: 3, approvals: 'Fiduciary, compliance', guard: 'Fiduciary review', dep: 'QDIA draft', fallback: 'Education-only' },
+            education:       { cohorts: 'Low-readiness', assets: 3, approvals: 'Content review', guard: 'Pass', dep: 'Consent', fallback: 'None' },
+            holdout:         { cohorts: 'Control', assets: 3, approvals: 'Measurement', guard: 'Pass', dep: 'Measurement plan', fallback: 'None' },
+          }[s.id]
+          const done = values[s.id] ? STRATEGIES.find(x => x.id === s.id).required.filter(k => values[s.id][k] !== undefined && values[s.id][k] !== null && values[s.id][k] !== '').length : 0
+          const total = STRATEGIES.find(x => x.id === s.id).required.length
+          return (
+            <Paper key={s.id} withBorder p="sm" radius="md" onClick={() => setActive(s.id)}
+              style={{ cursor: 'pointer', borderLeft: `3px solid var(--mantine-color-orange-${active === s.id ? '6' : '3'})`, outline: active === s.id ? '2px solid var(--mantine-color-orange-5)' : 'none' }}>
+              <Stack gap={4}>
+                <Text size="xs" fw={700}>{s.label}</Text>
+                <Text size="9px" c="dimmed">Cohorts: {board.cohorts}</Text>
+                <Text size="9px" c="dimmed">Controls: {done}/{total}</Text>
+                <Text size="9px" c="dimmed">Assets: {board.assets} · Approvals: {board.approvals}</Text>
+                <Group gap={4}><Badge size="9px" variant="light" color={board.guard === 'Pass' ? 'green' : 'yellow'}>{board.guard}</Badge>{board.fallback !== 'None' && <Badge size="9px" variant="outline" color="gray">fallback: {board.fallback}</Badge>}</Group>
+              </Stack>
+            </Paper>
+          )
+        })}
+      </SimpleGrid>
+
       {/* 3-column: current | proposed | guardrails */}
       <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
         {/* Left — current plan design */}

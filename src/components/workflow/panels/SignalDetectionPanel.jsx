@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Paper, Stack, Group, Text, Badge, SimpleGrid, Progress, Table, ThemeIcon, Divider, Button, Alert, Loader, Center } from '@mantine/core'
+import { Paper, Stack, Group, Text, Badge, SimpleGrid, Progress, Table, ThemeIcon, Divider, Button, Alert, Loader, Center, Box } from '@mantine/core'
 import { IconRadar, IconShieldCheck, IconClock, IconDatabase, IconChevronRight, IconBrain, IconUsers, IconSpeakerphone, IconRoute2, IconChartBar, IconCheck, IconSparkles, IconMessageDots } from '@tabler/icons-react'
 import DataSourceStrip from '../../ui/DataSourceStrip'
 
@@ -263,6 +263,59 @@ export default function SignalDetectionPanel({ step, onContinue }) {
           </Stack>
         </Paper>
       )}
+
+      {/* Candidate allocation cells (replaces single recommended strategy) */}
+      <Paper withBorder p="md" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-orange-5)' }}>
+        <Stack gap="sm">
+          <Text size="sm" fw={700}>Candidate strategy cells generated from this signal</Text>
+          <Box style={{ overflowX: 'auto' }}>
+            <Table striped fz="xs" verticalSpacing="xs" horizontalSpacing="md" style={{ minWidth: 760 }}>
+              <Table.Thead><Table.Tr><Table.Th>Cell</Table.Th><Table.Th>Cohort</Table.Th><Table.Th>Signal driver</Table.Th><Table.Th>Candidate strategies</Table.Th><Table.Th ta="center">Default holdout?</Table.Th><Table.Th>Key blocker</Table.Th></Table.Tr></Table.Thead>
+              <Table.Tbody>
+                {[
+                  { c: 'C1', coh: 'Eligible nonparticipants', drv: 'Not enrolled', strat: 'Auto Enrollment / Education-only', block: 'Notice readiness' },
+                  { c: 'C2', coh: 'New hires', drv: 'Entry delay', strat: 'Auto Enrollment', block: 'Eligibility timing' },
+                  { c: 'C3', coh: 'Lower-compensation under-enrolled', drv: 'Equity gap', strat: 'Auto Enrollment + education', block: 'Fairness monitor' },
+                ].map(r => (
+                  <Table.Tr key={r.c}><Table.Td fw={700}>{r.c}</Table.Td><Table.Td>{r.coh}</Table.Td><Table.Td c="dimmed">{r.drv}</Table.Td><Table.Td><Badge size="xs" variant="light" color="orange">{r.strat}</Badge></Table.Td><Table.Td ta="center"><Badge size="xs" color="violet" variant="light">Yes</Badge></Table.Td><Table.Td c="orange">{r.block}</Table.Td></Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Box>
+        </Stack>
+      </Paper>
+
+      {/* Cohort issue map + evidence-to-strategy mapping */}
+      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+        <Paper withBorder p="md" radius="md">
+          <Text size="xs" fw={700} tt="uppercase" c="dimmed" mb="xs">Cohort issue map</Text>
+          <Table fz="xs" verticalSpacing={4}>
+            <Table.Thead><Table.Tr><Table.Th>Cohort</Table.Th><Table.Th>Part.</Table.Th><Table.Th>Defer.</Table.Th><Table.Th>Match</Table.Th><Table.Th>Ready</Table.Th><Table.Th>Candidate</Table.Th></Table.Tr></Table.Thead>
+            <Table.Tbody>
+              {[
+                ['Eligible nonparticipants', 'High', 'N/A', 'N/A', 'Med', 'Auto Enrollment'],
+                ['Below-match participants', 'Low', 'Med', 'High', 'High', 'Match Stretch'],
+                ['Stuck-at-default', 'Low', 'High', 'Med', 'Med', 'Auto Escalation'],
+                ['Legacy elections', 'Med', 'Med', 'Med', 'Low', 'Re-enrollment'],
+              ].map(r => <Table.Tr key={r[0]}><Table.Td fw={600}>{r[0]}</Table.Td><Table.Td>{r[1]}</Table.Td><Table.Td>{r[2]}</Table.Td><Table.Td>{r[3]}</Table.Td><Table.Td>{r[4]}</Table.Td><Table.Td><Badge size="9px" variant="light" color="teal">{r[5]}</Badge></Table.Td></Table.Tr>)}
+            </Table.Tbody>
+          </Table>
+        </Paper>
+        <Paper withBorder p="md" radius="md">
+          <Text size="xs" fw={700} tt="uppercase" c="dimmed" mb="xs">Evidence → strategy mapping</Text>
+          <Table fz="xs" verticalSpacing={4}>
+            <Table.Thead><Table.Tr><Table.Th>Evidence</Table.Th><Table.Th>Suggests</Table.Th><Table.Th>Candidate</Table.Th></Table.Tr></Table.Thead>
+            <Table.Tbody>
+              {[
+                ['Eligible employees not enrolled', 'Default friction', 'Auto Enrollment'],
+                ['Participants below match', 'Match leakage', 'Match Stretch'],
+                ['Deferrals stuck at default', 'Inertia after enrollment', 'Auto Escalation'],
+                ['Legacy elections', 'Outdated elections', 'Re-enrollment'],
+              ].map(r => <Table.Tr key={r[0]}><Table.Td>{r[0]}</Table.Td><Table.Td c="dimmed">{r[1]}</Table.Td><Table.Td><Badge size="9px" variant="light" color="teal">{r[2]}</Badge></Table.Td></Table.Tr>)}
+            </Table.Tbody>
+          </Table>
+        </Paper>
+      </SimpleGrid>
 
       {/* Expandable precedent config */}
       {expandedPrecedent !== null && pd.precedents[expandedPrecedent]?.config && (

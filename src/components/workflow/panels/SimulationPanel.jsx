@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Paper, Stack, Group, Text, Badge, SimpleGrid, Progress, Button, Alert, Divider, ThemeIcon, Loader, NumberInput, Select, Table, Modal, ActionIcon, Slider, Switch, SegmentedControl } from '@mantine/core'
+import { Paper, Stack, Group, Text, Badge, SimpleGrid, Progress, Button, Alert, Divider, ThemeIcon, Loader, NumberInput, Select, Table, Modal, ActionIcon, Slider, Switch, SegmentedControl, Box } from '@mantine/core'
 import { IconChartBar, IconChevronRight, IconAlertTriangle, IconCheck, IconPlayerPlay, IconPencil, IconLock, IconAdjustments, IconGift, IconSend, IconSparkles, IconFileText, IconVideo, IconMail, IconDeviceMobile, IconPhone, IconShield, IconChevronDown, IconChevronUp, IconEye } from '@tabler/icons-react'
 import { useUseCase } from '../../../contexts/UseCaseContext'
-import { PortfolioLab, PortfolioRecommendation } from './PortfolioPanels'
+import { PortfolioLab, PortfolioRecommendation, ALLOC } from './PortfolioPanels'
 
 // ── Content type registry ──────────────────────────────────────────────────
 const CONTENT_TYPES = [
@@ -738,7 +738,7 @@ function SegmentDetailCard({ seg }) {
 }
 
 // ── Main component ────────────────────────────────────────────────────────
-// ── Screen 6: Simulation Lab — scenario builder + KPI outputs ───────────────
+// ── Screen 6: Portfolio Allocation Simulator + KPI outputs ───────────────
 const LAB_STRATEGIES = [
   { value: 'auto_enrollment', label: 'Auto Enrollment' },
   { value: 'match_stretch', label: 'Match Stretch' },
@@ -812,7 +812,7 @@ function ScenarioLab({ strategy: initialStrategy }) {
       <Stack gap="md">
         <Group gap="xs">
           <ThemeIcon size="sm" variant="light" color="violet"><IconAdjustments size={12} /></ThemeIcon>
-          <Text size="sm" fw={700}>Simulation Lab — scenario builder</Text>
+          <Text size="sm" fw={700}>Portfolio Allocation Simulator</Text>
         </Group>
 
         {/* Scenario builder */}
@@ -882,6 +882,43 @@ function ScenarioLab({ strategy: initialStrategy }) {
             <Text size="xs">Participation {(67 + Number(k.liftPp)).toFixed(1)}% · avg deferral {(5.1 + Number(k.deferralPp)).toFixed(1)}% · cost +{k.costPct}% of payroll</Text>
           </Paper>
         </SimpleGrid>
+
+        {/* Optimizer controls */}
+        <Divider label="Optimize allocation for" labelPosition="left" />
+        <Group gap={6}>
+          {['Participation', 'Deferral', 'Cost', 'Readiness', 'Fairness', 'Preserve holdout'].map(o => (
+            <Button key={o} size="compact-xs" variant={lab.opt === o ? 'filled' : 'light'} color="violet" onClick={() => set('opt', lab.opt === o ? null : o)}>{o}</Button>
+          ))}
+        </Group>
+
+        {/* Portfolio allocation draft — feeds the Recommendation screen */}
+        <Divider label="Portfolio allocation draft" labelPosition="left" />
+        <Box style={{ overflowX: 'auto' }}>
+          <Table striped fz="xs" verticalSpacing="xs" horizontalSpacing="sm" style={{ minWidth: 940 }}>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Cell</Table.Th><Table.Th>Cohort</Table.Th><Table.Th>Recommended</Table.Th>
+                <Table.Th>Secondary layer</Table.Th><Table.Th ta="center">Holdout</Table.Th>
+                <Table.Th>Part. lift</Table.Th><Table.Th>Employer cost</Table.Th><Table.Th>Readiness</Table.Th><Table.Th>Status</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {ALLOC.map(r => (
+                <Table.Tr key={r.id}>
+                  <Table.Td fw={700}>{r.id}</Table.Td>
+                  <Table.Td><Group gap={6} wrap="nowrap"><div style={{ width: 3, height: 18, borderRadius: 2, background: `var(--mantine-color-${r.color}-5)` }} /><Text size="xs" fw={600}>{r.cohort}</Text></Group></Table.Td>
+                  <Table.Td><Badge size="xs" variant="light" color={r.color}>{r.strategy}</Badge></Table.Td>
+                  <Table.Td c="dimmed">{r.id === 'H' ? 'None' : 'Education-only'}</Table.Td>
+                  <Table.Td ta="center">{r.id === 'H' ? 'Locked' : '10%'}</Table.Td>
+                  <Table.Td c="dimmed">{r.id === 'H' ? 'Baseline' : 'Simulated'}</Table.Td>
+                  <Table.Td c="dimmed">Simulated</Table.Td>
+                  <Table.Td><Badge size="xs" variant="light" color={r.guardrail === 'Pass' ? 'green' : 'yellow'}>{r.guardrail === 'Pass' ? 'Medium' : 'Review'}</Badge></Table.Td>
+                  <Table.Td><Badge size="xs" variant="light" color={/review/i.test(r.guardrail) ? 'yellow' : 'green'}>{r.guardrail === 'Pass' ? 'Ready' : r.guardrail}</Badge></Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Box>
 
         {/* Constraint warnings */}
         {k.warnings.length > 0 && (
