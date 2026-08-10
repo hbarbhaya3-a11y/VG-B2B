@@ -55,6 +55,9 @@ function projectedKpis(id, v) {
   }
 }
 
+// Assumed average eligible-employee pay used to project per-employee match cost.
+const AVG_PAY = 50000
+
 // ── Guardrail validation — common across ALL selected strategies ────────────
 function aggregateGuardrails(selected, values) {
   const checks = [
@@ -64,13 +67,17 @@ function aggregateGuardrails(selected, values) {
     { pass: true, label: 'Fairness monitor', detail: 'Enabled — disparity tracked across cohorts' },
     { pass: true, label: 'Holdout feasibility', detail: 'Sample size sufficient for 80% power' },
   ]
-  // Employer cost depends on the Match Stretch configuration when selected.
+  // Employer cost is evaluated PER ELIGIBLE EMPLOYEE (not plan-level) and
+  // depends on the Match Stretch configuration when selected.
   if (selected.includes('match_stretch')) {
     const v = values.match_stretch || {}
-    const within = v.costNeutral || Number(v.costCeiling || 0) >= 120000
-    checks.unshift({ pass: within, label: 'Employer cost', detail: within ? 'Within approved ceiling' : 'Projected match cost exceeds approved ceiling' })
+    const perEmp = Math.round((v.matchCap ?? 6) / 100 * AVG_PAY)   // projected employer match $ per employee
+    const ceiling = Number(v.costCeiling || 0)
+    const within = v.costNeutral || perEmp <= ceiling
+    checks.unshift({ pass: within, label: 'Employer cost (per employee)',
+      detail: `Projected $${perEmp.toLocaleString()}/emp ${within ? 'within' : 'exceeds'} $${ceiling.toLocaleString()}/emp ceiling` })
   } else {
-    checks.unshift({ pass: true, label: 'Employer cost', detail: 'Within approved ceiling' })
+    checks.unshift({ pass: true, label: 'Employer cost (per employee)', detail: 'Within approved per-employee ceiling' })
   }
   return checks
 }
@@ -106,7 +113,7 @@ function StrategyControls({ id, v, set }) {
       <Stack gap={4}><FieldLabel>Match cap — {v.matchCap ?? 6}% of pay</FieldLabel>
         <Slider value={v.matchCap ?? 6} onChange={val => set('matchCap', val)} min={3} max={10} step={1} color="blue" /></Stack>
       <Switch checked={!!v.costNeutral} onChange={e => set('costNeutral', e.currentTarget.checked)} label="Cost-neutral toggle" color="teal" />
-      {num('costCeiling', 'Employer cost ceiling ($)', { step: 10000, thousandSeparator: ',' })}
+      {num('costCeiling', 'Employer cost ceiling ($ / employee)', { step: 250, thousandSeparator: ',' })}
     </>)
     case 'auto_escalation': return (<>
       <Stack gap={4}><FieldLabel>Annual increase — {v.annualIncrease ?? 1}%</FieldLabel>
@@ -126,7 +133,7 @@ function StrategyControls({ id, v, set }) {
 // Default lever seeds per strategy (applied when a strategy is first selected).
 const SEED = {
   auto_enrollment: { defaultDeferral: 4, qdia: 'tdf' },
-  match_stretch:   { currentFormula: '100% of 3%', proposedFormula: '50% of 6%', matchCap: 6, costCeiling: 150000, costNeutral: false },
+  match_stretch:   { currentFormula: '100% of 3%', proposedFormula: '50% of 6%', matchCap: 6, costCeiling: 3000, costNeutral: false },
   auto_escalation: { annualIncrease: 1, cap: 10, startMonth: 'jan' },
   reenrollment:    { sweepPopulation: 'legacy', defaultInvestment: 'tdf' },
 }
