@@ -568,10 +568,72 @@ function buildTabContent(seg, ch, variant) {
     format: ch.format, headline: theme, subhead, subject, objective, audience, keyMessages, body,
     personalization, deliverySpec, cta, secondaryCta, compliance: complianceFor(kind),
     avoid: seg.avoid, successMetric: KPI_BY[kind],
+    slides: ch.kind === 'deck' ? buildDeckSlides(seg, variant, kind, theme) : null,
     variantNote: variant === 'A'
       ? 'V1 — primary framing: direct, benefit-forward, action-oriented.'
       : 'V2 — alternate framing: reassurance-first, choice-forward, lower-pressure (A/B tested against V1).',
   }
+}
+
+// Committee-deck slides — the mandatory approval deck rendered slide-by-slide.
+function buildDeckSlides(seg, variant, kind, theme) {
+  return [
+    { kicker: 'Recommendation', title: seg.offer,
+      body: `${theme} — proposed for the ${seg.label} cohort (${seg.count.toLocaleString()} eligible employees). Presented for plan-committee and fiduciary approval.` },
+    { kicker: 'The opportunity', title: 'Why this cohort',
+      bullets: [`Cohort: ${seg.label} — ${seg.count.toLocaleString()} eligible employees.`, `Behavioral signal: ${seg.signal}.`, seg.why] },
+    { kicker: 'Recommended action', title: seg.offer,
+      bullets: [`Rationale: ${seg.why}`, `Primary KPI: ${KPI_BY[kind]}.`] },
+    { kicker: 'How it works', title: 'Rollout sequence', bullets: seg.path },
+    { kicker: 'Controls', title: 'Guardrails & compliance', bullets: complianceFor(kind).slice(0, 5) },
+    { kicker: 'Proof', title: 'Measurement & holdout',
+      bullets: [`Measured on: ${KPI_BY[kind]}.`, 'Isolated with a randomized holdout so reported lift is causal, not correlational.', 'Do-nothing baseline retained as a first-class comparison.'] },
+    { kicker: 'Decision', title: 'Approval ask',
+      bullets: ['Approve the recommended plan-design action for staged deployment.', 'Deployment holds until every guardrail returns green.', 'Fiduciary-sensitive cohorts require explicit authorization before launch.'] },
+  ]
+}
+
+// Slide viewer for committee-deck tabs.
+function DeckSlides({ slides, color }) {
+  const [i, setI] = useState(0)
+  const s = slides[i]
+  return (
+    <Stack gap="sm">
+      <Paper withBorder radius="md" style={{ overflow: 'hidden' }}>
+        <Box style={{ minHeight: 300, display: 'flex', flexDirection: 'column', padding: 24, borderTop: `4px solid var(--mantine-color-${color}-5)` }}>
+          <Group justify="space-between" mb="sm">
+            <Badge size="xs" variant="light" color={color}>{s.kicker}</Badge>
+            <Text size="xs" c="dimmed">Slide {i + 1} / {slides.length}</Text>
+          </Group>
+          <Text fw={800} size="xl" style={{ lineHeight: 1.2 }} mb="sm">{s.title}</Text>
+          {s.body && <Text size="sm" style={{ lineHeight: 1.6 }}>{s.body}</Text>}
+          {s.bullets && (
+            <Stack gap={8} mt="xs">
+              {s.bullets.map((b, k) => (
+                <Group key={k} gap="xs" align="flex-start" wrap="nowrap">
+                  <ThemeIcon size="sm" radius="xl" variant="light" color={color} mt={2}><IconCheck size={11} /></ThemeIcon>
+                  <Text size="sm" style={{ lineHeight: 1.5 }}>{b}</Text>
+                </Group>
+              ))}
+            </Stack>
+          )}
+          <Box style={{ flex: 1 }} />
+          <Text size="10px" c="dimmed" mt="md">TwinX for Vanguard · For plan-committee &amp; fiduciary review · Education-classified</Text>
+        </Box>
+      </Paper>
+      <Group justify="space-between">
+        <Button size="xs" variant="light" color="gray" disabled={i === 0} onClick={() => setI(i - 1)}>← Prev</Button>
+        <Group gap={5}>
+          {slides.map((_, k) => (
+            <div key={k} onClick={() => setI(k)}
+              style={{ width: 8, height: 8, borderRadius: '50%', cursor: 'pointer', background: `var(--mantine-color-${k === i ? color : 'gray'}-4)` }} />
+          ))}
+        </Group>
+        <Button size="xs" variant="light" color={color} disabled={i === slides.length - 1}
+          rightSection={<IconChevronRight size={14} />} onClick={() => setI(i + 1)}>Next</Button>
+      </Group>
+    </Stack>
+  )
 }
 
 const CSECTION = ({ label, children }) => (
@@ -626,6 +688,11 @@ function ContentPreviewModal({ seg, onClose }) {
                 <Badge size="sm" color="teal" variant="light">Education-classified</Badge>
               </Group>
 
+              {t.slides ? (
+                /* Committee-deck tabs render as slides */
+                <DeckSlides slides={t.slides} color={seg.color} />
+              ) : (
+                <>
               {/* Rendered message */}
               <Paper withBorder p="md" radius="md" style={{ borderLeft: `3px solid var(--mantine-color-${seg.color}-5)` }}>
                 <Stack gap="sm">
@@ -725,6 +792,8 @@ function ContentPreviewModal({ seg, onClose }) {
                   </Paper>
                 </CSECTION>
               </SimpleGrid>
+                </>
+              )}
 
               <Alert color="gray" variant="light" icon={<IconInfoCircle size={16} />}>
                 <Text size="xs">{t.variantNote}</Text>
