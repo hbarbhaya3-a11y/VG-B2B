@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import {
   Paper, Stack, Group, Text, Badge, Button, ThemeIcon, Alert, Divider,
-  SimpleGrid, Tabs, Select, NumberInput, Slider, Switch, TextInput, SegmentedControl, Box,
+  SimpleGrid, Chip, Select, NumberInput, Slider, Switch, TextInput, Box,
 } from '@mantine/core'
 import {
-  IconChevronRight, IconInfoCircle, IconShieldCheck, IconShieldX, IconSettings,
+  IconChevronRight, IconInfoCircle, IconShieldX, IconSettings,
   IconBuildingBank, IconAdjustments, IconCheck, IconAlertTriangle,
 } from '@tabler/icons-react'
 
@@ -35,6 +35,38 @@ const STRATEGIES = [
     assets: ['Measurement plan', 'Deployment split', 'Readout template'] },
 ]
 
+// ── Projected KPIs per strategy — default values that move with the levers ──
+// so the numbers stay logically tied to the configured strategy.
+function projectedKpis(id, v) {
+  switch (id) {
+    case 'auto_enrollment': return [
+      { label: 'Participation lift', value: `+${18 + (v.defaultDeferral ?? 4)}pp` },
+      { label: 'Projected opt-out', value: `${Math.max(4, 12 - (v.defaultDeferral ?? 4))}%` },
+    ]
+    case 'match_stretch': return [
+      { label: 'Match utilization', value: `+${(v.matchCap ?? 6) * 2}pp` },
+      { label: 'Avg deferral lift', value: `+${(((v.matchCap ?? 6) - 3) * 0.4).toFixed(1)}pp` },
+    ]
+    case 'auto_escalation': return [
+      { label: 'Avg deferral lift', value: `+${((v.annualIncrease ?? 1) * 2).toFixed(1)}pp` },
+      { label: 'Years to cap', value: `${Math.max(1, Math.round(((v.cap ?? 10) - 3) / (v.annualIncrease ?? 1)))} yrs` },
+    ]
+    case 'reenrollment': return [
+      { label: 'Participation lift', value: '+9pp' },
+      { label: 'Re-election rate', value: '71%' },
+    ]
+    case 'education': return [
+      { label: 'Engagement lift', value: '+12pp' },
+      { label: 'Content completion', value: '48%' },
+    ]
+    case 'holdout': return [
+      { label: 'Statistical power', value: `${(v.controlPct ?? 10) >= 10 ? '80%' : '70%'}` },
+      { label: 'Control size', value: `${v.controlPct ?? 10}%` },
+    ]
+    default: return []
+  }
+}
+
 // ── Guardrail checks per strategy ───────────────────────────────────────────
 function guardrails(id, v) {
   const ok = (pass, label, detail) => ({ pass, label, detail })
@@ -61,7 +93,7 @@ const FieldLabel = ({ children }) => (
   <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>{children}</Text>
 )
 
-// ── Per-strategy proposed controls ──────────────────────────────────────────
+// ── Per-strategy proposed controls (levers) ─────────────────────────────────
 function StrategyControls({ id, v, set }) {
   const num = (k, label, props = {}) => (
     <Stack gap={4}><FieldLabel>{label}</FieldLabel>
@@ -124,27 +156,45 @@ function StrategyControls({ id, v, set }) {
   }
 }
 
+// Default lever seeds per strategy (applied when a strategy is first selected).
+const SEED = {
+  auto_enrollment: { defaultDeferral: 4, fairness: true },
+  match_stretch:   { matchCap: 6, fairness: true },
+  auto_escalation: { annualIncrease: 1, cap: 10, fairness: true },
+  reenrollment:    { fairness: true },
+  education:       {},
+  holdout:         { controlPct: 10 },
+}
+
 export default function ParticipantChannelConfigPanel({ step, workflowState, setWorkflowState, onContinue }) {
   const pd = step.panelData
-  const [active, setActive] = useState('auto_enrollment')
-  const [values, setValues] = useState({ auto_enrollment: { defaultDeferral: 4, fairness: true }, match_stretch: { matchCap: 6, fairness: true }, auto_escalation: { annualIncrease: 1, cap: 10, fairness: true }, reenrollment: { fairness: true }, education: {}, holdout: { controlPct: 10 } })
+  const [selected, setSelected] = useState(['auto_enrollment'])
+  const [values, setValues] = useState({ auto_enrollment: { ...SEED.auto_enrollment } })
 
-  const strat = STRATEGIES.find(s => s.id === active)
-  const v = values[active] || {}
-  const set = (k, val) => setValues(prev => ({ ...prev, [active]: { ...prev[active], [k]: val } }))
+  // Selecting a strategy seeds its default levers (which drive default KPIs).
+  const onSelect = (next) => {
+    setSelected(next)
+    setValues(prev => {
+      const nv = { ...prev }
+      next.forEach(id => { if (!nv[id]) nv[id] = { ...SEED[id] } })
+      return nv
+    })
+  }
+  const setLever = (id, k, val) => setValues(prev => ({ ...prev, [id]: { ...prev[id], [k]: val } }))
 
-  const complete = strat.required.every(k => {
-    const val = v[k]
+  const isComplete = (id) => STRATEGIES.find(s => s.id === id).required.every(k => {
+    const val = values[id]?.[k]
     return val !== undefined && val !== null && val !== ''
   })
-  const checks = guardrails(active, v)
-  const blockers = checks.filter(c => !c.pass)
+  const allComplete = selected.length > 0 && selected.every(isComplete)
+  const allBlockers = selected.flatMap(id => guardrails(id, values[id] || {}).filter(c => !c.pass))
 
   const handleContinue = () => {
-    // Preserve downstream contract (simulation reads these)
+    const primary = selected[0]
     setWorkflowState(s => ({
       ...s,
-      strategyConfig: { strategy: active, values: v },
+      // Preserve downstream contract (simulation reads strategy + values)
+      strategyConfig: { strategy: primary, values: values[primary] || {}, strategies: selected, allValues: values },
       selectedOffers: (pd.offers || []).map(o => o.id),
       selectedSegments: (pd.segments || []).map(sg => sg.id),
       selectedChannels: ['committee', 'email', 'portal'],
@@ -154,108 +204,101 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
 
   return (
     <Stack gap="md">
-      {/* Header + strategy package selector */}
+      {/* Header + multiselect strategy picker (6 available) */}
       <Paper withBorder p="md" radius="md">
         <Group justify="space-between" mb="sm">
           <Group gap="xs">
             <ThemeIcon size={28} radius="md" variant="light" color="orange"><IconSettings size={16} /></ThemeIcon>
             <Text size="lg" fw={700}>Strategy Configuration</Text>
           </Group>
-          <Badge size="sm" variant="light" color={complete && blockers.length === 0 ? 'green' : 'orange'}>
-            {complete ? (blockers.length === 0 ? 'Ready to simulate' : `${blockers.length} guardrail block(s)`) : 'Required controls incomplete'}
+          <Badge size="sm" variant="light" color={allComplete && allBlockers.length === 0 ? 'green' : 'orange'}>
+            {selected.length === 0 ? 'Select a strategy'
+              : allComplete ? (allBlockers.length === 0 ? 'Ready to simulate' : `${allBlockers.length} guardrail block(s)`)
+              : 'Required controls incomplete'}
           </Badge>
         </Group>
-        <Tabs value={active} onChange={setActive} variant="pills" radius="md" color="orange">
-          <Tabs.List>
-            {STRATEGIES.map(s => <Tabs.Tab key={s.id} value={s.id}>{s.label}</Tabs.Tab>)}
-          </Tabs.List>
-        </Tabs>
+        <Text size="xs" c="dimmed" mb={8}>Select one or more strategies — 6 available. Levers and projected KPIs update per selected strategy.</Text>
+        <Chip.Group multiple value={selected} onChange={onSelect}>
+          <Group gap="xs">
+            {STRATEGIES.map(s => (
+              <Chip key={s.id} value={s.id} variant="outline" color="orange" radius="md" size="sm">{s.label}</Chip>
+            ))}
+          </Group>
+        </Chip.Group>
       </Paper>
 
-      {/* Parallel strategy package board */}
-      <SimpleGrid cols={{ base: 2, sm: 3, md: 6 }} spacing="sm">
-        {STRATEGIES.map(s => {
-          const board = {
-            auto_enrollment: { cohorts: 'Nonparticipants, New hires', assets: 4, approvals: 'Compliance, fiduciary, payroll', guard: 'Warn', dep: 'Notice pack', fallback: 'Education-only' },
-            match_stretch:   { cohorts: 'Below-match', assets: 4, approvals: 'Cost, payroll', guard: 'Cost review', dep: 'Payroll formula', fallback: 'Education-only' },
-            auto_escalation: { cohorts: 'Stuck-at-default', assets: 4, approvals: 'Compliance, payroll', guard: 'Notice review', dep: 'Payroll schedule', fallback: 'Education-only' },
-            reenrollment:    { cohorts: 'Legacy elections', assets: 3, approvals: 'Fiduciary, compliance', guard: 'Fiduciary review', dep: 'QDIA draft', fallback: 'Education-only' },
-            education:       { cohorts: 'Low-readiness', assets: 3, approvals: 'Content review', guard: 'Pass', dep: 'Consent', fallback: 'None' },
-            holdout:         { cohorts: 'Control', assets: 3, approvals: 'Measurement', guard: 'Pass', dep: 'Measurement plan', fallback: 'None' },
-          }[s.id]
-          const done = values[s.id] ? STRATEGIES.find(x => x.id === s.id).required.filter(k => values[s.id][k] !== undefined && values[s.id][k] !== null && values[s.id][k] !== '').length : 0
-          const total = STRATEGIES.find(x => x.id === s.id).required.length
-          return (
-            <Paper key={s.id} withBorder p="sm" radius="md" onClick={() => setActive(s.id)}
-              style={{ cursor: 'pointer', borderLeft: `3px solid var(--mantine-color-orange-${active === s.id ? '6' : '3'})`, outline: active === s.id ? '2px solid var(--mantine-color-orange-5)' : 'none' }}>
-              <Stack gap={4}>
-                <Text size="xs" fw={700}>{s.label}</Text>
-                <Text size="9px" c="dimmed">Cohorts: {board.cohorts}</Text>
-                <Text size="9px" c="dimmed">Controls: {done}/{total}</Text>
-                <Text size="9px" c="dimmed">Assets: {board.assets} · Approvals: {board.approvals}</Text>
-                <Group gap={4}><Badge size="9px" variant="light" color={board.guard === 'Pass' ? 'green' : 'yellow'}>{board.guard}</Badge>{board.fallback !== 'None' && <Badge size="9px" variant="outline" color="gray">fallback: {board.fallback}</Badge>}</Group>
-              </Stack>
-            </Paper>
-          )
-        })}
-      </SimpleGrid>
+      {/* Current plan design reference */}
+      <Paper withBorder p="md" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-gray-4)' }}>
+        <Group gap="xs" mb="xs"><ThemeIcon size="sm" variant="light" color="gray"><IconBuildingBank size={12} /></ThemeIcon><Text size="sm" fw={700}>Current plan design</Text></Group>
+        <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+          {CURRENT_PLAN.map(r => (
+            <Box key={r.label}><Text size="10px" c="dimmed">{r.label}</Text><Text size="xs" fw={600}>{r.value}</Text></Box>
+          ))}
+        </SimpleGrid>
+      </Paper>
 
-      {/* 3-column: current | proposed | guardrails */}
-      <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
-        {/* Left — current plan design */}
-        <Paper withBorder p="md" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-gray-4)' }}>
-          <Stack gap="sm">
-            <Group gap="xs"><ThemeIcon size="sm" variant="light" color="gray"><IconBuildingBank size={12} /></ThemeIcon><Text size="sm" fw={700}>Current plan design</Text></Group>
-            <Divider />
-            {CURRENT_PLAN.map(r => (
-              <Group key={r.label} justify="space-between" wrap="nowrap">
-                <Text size="xs" c="dimmed">{r.label}</Text>
-                <Text size="xs" fw={600} ta="right">{r.value}</Text>
-              </Group>
-            ))}
-          </Stack>
-        </Paper>
+      {selected.length === 0 && (
+        <Alert color="gray" variant="light" icon={<IconInfoCircle size={16} />}>Select at least one strategy to configure its levers.</Alert>
+      )}
 
-        {/* Center — proposed controls */}
-        <Paper withBorder p="md" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-orange-5)' }}>
-          <Stack gap="sm">
-            <Group gap="xs"><ThemeIcon size="sm" variant="light" color="orange"><IconAdjustments size={12} /></ThemeIcon><Text size="sm" fw={700}>Proposed — {strat.label}</Text></Group>
-            <Divider />
-            <StrategyControls id={active} v={v} set={set} />
-            <Divider label="Required assets" labelPosition="left" />
-            <Group gap={6}>
-              {strat.assets.map(a => <Badge key={a} size="xs" variant="outline" color="orange">{a}</Badge>)}
+      {/* One editable config block per SELECTED strategy */}
+      {selected.map(id => {
+        const strat = STRATEGIES.find(s => s.id === id)
+        const v = values[id] || {}
+        const checks = guardrails(id, v)
+        const blk = checks.filter(c => !c.pass)
+        return (
+          <Paper key={id} withBorder p="md" radius="md" style={{ borderLeft: `3px solid var(--mantine-color-${blk.length ? 'red' : 'orange'}-5)` }}>
+            <Group justify="space-between" mb="xs">
+              <Group gap="xs"><ThemeIcon size="sm" variant="light" color="orange"><IconAdjustments size={12} /></ThemeIcon><Text size="sm" fw={700}>{strat.label}</Text></Group>
+              <Badge size="xs" variant="light" color={isComplete(id) ? (blk.length ? 'yellow' : 'green') : 'orange'}>
+                {isComplete(id) ? (blk.length ? `${blk.length} block(s)` : 'Ready') : 'Incomplete'}
+              </Badge>
             </Group>
-          </Stack>
-        </Paper>
+            <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
+              {/* Levers — editable only for this selected strategy */}
+              <Stack gap="sm">
+                <FieldLabel>Proposed levers</FieldLabel>
+                <StrategyControls id={id} v={v} set={(k, val) => setLever(id, k, val)} />
+              </Stack>
+              {/* Projected KPIs — default values that move with the levers */}
+              <Stack gap="sm">
+                <FieldLabel>Projected KPIs</FieldLabel>
+                {projectedKpis(id, v).map(k => (
+                  <Group key={k.label} justify="space-between" wrap="nowrap">
+                    <Text size="xs" c="dimmed">{k.label}</Text>
+                    <Badge size="sm" variant="light" color="teal">{k.value}</Badge>
+                  </Group>
+                ))}
+                <Divider label="Required assets" labelPosition="left" />
+                <Group gap={6}>{strat.assets.map(a => <Badge key={a} size="xs" variant="outline" color="orange">{a}</Badge>)}</Group>
+              </Stack>
+              {/* Guardrail validation */}
+              <Stack gap="sm">
+                <FieldLabel>Guardrail validation</FieldLabel>
+                {checks.map(c => (
+                  <Group key={c.label} gap="xs" align="flex-start" wrap="nowrap">
+                    <ThemeIcon size="xs" radius="xl" variant="light" color={c.pass ? 'green' : 'red'} mt={2}>
+                      {c.pass ? <IconCheck size={9} /> : <IconShieldX size={9} />}
+                    </ThemeIcon>
+                    <Box style={{ flex: 1 }}>
+                      <Text size="xs" fw={600}>{c.label}</Text>
+                      <Text size="10px" c={c.pass ? 'dimmed' : 'red'}>{c.detail}</Text>
+                    </Box>
+                  </Group>
+                ))}
+              </Stack>
+            </SimpleGrid>
+          </Paper>
+        )
+      })}
 
-        {/* Right — guardrail validation */}
-        <Paper withBorder p="md" radius="md" style={{ borderLeft: `3px solid var(--mantine-color-${blockers.length ? 'red' : 'green'}-5)` }}>
-          <Stack gap="sm">
-            <Group gap="xs"><ThemeIcon size="sm" variant="light" color={blockers.length ? 'red' : 'green'}><IconShieldCheck size={12} /></ThemeIcon><Text size="sm" fw={700}>Guardrail validation</Text></Group>
-            <Divider />
-            {checks.map(c => (
-              <Group key={c.label} gap="xs" align="flex-start" wrap="nowrap">
-                <ThemeIcon size="xs" radius="xl" variant="light" color={c.pass ? 'green' : 'red'} mt={2}>
-                  {c.pass ? <IconCheck size={9} /> : <IconShieldX size={9} />}
-                </ThemeIcon>
-                <Box style={{ flex: 1 }}>
-                  <Text size="xs" fw={600}>{c.label}</Text>
-                  <Text size="10px" c={c.pass ? 'dimmed' : 'red'}>{c.detail}</Text>
-                </Box>
-              </Group>
-            ))}
-          </Stack>
-        </Paper>
-      </SimpleGrid>
-
-      {/* Bottom — generated configuration summary */}
-      <Alert variant="light" color={complete && !blockers.length ? 'teal' : 'orange'} icon={complete && !blockers.length ? <IconInfoCircle size={16} /> : <IconAlertTriangle size={16} />}>
+      {/* Summary */}
+      <Alert variant="light" color={allComplete && !allBlockers.length ? 'teal' : 'orange'} icon={allComplete && !allBlockers.length ? <IconInfoCircle size={16} /> : <IconAlertTriangle size={16} />}>
         <Text size="sm">
-          <strong>{strat.label}</strong> configured for eligible cohorts with{' '}
-          <strong>{strat.required.length}</strong> required controls
-          {complete ? ' complete' : ` — ${strat.required.filter(k => !(v[k] !== undefined && v[k] !== null && v[k] !== '')).length} still required`}.
-          {blockers.length > 0 && <> Guardrail blockers: <strong>{blockers.map(b => b.label).join(', ')}</strong>.</>}
+          <strong>{selected.length}</strong> strateg{selected.length === 1 ? 'y' : 'ies'} selected — <strong>{selected.map(id => STRATEGIES.find(s => s.id === id).label).join(', ') || 'none'}</strong>.
+          {' '}{allComplete ? 'All required controls complete.' : 'Some required controls still needed.'}
+          {allBlockers.length > 0 && <> Guardrail blockers: <strong>{allBlockers.map(b => b.label).join(', ')}</strong>.</>}
         </Text>
       </Alert>
 
@@ -267,7 +310,7 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
         styles={{ root: { boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)' } }}
         style={{ alignSelf: 'flex-end' }}
         onClick={handleContinue}
-        disabled={!complete || blockers.length > 0}
+        disabled={!allComplete || allBlockers.length > 0}
       >
         Run Simulation
       </Button>
