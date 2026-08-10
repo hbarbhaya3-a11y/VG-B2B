@@ -186,7 +186,7 @@ const UC_ADVISORY_READINESS = {
           'Portal engagement indicates readiness but no enrollment election',
           'Match utilization below the opportunity threshold',
         ],
-        hypothesis: 'If eligible nonparticipants are auto-enrolled at a 4% default with 1%/yr auto-escalation — with required notices and opt-out preserved — then the sponsor can raise participation toward the 82% benchmark and lift average deferral versus a holdout plan, within the approved employer-cost ceiling and fiduciary guardrails. This is a plan-design decision, not a marketing campaign.',
+        hypothesis: 'Hypothesis: applying plan-design levers — auto-enrollment, match-stretch, and auto-escalation — to eligible nonparticipants will change participation and deferral behaviour relative to the current voluntary design. TwinX simulates each lever, and combinations, under the sponsor\'s cost, readiness, equity and fiduciary constraints and measures the incremental effect against a holdout. No target is assumed upfront — the simulation determines which lever, at which settings, best fits this workforce before anything is scaled. A governed plan-design decision, not a marketing campaign.',
         continueLabel: 'Continue to Sponsor Decision Objective',
       },
     },
