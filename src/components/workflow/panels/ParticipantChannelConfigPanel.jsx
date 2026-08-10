@@ -58,6 +58,15 @@ function projectedKpis(id, v) {
 // Assumed average eligible-employee pay used to project per-employee match cost.
 const AVG_PAY = 50000
 
+// ── Delivery channels (multiselect) ─────────────────────────────────────────
+const CHANNELS = [
+  { id: 'committee', label: 'Committee deck' },
+  { id: 'email', label: 'Participant email' },
+  { id: 'portal', label: 'Portal' },
+  { id: 'sms', label: 'SMS / push' },
+  { id: 'mail', label: 'Direct mail' },
+]
+
 // ── Guardrail validation — common across ALL selected strategies ────────────
 function aggregateGuardrails(selected, values) {
   const checks = [
@@ -142,6 +151,7 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
   const pd = step.panelData
   const [selected, setSelected] = useState(['auto_enrollment'])
   const [values, setValues] = useState({ auto_enrollment: { ...SEED.auto_enrollment } })
+  const [channels, setChannels] = useState(['committee', 'email', 'portal'])
 
   // Selecting a strategy seeds its default levers (which drive default KPIs).
   const onSelect = (next) => {
@@ -161,7 +171,7 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
   const allComplete = selected.length > 0 && selected.every(isComplete)
   const guardChecks = aggregateGuardrails(selected, values)
   const blockers = guardChecks.filter(c => !c.pass)
-  const ready = allComplete && blockers.length === 0
+  const ready = allComplete && blockers.length === 0 && channels.length > 0
 
   const handleContinue = () => {
     const primary = selected[0]
@@ -171,7 +181,7 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
       strategyConfig: { strategy: primary, values: values[primary] || {}, strategies: selected, allValues: values },
       selectedOffers: (pd.offers || []).map(o => o.id),
       selectedSegments: (pd.segments || []).map(sg => sg.id),
-      selectedChannels: ['committee', 'email', 'portal'],
+      selectedChannels: channels,
     }))
     onContinue()
   }
@@ -189,7 +199,8 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
             {selected.length === 0 ? 'Select a strategy'
               : ready ? 'Ready to simulate'
               : !allComplete ? 'Required controls incomplete'
-              : `${blockers.length} guardrail block(s)`}
+              : blockers.length ? `${blockers.length} guardrail block(s)`
+              : 'Select a channel'}
           </Badge>
         </Group>
         <Text size="xs" c="dimmed" mb={8}>Select one or more strategies — 4 available. Levers and projected KPIs update per selected strategy.</Text>
@@ -250,6 +261,24 @@ export default function ParticipantChannelConfigPanel({ step, workflowState, set
           </Paper>
         )
       })}
+
+      {/* Delivery channels — multiselect */}
+      <Paper withBorder p="md" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-blue-5)' }}>
+        <Group justify="space-between" mb="xs">
+          <Text size="sm" fw={700}>Channels</Text>
+          <Badge size="xs" variant="light" color={channels.length ? 'blue' : 'orange'}>
+            {channels.length ? `${channels.length} selected` : 'Select at least one'}
+          </Badge>
+        </Group>
+        <Text size="xs" c="dimmed" mb={8}>Choose how the selected strategies are delivered to eligible cohorts.</Text>
+        <Chip.Group multiple value={channels} onChange={setChannels}>
+          <Group gap="xs">
+            {CHANNELS.map(c => (
+              <Chip key={c.id} value={c.id} variant="outline" color="blue" radius="md" size="sm">{c.label}</Chip>
+            ))}
+          </Group>
+        </Chip.Group>
+      </Paper>
 
       {/* Guardrail validation — one common panel across all selected strategies */}
       {selected.length > 0 && (

@@ -975,76 +975,18 @@ export default function SimulationPanel({ step, workflowState, setWorkflowState,
     return (
       <Stack gap="md">
         <Paper withBorder p="md" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-violet-5)' }}>
-          <Group justify="space-between">
-            <Stack gap={4}>
-              <Group gap="xs">
-                <Badge size="sm" color="violet" variant="filled">SIMULATE</Badge>
-                <Badge size="sm" color="violet" variant="light">TwinX Simulation</Badge>
-              </Group>
-              <Text size="lg" fw={700}>Configure simulation</Text>
-              <Text size="xs" c="dimmed">Parameters pre-loaded from your configuration in steps 1–4</Text>
-            </Stack>
-            <Button
-              size="xs"
-              variant={editMode ? 'filled' : 'light'}
-              color="violet"
-              leftSection={editMode ? <IconLock size={12} /> : <IconPencil size={12} />}
-              onClick={() => setEditMode(e => !e)}
-            >
-              {editMode ? 'Lock parameters' : 'Edit parameters'}
-            </Button>
-          </Group>
+          <Stack gap={4}>
+            <Group gap="xs">
+              <Badge size="sm" color="violet" variant="filled">SIMULATE</Badge>
+              <Badge size="sm" color="violet" variant="light">TwinX Simulation</Badge>
+            </Group>
+            <Text size="lg" fw={700}>Configure simulation</Text>
+            <Text size="xs" c="dimmed">Parameters pre-loaded from your configuration in steps 1–4</Text>
+          </Stack>
         </Paper>
-
-        {/* Screen 6 — Simulation Lab scenario builder */}
-        <ScenarioLab strategy={workflowState?.strategyConfig?.strategy} />
 
         {/* Step 5 configuration summary */}
         <OfferChannelSummary workflowState={workflowState} activeUseCase={activeUseCase} />
-
-        {/* Parameters */}
-        <Paper withBorder p="md" radius="md">
-          <Stack gap="md">
-            <SimpleGrid cols={2} spacing="md">
-              <Stack gap="xs">
-                <Group gap="xs">
-                  <IconLock size={13} stroke={1.5} style={{ color: 'var(--mantine-color-dimmed)' }} />
-                  <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.05em' }}>Locked — from your config</Text>
-                </Group>
-                <Group justify="space-between"><Text size="xs" c="dimmed">Campaign objective</Text><Badge variant="light" color="vanguardRed" size="xs">{campaignObjectiveStep?.panelData?.objectives?.find(o => o.recommended)?.label || 'Cross-sell to advisory'}</Badge></Group>
-                <Group justify="space-between"><Text size="xs" c="dimmed">Budget</Text><Badge variant="light" color="green" size="xs">${(campaignObjectiveStep?.panelData?.defaultBudget || 150000).toLocaleString()}</Badge></Group>
-                <Group justify="space-between"><Text size="xs" c="dimmed">Population (reach)</Text><Badge variant="light" color="orange" size="xs">{totalReachLocked.toLocaleString()}</Badge></Group>
-                <Group justify="space-between"><Text size="xs" c="dimmed">Holdout</Text><Badge variant="light" color="gray" size="xs">{holdoutLocked.toLocaleString()}</Badge></Group>
-                <Group justify="space-between"><Text size="xs" c="dimmed">Active segments</Text><Badge variant="light" color="blue" size="xs">{activeSegments.length}</Badge></Group>
-                <Group justify="space-between"><Text size="xs" c="dimmed">Offers</Text><Badge variant="light" color="grape" size="xs">{activeOffersCount}</Badge></Group>
-                <Group justify="space-between"><Text size="xs" c="dimmed">Content variants</Text><Badge variant="light" color="violet" size="xs">{contentVariants.length}</Badge></Group>
-                <Group justify="space-between"><Text size="xs" c="dimmed">Episode baseline</Text><Badge variant="light" color="blue" size="xs">18 prior episodes</Badge></Group>
-                <Group justify="space-between"><Text size="xs" c="dimmed">Iterations</Text><Badge variant="light" color="violet" size="xs">1,000</Badge></Group>
-              </Stack>
-              <Stack gap="xs">
-                <Group gap="xs">
-                  <IconAdjustments size={13} stroke={1.5} style={{ color: 'var(--mantine-color-dimmed)' }} />
-                  <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.05em' }}>Tunable parameters</Text>
-                </Group>
-                {editMode ? (
-                  <>
-                    <NumberInput label="Confidence threshold (%)" value={params.confidenceThreshold} onChange={v => setParams(p => ({ ...p, confidenceThreshold: v }))} min={50} max={99} size="xs" />
-                    <NumberInput label="Min engagement (%)" value={params.minEngagement} onChange={v => setParams(p => ({ ...p, minEngagement: v }))} min={5} max={40} size="xs" />
-                    <Select label="Time horizon" value={params.timeHorizon} onChange={v => setParams(p => ({ ...p, timeHorizon: v }))} data={['14 days', '30 days', '60 days', '90 days']} size="xs" allowDeselect={false} />
-                    <NumberInput label="Response curve sensitivity" value={params.tier1Multiplier} onChange={v => setParams(p => ({ ...p, tier1Multiplier: v }))} min={1} max={5} step={0.5} size="xs" />
-                  </>
-                ) : (
-                  <>
-                    <Group justify="space-between"><Text size="xs" c="dimmed">Confidence threshold</Text><Badge variant="outline" color="gray" size="xs">{params.confidenceThreshold}%</Badge></Group>
-                    <Group justify="space-between"><Text size="xs" c="dimmed">Min engagement</Text><Badge variant="outline" color="gray" size="xs">{params.minEngagement}%</Badge></Group>
-                    <Group justify="space-between"><Text size="xs" c="dimmed">Time horizon</Text><Badge variant="outline" color="gray" size="xs">{params.timeHorizon}</Badge></Group>
-                    <Group justify="space-between"><Text size="xs" c="dimmed">Response curve sensitivity</Text><Badge variant="outline" color="gray" size="xs">{params.tier1Multiplier}×</Badge></Group>
-                  </>
-                )}
-              </Stack>
-            </SimpleGrid>
-          </Stack>
-        </Paper>
 
         <Button
           size="md"
