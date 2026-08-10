@@ -10,31 +10,31 @@ import {
 } from '@tabler/icons-react'
 
 const ALL_KPIS = [
-  { value: 'advisory_starts',     label: 'Advisory consultation starts' },
-  { value: 'aum_under_advice',    label: 'AUM transitioned to advice' },
-  { value: 'advisor_bookings',    label: 'Advisor appointment bookings' },
-  { value: 'incremental_aum',     label: 'Incremental AUM under management' },
-  { value: 'portfolio_reviews',   label: 'Portfolio review completions' },
-  { value: 'funded_advisory',     label: 'Funded advisory accounts' },
-  { value: 'outflow_reduction',   label: 'Reduced asset outflow rate' },
-  { value: 'closure_prevention',  label: 'Account closure prevention rate' },
-  { value: 're_engagement',       label: 'Re-engagement rate' },
-  { value: 'cash_conversion',     label: 'Cash-to-investment conversion' },
-  { value: 'planning_engagement', label: 'Planning-tool engagement rate' },
-  { value: 'funded_action',       label: 'Funded action rate' },
-  { value: 'planning_completion', label: 'Planning-tool completion rate' },
-  { value: 'content_engagement',  label: 'Content engagement depth' },
-  { value: 'return_visit',        label: 'Return visit rate' },
-  { value: 'email_open',          label: 'Email open rate' },
-  { value: 'click_through',       label: 'Click-through rate' },
-  { value: 'campaign_roi',        label: 'Campaign ROI multiple' },
-  { value: 'aum_retained',        label: 'AUM retained / protected' },
-  { value: 'idle_cash_activated', label: 'Idle cash activated' },
-  { value: 'annual_advisory_rev', label: 'Annual advisory revenue proxy' },
+  { value: 'advisory_starts',     label: 'Participation lift' },
+  { value: 'aum_under_advice',    label: 'Incremental enrollments' },
+  { value: 'advisor_bookings',    label: 'New-hire participation rate' },
+  { value: 'incremental_aum',     label: 'Average deferral lift' },
+  { value: 'portfolio_reviews',   label: 'Match utilization rate' },
+  { value: 'funded_advisory',     label: 'Full-match capture rate' },
+  { value: 'outflow_reduction',   label: 'Participation-disparity reduction' },
+  { value: 'closure_prevention',  label: 'Cohort equity index' },
+  { value: 're_engagement',       label: 'Re-enrollment rate' },
+  { value: 'cash_conversion',     label: 'Below-match → full-match conversion' },
+  { value: 'planning_engagement', label: 'Auto-escalation adoption' },
+  { value: 'funded_action',       label: 'Catch-up adoption rate' },
+  { value: 'planning_completion', label: 'Retirement-readiness engagement' },
+  { value: 'content_engagement',  label: 'Content completion depth' },
+  { value: 'return_visit',        label: 'QDIA adoption rate' },
+  { value: 'email_open',          label: 'Notice open rate' },
+  { value: 'click_through',       label: 'Portal click-through rate' },
+  { value: 'campaign_roi',        label: 'Cost-per-incremental-enrollment' },
+  { value: 'aum_retained',        label: 'Opt-out rate' },
+  { value: 'idle_cash_activated', label: 'Employer cost impact' },
+  { value: 'annual_advisory_rev', label: 'Projected retirement-readiness gain' },
 ]
 
 const DEFAULT_KPIS = {
-  cross_sell: ['advisory_starts', 'aum_retained', 'idle_cash_activated', 'annual_advisory_rev'],
+  cross_sell: ['advisory_starts', 'aum_under_advice', 'aum_retained', 'idle_cash_activated'],
   aum_growth: ['incremental_aum', 'portfolio_reviews', 'funded_advisory'],
   retention:  ['outflow_reduction', 'closure_prevention', 're_engagement'],
   activation: ['cash_conversion', 'planning_engagement', 'funded_action'],
@@ -95,7 +95,7 @@ export default function CampaignObjectivePanel({ panelData: pd, onContinue }) {
           <IconTarget size={18} stroke={1.5} />
         </ThemeIcon>
         <Box>
-          <Text size="xl" fw={800}>Campaign objective</Text>
+          <Text size="xl" fw={800}>Sponsor decision objective</Text>
           <Text size="sm" c="dimmed">Set your goal, dates, and budget — TwinX will align the full pipeline to this.</Text>
         </Box>
       </Group>
@@ -154,7 +154,7 @@ export default function CampaignObjectivePanel({ panelData: pd, onContinue }) {
       {/* Budget + Dates */}
       <SimpleGrid cols={3} spacing="md">
         <Stack gap="xs">
-          <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Budget ($)</Text>
+          <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Employer cost ceiling ($)</Text>
           <NumberInput
             value={budget}
             onChange={setBudget}
@@ -221,7 +221,7 @@ export default function CampaignObjectivePanel({ panelData: pd, onContinue }) {
       <Paper withBorder radius="md" p="md" style={{ background: 'var(--mantine-color-default-hover)' }}>
         <Group gap="xs" mb={6}>
           <IconSparkles size={14} stroke={1.5} style={{ color: 'var(--mantine-color-violet-6)' }} />
-          <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.06em' }}>Campaign Summary</Text>
+          <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.06em' }}>Sponsor Decision Summary</Text>
         </Group>
         <Text size="sm">
           {durationDays ? <><strong>{durationDays}-day </strong></> : null}

@@ -6,7 +6,7 @@ import { IconCheck, IconBrain, IconTrendingUp, IconUsers, IconCurrencyDollar, Ic
 const MEASURING_LINES = [
   'Measuring engagement outcomes (Days 1–7)…',
   'Measuring action outcomes (Days 7–30)…',
-  'Measuring AUM outcomes (Days 30–90)…',
+  'Measuring participation outcomes (Days 30–90)…',
   'Comparing treatment vs. holdout control group…',
   'Attribution complete — archiving episode…',
 ]
@@ -80,10 +80,10 @@ export default function AttributionPanel({ step, onExit }) {
   ]
 
   const actionFunnelData = [
-    { step: 'Advisors targeted', count: 7900 },
-    { step: 'Portfolio tool opens', count: action.portfolioToolOpens ?? 0 },
-    { step: 'Wholesaler follow-ups', count: action.wholesalerFollowUps ?? 0 },
-    { step: 'Rebalancing transactions', count: action.rebalancingTransactions ?? 0 },
+    { step: 'Eligible employees in scope', count: 11800 },
+    { step: 'Enrollment actions', count: action.portfolioToolOpens ?? 0 },
+    { step: 'Escalation opt-ins', count: action.wholesalerFollowUps ?? 0 },
+    { step: 'Deferral increases', count: action.rebalancingTransactions ?? 0 },
   ]
 
   const ot = outputTracking
@@ -99,7 +99,7 @@ export default function AttributionPanel({ step, onExit }) {
         title={pd.episodeTitle || 'Workflow Complete — VIX Spike Response Episode #19'}
       >
         <Text size="xs">
-          Signal detected → Advisors targeted → Simulation run → Approved → Content generated → Compliance cleared → Deployed → Outcomes measured. Episode archived to TwinX.
+          Signal detected → Cohorts built → Simulation run → Approved → Content generated → Compliance cleared → Deployed → Outcomes measured. Episode archived to TwinX.
         </Text>
       </Alert>
 
@@ -179,7 +179,7 @@ export default function AttributionPanel({ step, onExit }) {
                 <Table striped highlightOnHover withTableBorder={false} fz="xs">
                   <Table.Thead>
                     <Table.Tr>
-                      <Table.Th>Advisor</Table.Th>
+                      <Table.Th>Cohort</Table.Th>
                       <Table.Th>Firm</Table.Th>
                       <Table.Th>Tier</Table.Th>
                       <Table.Th>Content pushed</Table.Th>
@@ -225,7 +225,7 @@ export default function AttributionPanel({ step, onExit }) {
                     <Badge size="sm" color="green" variant="filled">Causal measurement</Badge>
                     <Badge size="sm" color="teal" variant="light">Treatment vs holdout · 30–90 days</Badge>
                   </Group>
-                  <Text size="sm" fw={600}>Advisory Readiness Gap — Episode #1 · 42,000 participants · 4,200 holdout</Text>
+                  <Text size="sm" fw={600}>Participation Gap — Episode #1 · 42,000 eligible employees · 4,200 holdout</Text>
                 </Stack>
                 <Text size="xs" c="dimmed">95% CI: {aum.ciLow}–{aum.ciHigh} bps vs holdout</Text>
               </Group>
@@ -234,10 +234,10 @@ export default function AttributionPanel({ step, onExit }) {
             {/* Primary KPI tiles — matches simulation results */}
             <SimpleGrid cols={4} spacing="sm">
               {[
-                { label: 'Advisor appointment starts', value: '+440', sub: 'vs do-nothing baseline', color: 'green' },
-                { label: 'AUM retained / protected',   value: '+$31.8M', sub: 'reduced leakage risk', color: 'violet' },
-                { label: 'Idle cash activated',         value: '+$24.3M', sub: 'cash-to-investment', color: 'teal' },
-                { label: 'Annual advisory revenue',     value: '+$391K', sub: 'annualized proxy', color: 'orange' },
+                { label: 'Participation lift',       value: '+14pp', sub: 'vs do-nothing baseline', color: 'green' },
+                { label: 'Incremental enrollments',  value: '+8,400', sub: 'net new participants', color: 'violet' },
+                { label: 'Average deferral lift',    value: '+1.3pp', sub: 'toward readiness target', color: 'teal' },
+                { label: 'Employer cost impact',     value: '+0.4%', sub: 'of payroll, within ceiling', color: 'orange' },
               ].map(kpi => (
                 <Paper key={kpi.label} withBorder p="md" radius="md" style={{ borderTop: `3px solid var(--mantine-color-${kpi.color}-5)` }}>
                   <Stack gap={4}>
@@ -257,24 +257,24 @@ export default function AttributionPanel({ step, onExit }) {
                   <Divider />
                   <SimpleGrid cols={2} spacing="xs">
                     <Stack gap={2}>
-                      <Text size="xs" c="dimmed">Portfolio review starts</Text>
-                      <Text size="xl" fw={800} c="teal" style={{ lineHeight: 1 }}>4,973</Text>
-                      <Text size="xs" c="dimmed">vs 1,928 baseline</Text>
+                      <Text size="xs" c="dimmed">Incremental enrollments</Text>
+                      <Text size="xl" fw={800} c="teal" style={{ lineHeight: 1 }}>8,400</Text>
+                      <Text size="xs" c="dimmed">vs 0 baseline</Text>
                     </Stack>
                     <Stack gap={2}>
-                      <Text size="xs" c="dimmed">Digital Advisor assessment starts</Text>
-                      <Text size="xl" fw={800} c="blue" style={{ lineHeight: 1 }}>851</Text>
-                      <Text size="xs" c="dimmed">vs 293 baseline</Text>
+                      <Text size="xs" c="dimmed">Below-match → full-match moves</Text>
+                      <Text size="xl" fw={800} c="blue" style={{ lineHeight: 1 }}>3,180</Text>
+                      <Text size="xs" c="dimmed">vs 610 baseline</Text>
                     </Stack>
                     <Stack gap={2}>
-                      <Text size="xs" c="dimmed">AUM into advice path</Text>
-                      <Text size="xl" fw={800} c="green" style={{ lineHeight: 1 }}>$191M</Text>
-                      <Text size="xs" c="dimmed">vs $60.7M baseline</Text>
+                      <Text size="xs" c="dimmed">Average deferral lift</Text>
+                      <Text size="xl" fw={800} c="green" style={{ lineHeight: 1 }}>+1.3pp</Text>
+                      <Text size="xs" c="dimmed">5.1% → 6.4%</Text>
                     </Stack>
                     <Stack gap={2}>
-                      <Text size="xs" c="dimmed">Complaint / opt-out rate</Text>
-                      <Text size="xl" fw={800} c="gray" style={{ lineHeight: 1 }}>0.11%</Text>
-                      <Text size="xs" c="dimmed">Within guardrail (&lt;0.20%)</Text>
+                      <Text size="xs" c="dimmed">Opt-out rate</Text>
+                      <Text size="xl" fw={800} c="gray" style={{ lineHeight: 1 }}>10.4%</Text>
+                      <Text size="xs" c="dimmed">Within guardrail (&lt;12%)</Text>
                     </Stack>
                   </SimpleGrid>
                 </Stack>
@@ -316,7 +316,7 @@ export default function AttributionPanel({ step, onExit }) {
               <Stack gap="sm">
                 <Group justify="space-between">
                   <Text size="xs" fw={600} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.05em' }}>
-                    AUM accumulation — treatment vs. holdout (12 weeks)
+                    Enrollment accumulation — treatment vs. holdout (12 weeks)
                   </Text>
                   <Group gap="md">
                     <Group gap={4}>
@@ -352,12 +352,12 @@ export default function AttributionPanel({ step, onExit }) {
             <Paper withBorder radius="md" style={{ overflow: 'hidden' }}>
               <Stack gap={0}>
                 <Group px="md" py="sm" style={{ background: 'var(--mantine-color-default-hover)' }}>
-                  <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.05em' }}>Per-advisor KPIs — sample</Text>
+                  <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.05em' }}>Per-cohort KPIs — sample</Text>
                 </Group>
                 <Table striped highlightOnHover fz="xs">
                   <Table.Thead>
                     <Table.Tr>
-                      <Table.Th>Advisor</Table.Th>
+                      <Table.Th>Cohort</Table.Th>
                       <Table.Th>Firm</Table.Th>
                       <Table.Th>Open rate</Table.Th>
                       <Table.Th>Click rate</Table.Th>
@@ -479,8 +479,8 @@ export default function AttributionPanel({ step, onExit }) {
         <Accordion.Item value="aum">
           <Accordion.Control icon={<IconCurrencyDollar size={16} stroke={1.5} />}>
             <Group gap="xs">
-              <Text size="sm" fw={600}>AUM outcomes — Days 30–90</Text>
-              <Badge size="xs" color="green" variant="filled">$49M incremental</Badge>
+              <Text size="sm" fw={600}>Participation outcomes — Days 30–90</Text>
+              <Badge size="xs" color="green" variant="filled">+8,400 enrollments</Badge>
             </Group>
           </Accordion.Control>
           <Accordion.Panel>
@@ -488,32 +488,32 @@ export default function AttributionPanel({ step, onExit }) {
               <SimpleGrid cols={3} spacing="sm">
                 <Paper withBorder p="sm" radius="md">
                   <Stack gap={2}>
-                    <Text size="xs" c="dimmed">AUM growth vs. holdout</Text>
-                    <Text size="2xl" fw={900} c="teal">+{aum.bpsVsHoldout} bps</Text>
-                    <Text size="xs" c="dimmed">95% CI: {aum.ciLow}–{aum.ciHigh} bps</Text>
+                    <Text size="xs" c="dimmed">Participation lift vs. holdout</Text>
+                    <Text size="2xl" fw={900} c="teal">+{aum.bpsVsHoldout / 10} pp</Text>
+                    <Text size="xs" c="dimmed">95% CI: {(aum.ciLow / 10).toFixed(1)}–{(aum.ciHigh / 10).toFixed(1)} pp</Text>
                     <Progress value={(aum.bpsVsHoldout / 120) * 100} color="teal" size="xs" />
                   </Stack>
                 </Paper>
                 <Paper withBorder p="sm" radius="md">
                   <Stack gap={2}>
-                    <Text size="xs" c="dimmed">Incremental AUM</Text>
-                    <Text size="2xl" fw={900} c="green">${(aum.incrementalAUM / 1000000).toFixed(0)}M</Text>
-                    <Text size="xs" c="dimmed">from 90-minute intervention</Text>
+                    <Text size="xs" c="dimmed">Incremental enrollments</Text>
+                    <Text size="2xl" fw={900} c="green">+{aum.incrementalAUM.toLocaleString()}</Text>
+                    <Text size="xs" c="dimmed">from the plan-design change</Text>
                   </Stack>
                 </Paper>
                 <Paper withBorder p="sm" radius="md">
                   <Stack gap={2}>
-                    <Text size="xs" c="dimmed">Quarterly revenue</Text>
+                    <Text size="xs" c="dimmed">Incremental match cost</Text>
                     <Text size="2xl" fw={900} c="orange">${(pnl.quarterlyRevenue / 1000).toFixed(0)}K</Text>
-                    <Text size="xs" c="dimmed">{(pnl.takeRate * 100).toFixed(2)}% blended take rate</Text>
+                    <Text size="xs" c="dimmed">+0.4% of payroll, within ceiling</Text>
                   </Stack>
                 </Paper>
               </SimpleGrid>
               <Paper p="sm" radius="md" withBorder>
                 <Group gap="xs">
-                  <Text size="xs" c="dimmed">P&L:</Text>
-                  <Text size="xs" fw={600}>${(aum.incrementalAUM / 1000000).toFixed(0)}M × {(pnl.takeRate * 100).toFixed(2)}% blended take rate =</Text>
-                  <Text size="xs" fw={800} c="green">${(pnl.quarterlyRevenue / 1000).toFixed(0)}K incremental quarterly revenue</Text>
+                  <Text size="xs" c="dimmed">Employer cost:</Text>
+                  <Text size="xs" fw={600}>{aum.incrementalAUM.toLocaleString()} incremental enrollments × avg match =</Text>
+                  <Text size="xs" fw={800} c="green">${(pnl.quarterlyRevenue / 1000).toFixed(0)}K incremental quarterly employer cost</Text>
                 </Group>
               </Paper>
             </Stack>
@@ -539,7 +539,7 @@ export default function AttributionPanel({ step, onExit }) {
               </Group>
             </Stack>
             <Stack gap={0}>
-              <Text size="xs" c="dimmed">Advisor twins enriched</Text>
+              <Text size="xs" c="dimmed">Employee twins enriched</Text>
               <Text size="sm" fw={700}>{modelUpdate.twinsEnriched.toLocaleString()}</Text>
             </Stack>
             <Stack gap={0}>

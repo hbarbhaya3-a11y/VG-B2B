@@ -13,7 +13,7 @@ const CHANNEL_TILES = [
   { id: 'secure-site-card',    label: 'Secure-site card',        icon: IconBrowser,       color: 'blue'   },
   { id: 'email',               label: 'Email',                   icon: IconMail,           color: 'orange' },
   { id: 'app-push',            label: 'App push',                icon: IconBell,           color: 'violet' },
-  { id: 'advisor-crm',         label: 'Advisor / CRM task',      icon: IconPhone,          color: 'green'  },
+  { id: 'advisor-crm',         label: 'Committee / payroll task',      icon: IconPhone,          color: 'green'  },
   { id: 'secure-site-insight', label: 'Secure-site insight',     icon: IconBrowser,        color: 'teal'   },
   { id: 'in-app-notification', label: 'In-app notification',     icon: IconDeviceMobile,   color: 'cyan'   },
   { id: 'article',             label: 'Article / blog',          icon: IconMessage,        color: 'grape'  },

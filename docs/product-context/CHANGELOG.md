@@ -5,6 +5,32 @@
 
 ---
 
+## Session 5 — VG B2B Plan (Version B) participation-lift re-skin — 2026-08-10
+
+### Build Status
+- `npm run build` — **PASSED** — 7,683 modules, 0 errors
+
+### Added / Changed — Version B (Plan Sponsor participation-lift)
+Preserved the existing Sense → Simulate → Select → Execute → Learn flow, navigation, layouts, charts, and panels; replaced the advisory-investor data model with Plan Sponsor participation-lift concepts across all 12 screens.
+
+- **`src/data/usecases.js`** — rewrote the lead use case `uc-advisory-readiness` (title now **Participation Gap**) end-to-end:
+  - Signal: Participation Gap — 11,800 eligible employees not enrolled (67% vs 82% benchmark); recordkeeping/payroll/eligibility sources; reaction/eligibility-based signals only
+  - Objective screen → **Sponsor Decision Objective** (increase participation, improve deferral, close equity gap, reduce match leakage; employer cost ceiling replaces budget)
+  - Segmentation → **Workforce Cohort Builder** (Eligible Nonparticipants, New Hires, Below-Match, Low-Deferral, Legacy Election Holders, Near-Retirement Under-Savers, Auto-Enroll Opt-Outs)
+  - Config → **Strategy & Launch Config** (Auto Enrollment, Match Stretch, Auto Escalation, Re-enrollment; Committee Deck / Participant Email / Portal Banner channels)
+  - Simulation / Results → participation lift, incremental enrollments, deferral lift, opt-out, employer cost
+  - Approval → **Plan Design Approval** (Sponsor / Compliance / Fiduciary / Benefits)
+  - Guardrails → **Participation Strategy Rules** (cost constraints, eligibility, notices, opt-out, compliance/fiduciary) via `PERSONAL_WEALTH_RAILS`
+  - Deployment → recordkeeping/payroll/participant-comms; Learning → participation/deferral/cost treatment vs holdout
+  - `ADVISORY_PRECEDENTS` replaced with plan-sponsor analogs (auto-enroll, match stretch, re-enrollment)
+- **Panels** — replaced hardcoded advisory copy with plan-sponsor copy in the primary flow panels: `CampaignObjectivePanel` (KPI list, headers), `SimulationPanel` (`SEG_DETAIL` cohort table, KPI tiles, content types, disclaimer, cohort description), `AttributionPanel` (KPI tiles, secondary KPIs, participation/enrollment trend, employer-cost framing, funnel, table headers), `ParticipantSegmentationPanel` / `ParticipantChannelConfigPanel` labels
+
+### Watch List
+- `SimulationPanel` `VARIANT_CONTENT` (per-cohort variant **preview** copy, shown behind "Preview Variant" clicks) still carries some advisory phrasing — secondary surface, not shown by default
+- `ContentGenerationPanel` is not part of this 12-step flow (flow uses `participant_channel_config`), so its advisory copy is not rendered here
+
+---
+
 ## Session 4 — Plan Design Optimizer (UC-E v0.2.0-vanguard) — 2026-04-30
 
 ### Build Status

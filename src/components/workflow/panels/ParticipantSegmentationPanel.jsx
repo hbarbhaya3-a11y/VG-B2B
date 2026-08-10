@@ -49,7 +49,7 @@ const CONTENT_TYPE_OPTIONS = [
   { value: 'Educational article', label: 'Educational article' },
   { value: 'Explainer video', label: 'Explainer video' },
   { value: 'Retirement projection', label: 'Retirement projection tool' },
-  { value: 'Advisor consult offer', label: 'Advisor consultation offer' },
+  { value: 'Advisor consult offer', label: 'Auto-enrollment strategy' },
 ]
 
 function TierCard({ tier, editMode, onUpdate, onSeeSample, isSelected, onToggle }) {
@@ -387,7 +387,7 @@ export default function ParticipantSegmentationPanel({ step, workflowState, setW
             <ThemeIcon size={22} radius="md" variant="light" color="indigo">
               <IconTargetArrow size={13} stroke={1.8} />
             </ThemeIcon>
-            <Text fw={700} size="sm">Test Hypothesis — Advisory Readiness Gap</Text>
+            <Text fw={700} size="sm">Test Strategy — Participation Gap</Text>
           </Group>
           <Stack gap={6}>
             <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Objective</Text>
