@@ -47,8 +47,11 @@ const ADVISORY_PRECEDENTS = [
   {
     date: 'Apr 2024',
     event: 'Auto-enroll + escalation launch',
+    sponsorProfile: 'Large service employer',
+    signalType: 'New-hire enrollment gap',
+    strategyTested: 'Auto Enrollment',
     similarity: 0.94,
-    outcome: '+14pp participation, +1.3pp average deferral',
+    outcome: 'Incremental enrollment vs holdout (illustrative)',
     config: {
       whoTargeted: 'Eligible employees not enrolled at a mid-size sponsor with voluntary-enrollment plan design',
       whatContent: 'Auto-enrollment at 4% default + 1%/yr auto-escalation to 10% cap',
@@ -61,8 +64,11 @@ const ADVISORY_PRECEDENTS = [
   {
     date: 'Nov 2023',
     event: 'Match stretch',
+    sponsorProfile: 'Manufacturing plan',
+    signalType: 'Below-match savers',
+    strategyTested: 'Match Stretch + education',
     similarity: 0.86,
-    outcome: '+0.9pp deferral, participation held flat, neutral employer cost',
+    outcome: 'Deferral improvement, neutral cost (illustrative)',
     config: {
       whoTargeted: 'Below-match participants deferring under the full-match threshold',
       whatContent: 'Match formula stretched from 100% of 3% to 50% of 6% (cost-neutral design)',
@@ -75,8 +81,11 @@ const ADVISORY_PRECEDENTS = [
   {
     date: 'Jun 2023',
     event: 'Re-enrollment of legacy elections',
+    sponsorProfile: 'Mixed-tenure plan',
+    signalType: 'Legacy elections',
+    strategyTested: 'Re-enrollment',
     similarity: 0.80,
-    outcome: '+8pp match utilization, +6pp QDIA adoption',
+    outcome: 'Participation / deferral reset (illustrative)',
     config: {
       whoTargeted: 'Legacy-election holders with outdated deferral or default-fund elections',
       whatContent: 'Re-enrollment sweep into current QDIA with opt-out',
@@ -153,6 +162,32 @@ const UC_ADVISORY_READINESS = {
           { label: 'Historical precedents matched', value: '3' },
           { label: 'Decision window', value: '30 days' },
         ],
+        // Screen 2 — Signal Detail: rich plan-health metric strip
+        metricStrip: [
+          { label: 'Eligible employees', value: '42,000' },
+          { label: 'Enrolled participants', value: '30,200' },
+          { label: 'Eligible nonparticipants', value: '11,800', color: 'orange' },
+          { label: 'Participation rate', value: '67%' },
+          { label: 'Peer benchmark', value: '82%' },
+          { label: 'Participation gap', value: '15pp', color: 'orange' },
+          { label: 'Average deferral', value: '5.1%' },
+          { label: 'Median deferral', value: '4.0%' },
+          { label: 'Current match', value: '100% of 3%' },
+          { label: 'Model confidence', value: '91%' },
+          { label: 'Data completeness', value: '98%' },
+          { label: 'Analog similarity', value: '94%' },
+          { label: 'Holdout feasibility', value: 'High' },
+        ],
+        // Screen 2 — "Why detected?" reason codes
+        reasonCodes: [
+          'Participation (67%) below peer benchmark (82%)',
+          'New-hire enrollment lag in the initial eligibility window',
+          'Lower-tenure cohort under-enrolled vs plan average',
+          'Portal engagement indicates readiness but no enrollment election',
+          'Match utilization below the opportunity threshold',
+        ],
+        hypothesis: 'If eligible nonparticipants are auto-enrolled at a 4% default with 1%/yr auto-escalation — with required notices and opt-out preserved — then the sponsor can raise participation toward the 82% benchmark and lift average deferral versus a holdout plan, within the approved employer-cost ceiling and fiduciary guardrails. This is a plan-design decision, not a marketing campaign.',
+        continueLabel: 'Continue to Sponsor Decision Objective',
       },
     },
     {

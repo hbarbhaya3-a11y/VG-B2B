@@ -196,8 +196,9 @@ export default function SignalDetectionPanel({ step, onContinue }) {
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th>Date</Table.Th>
-                  <Table.Th>Event</Table.Th>
-                  <Table.Th>Similarity</Table.Th>
+                  <Table.Th>Sponsor profile</Table.Th>
+                  <Table.Th>Signal</Table.Th>
+                  <Table.Th>Strategy tested</Table.Th>
                   <Table.Th>Outcome</Table.Th>
                 </Table.Tr>
               </Table.Thead>
@@ -212,14 +213,10 @@ export default function SignalDetectionPanel({ step, onContinue }) {
                     onClick={() => setExpandedPrecedent(expandedPrecedent === i ? null : i)}
                   >
                     <Table.Td fw={600}>{p.date}</Table.Td>
-                    <Table.Td>{p.event}</Table.Td>
-                    <Table.Td>
-                      <Stack gap={2}>
-                        <Text size="xs" fw={700} c="teal">{Math.round(p.similarity * 100)}%</Text>
-                        <Progress value={p.similarity * 100} color="teal" size="xs" radius="sm" />
-                      </Stack>
-                    </Table.Td>
-                    <Table.Td c="green" fw={500}>{p.outcome}</Table.Td>
+                    <Table.Td>{p.sponsorProfile || p.event}</Table.Td>
+                    <Table.Td>{p.signalType || '—'}</Table.Td>
+                    <Table.Td><Badge size="xs" variant="light" color="teal">{p.strategyTested || '—'}</Badge></Table.Td>
+                    <Table.Td c="dimmed">{p.outcome}</Table.Td>
                   </Table.Tr>
                 ))}
               </Table.Tbody>
@@ -227,11 +224,45 @@ export default function SignalDetectionPanel({ step, onContinue }) {
 
             <Group gap="xs">
               <IconClock size={12} stroke={1.5} style={{ color: 'var(--mantine-color-dimmed)' }} />
-              <Text size="xs" c="dimmed">Select a row to see the configuration applied in that episode</Text>
+              <Text size="xs" c="dimmed">Outcomes are illustrative. Select a row to see the configuration applied in that episode.</Text>
             </Group>
           </Stack>
         </Paper>
       </SimpleGrid>
+
+      {/* Core metric strip (Screen 2 — Signal Detail) */}
+      {Array.isArray(pd.metricStrip) && pd.metricStrip.length > 0 && (
+        <Paper withBorder p="md" radius="md">
+          <Stack gap="sm">
+            <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>Plan health — core metrics</Text>
+            <SimpleGrid cols={{ base: 3, sm: 5 }} spacing="md">
+              {pd.metricStrip.map((m) => (
+                <StatBlock key={m.label} label={m.label} value={m.value} color={m.color || 'teal'} />
+              ))}
+            </SimpleGrid>
+          </Stack>
+        </Paper>
+      )}
+
+      {/* Why detected? reason codes */}
+      {Array.isArray(pd.reasonCodes) && pd.reasonCodes.length > 0 && (
+        <Paper withBorder p="md" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-orange-5)' }}>
+          <Stack gap="sm">
+            <Group gap="xs">
+              <ThemeIcon size="sm" variant="light" color="orange" radius="sm"><IconMessageDots size={12} stroke={1.5} /></ThemeIcon>
+              <Text size="sm" fw={700}>Why detected?</Text>
+            </Group>
+            <Stack gap={6}>
+              {pd.reasonCodes.map((r, i) => (
+                <Group key={i} gap="xs" align="flex-start" wrap="nowrap">
+                  <ThemeIcon size="xs" radius="xl" variant="light" color="orange" mt={2}><IconCheck size={9} /></ThemeIcon>
+                  <Text size="xs" style={{ lineHeight: 1.5 }}>{r}</Text>
+                </Group>
+              ))}
+            </Stack>
+          </Stack>
+        </Paper>
+      )}
 
       {/* Expandable precedent config */}
       {expandedPrecedent !== null && pd.precedents[expandedPrecedent]?.config && (
@@ -248,7 +279,7 @@ export default function SignalDetectionPanel({ step, onContinue }) {
             <Text fw={700} size="sm">Recommended Hypothesis</Text>
           </Group>
           <Text size="sm" style={{ lineHeight: 1.7 }}>
-            If planning-intent, unadvised investors receive behavior-matched education, portfolio review prompts, and appropriate advice pathways within a 30-day window, then Vanguard can increase advisory appointment starts and portfolio review completion versus no action, while preserving education/advice boundaries and brand trust.
+            {pd.hypothesis || 'If planning-intent, unadvised investors receive behavior-matched education, portfolio review prompts, and appropriate advice pathways within a 30-day window, then Vanguard can increase advisory appointment starts and portfolio review completion versus no action, while preserving education/advice boundaries and brand trust.'}
           </Text>
         </Stack>
       </Paper>
@@ -262,7 +293,7 @@ export default function SignalDetectionPanel({ step, onContinue }) {
         styles={{ root: { boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)' } }}
         style={{ alignSelf: 'flex-end' }}
       >
-        Continue to Simulation
+        {pd.continueLabel || 'Continue to Simulation'}
       </Button>
     </Stack>
   )
