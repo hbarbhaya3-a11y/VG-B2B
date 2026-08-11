@@ -1142,7 +1142,7 @@ function TabPolicyImpact({ sponsor, lab, setLab, d }) {
   const L = lab.levers
   const paramMap = {
     ae: { name: 'Auto Enrollment', cur: '3% default · opt-in', neu: `${L.aeDefault}% auto-enroll · QDIA` },
-    ms: { name: 'Match Stretch', cur: `3% default match · company share ${L.msCompanyShare}%`, neu: `Stretch match to ${L.msTarget}% · company share 100% (cost-neutral)` },
+    ms: { name: 'Match Stretch', cur: '3% default match · company share 100%', neu: `Stretch match to ${L.msTarget}% · company share ${L.msCompanyShare}% (cost-neutral)` },
     esc: { name: 'Auto Escalation', cur: 'None for stuck-at-default', neu: `+${L.escStep}%/yr → ${L.escCap}% cap` },
     re: { name: 'Re-enrollment', cur: 'Legacy / non-QDIA elections', neu: `Sweep every ${L.reFreq} mo → QDIA · ${L.reNotice}-day notice` },
   }
