@@ -1139,7 +1139,7 @@ function TabPolicyImpact({ sponsor, lab, setLab, d }) {
   const L = lab.levers
   const paramMap = {
     ae: { name: 'Auto Enrollment', cur: '3% default · opt-in', neu: `${L.aeDefault}% auto-enroll · QDIA` },
-    ms: { name: 'Match Stretch', cur: 'Standard match formula', neu: `Stretch match to ${L.msTarget}% (cost-neutral)` },
+    ms: { name: 'Match Stretch', cur: '3% default match', neu: `Stretch match to ${L.msTarget}% (cost-neutral)` },
     esc: { name: 'Auto Escalation', cur: 'None for stuck-at-default', neu: `+${L.escStep}%/yr → ${L.escCap}% cap` },
     re: { name: 'Re-enrollment', cur: 'Legacy / non-QDIA elections', neu: `Sweep every ${L.reFreq} mo → QDIA · ${L.reNotice}-day notice` },
   }
@@ -1603,14 +1603,12 @@ function TabDeployment({ sponsor, lab, setLab, d, addMemory }) {
           : allLive ? <Pill tone="ok"><IconCheck size={12} /> Full strategy live · logged to Memory</Pill>
           : <Btn kind="gold" small onClick={runFull}><IconRocket size={14} /> Run full strategy</Btn>}
       </div>
-      <Table minWidth={720} head={<><Th>Lane</Th><Th align="right">Treated</Th><Th align="right">Holdout</Th><Th>Channel</Th><Th align="right">Action</Th></>}>
+      <Table minWidth={720} head={<><Th>Lane</Th><Th>Channel</Th><Th align="right">Action</Th></>}>
         {d.perCell.map(l => {
           const live = lab.deployed[l.strategy]
           return (
             <tr key={l.id}>
               <Td bold>{l.strategy}</Td>
-              <Td align="right">{num(l.treated)}</Td>
-              <Td align="right">{l.holdout ? num(l.holdout) : '—'}</Td>
               <Td>{l.content}</Td>
               <Td align="right">
                 {live ? <Pill tone="ok"><IconRocket size={12} /> Launched</Pill>
@@ -1674,7 +1672,7 @@ function LiveCampaignDetail({ record }) {
           <span style={{ marginLeft: 'auto', fontSize: 12, color: C.muted }}>Week {weekOf} of {totalWeeks} · {dt.window}</span>
         </div>
         <div style={{ fontSize: 14, color: C.ink2, lineHeight: 1.6, marginTop: 6, maxWidth: 680 }}>
-          Rolling out across <b style={{ color: C.ink }}>{num(dt.treated)}</b> treated participants ({num(dt.holdout)} held out for causal measurement).
+          Rolling out across the treated population, with a preserved holdout for causal measurement.
           Results below are to-date and will continue to accrue toward the projection.
         </div>
         <div style={{ marginTop: 12, height: 10, background: C.line, borderRadius: 5, overflow: 'hidden' }}>
@@ -1719,12 +1717,10 @@ function LiveCampaignDetail({ record }) {
 
       <Card pad={0}>
         <div style={{ padding: '14px 20px', borderBottom: T.rule, fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>Deployment lanes · live</div>
-        <Table minWidth={640} head={<><Th>Lane</Th><Th align="right">Treated</Th><Th align="right">Holdout</Th><Th>Channel</Th><Th align="center">Status</Th></>}>
+        <Table minWidth={640} head={<><Th>Lane</Th><Th>Channel</Th><Th align="center">Status</Th></>}>
           {dt.lanes.map(l => (
             <tr key={l.strategy}>
               <Td bold>{l.strategy}</Td>
-              <Td align="right">{num(l.treated)}</Td>
-              <Td align="right">{l.holdout ? num(l.holdout) : '—'}</Td>
               <Td>{l.channel}</Td>
               <Td align="center"><Pill tone="high"><LiveDot /> Rolling out</Pill></Td>
             </tr>
@@ -1836,11 +1832,10 @@ function CompletedCampaignDetail({ record }) {
         </Card>
         <Card pad={0}>
           <div style={{ padding: '16px 20px', borderBottom: T.rule, fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>Lane-level realized impact</div>
-          <Table minWidth={360} head={<><Th>Lane</Th><Th align="right">Treated</Th><Th>Realized</Th></>}>
+          <Table minWidth={360} head={<><Th>Lane</Th><Th>Realized</Th></>}>
             {im.lanes.map(l => (
               <tr key={l.strategy}>
                 <Td bold>{l.strategy}</Td>
-                <Td align="right">{num(l.treated)}</Td>
                 <Td><span style={{ color: C.green, fontWeight: 600 }}>{l.realized}</span></Td>
               </tr>
             ))}
