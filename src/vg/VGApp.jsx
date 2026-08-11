@@ -15,6 +15,7 @@ import {
   MEMORY_DECISIONS, HOLDOUT_OUTCOMES, POLICIES,
   CONTENT_LIBRARY, DECISION_TABS,
   TODAYS_FOCUS, SIGNAL_KPIS, MARKET_SIGNALS,
+  OBJECTIVES, CHANNELS, AVG_BALANCE, INDUSTRY_KPI,
 } from './data'
 
 /* ───────────────────────── helpers ───────────────────────── */
@@ -465,7 +466,7 @@ function labDerived(lab) {
 
 function stepDone(lab, d, i) {
   return [
-    d.treatCells.length > 0,               // 0 recommendation
+    !!lab.objective,                       // 0 objective
     d.portfolioPop > 0,                    // 1 levers
     d.treatCells.length > 0,               // 2 recommended segments
     lab.content !== 'none',                // 3 content
@@ -487,7 +488,7 @@ function DecisionLab({ sponsor, tab, setTab, lab, setLab }) {
   return (
     <div>
       <SectionTitle kicker="Decision Lab · Portfolio workbench" title={`${sponsor.name} — decision portfolio`}
-        sub="A portfolio allocation across cohort strategy cells — recommend, configure, prove, and launch."
+        sub="A portfolio allocation across cohort strategy cells — set the objective, configure, simulate, and launch."
         right={<div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: 11, color: C.muted }}>In portfolio</div>
           <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, color: C.ink }}>{num(d.portfolioPop)}</div>
@@ -512,11 +513,11 @@ function DecisionLab({ sponsor, tab, setTab, lab, setLab }) {
         })}
       </div>
 
-      {tab === 0 && <TabRecommendation lab={lab} setLab={setLab} d={d} />}
+      {tab === 0 && <TabObjective sponsor={sponsor} lab={lab} setLab={setLab} d={d} />}
       {tab === 1 && <TabLevers lab={lab} setLab={setLab} d={d} />}
       {tab === 2 && <TabSegments d={d} />}
       {tab === 3 && <TabContent lab={lab} setLab={setLab} d={d} />}
-      {tab === 4 && <TabSimulation lab={lab} setLab={setLab} d={d} />}
+      {tab === 4 && <TabSimulation sponsor={sponsor} lab={lab} setLab={setLab} d={d} />}
       {tab === 5 && <TabApproval lab={lab} setLab={setLab} d={d} />}
       {tab === 6 && <TabDeployment lab={lab} setLab={setLab} d={d} />}
 
@@ -531,38 +532,78 @@ function DecisionLab({ sponsor, tab, setTab, lab, setLab }) {
   )
 }
 
-function TabRecommendation({ lab, setLab, d }) {
-  const toggle = (id) => setLab(l => ({ ...l, cells: { ...l.cells, [id]: !l.cells[id] } }))
+function trackedKpis(sponsor) {
+  const ind = INDUSTRY_KPI[sponsor.industry]
+  return ['Participation lift', 'AUM retained', 'Deferral lift', 'Hardship leakage', ...(ind ? [ind.label] : [])]
+}
+
+function TabObjective({ sponsor, lab, setLab, d }) {
+  const setObj = (o) => setLab(l => ({ ...l, objective: o }))
+  const toggleCh = (c) => setLab(l => ({ ...l, channels: { ...l.channels, [c]: !l.channels[c] } }))
+  const setTl = (k, v) => setLab(l => ({ ...l, timeline: { ...l.timeline, [k]: v } }))
   return (
-    <div>
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
-        <Stat label="Cells in portfolio" value={d.treatCells.length} sub={`of ${STRATEGY_CELLS.length - 1} candidates`} />
-        <Stat label="Portfolio population" value={num(d.portfolioPop)} sub="total addressable" />
-        <Stat label="Treated" value={num(d.treated)} sub="receive a strategy" />
-        <Stat label="Holdout" value={num(d.holdout)} sub={`${lab.levers.holdoutPct}% · causal control`} tone={C.goldDk} />
-      </div>
-      <Card pad={0}>
-        <div style={{ padding: '14px 20px', borderBottom: T.rule }}>
-          <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>Recommended portfolio by cohort</div>
-          <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Toggle a cell to include or exclude it from the allocation.</div>
-        </div>
-        <Table minWidth={800} head={<><Th>In</Th><Th>Cohort</Th><Th>Strategy</Th><Th>Why</Th><Th>Primary KPI</Th><Th align="right">Population</Th><Th align="center">Holdout</Th></>}>
-          {STRATEGY_CELLS.map(c => {
-            const on = lab.cells[c.id]
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* objective */}
+      <div>
+        <Eyebrow>Objective · what are we optimizing?</Eyebrow>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 12, marginTop: 4 }}>
+          {OBJECTIVES.map(o => {
+            const on = lab.objective === o.id
             return (
-              <tr key={c.id} onClick={() => toggle(c.id)} style={{ cursor: 'pointer', opacity: on ? 1 : 0.5 }}>
-                <Td><span style={{ width: 18, height: 18, borderRadius: 5, display: 'inline-grid', placeItems: 'center',
-                  background: on ? C.green : 'transparent', border: on ? 'none' : `1.5px solid ${C.line2}` }}>
-                  {on && <IconCheck size={12} color="#fff" />}</span></Td>
-                <Td bold>{c.cohort}</Td>
-                <Td><Pill tone="gold">{c.strategy}</Pill></Td>
-                <Td>{c.why}</Td><Td>{c.kpi}</Td>
-                <Td align="right">{num(c.population)}</Td>
-                <Td align="center">{c.holdout ? <IconCheck size={15} color={C.green} /> : <span style={{ color: C.faint }}>—</span>}</Td>
-              </tr>
+              <Card key={o.id} onClick={() => setObj(o.id)} pad={16}
+                style={{ cursor: 'pointer', borderColor: on ? C.gold : undefined, borderWidth: on ? 2 : 1, borderStyle: 'solid',
+                  background: on ? C.amberBg : C.card }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontFamily: DISP, fontWeight: 600, fontSize: 14.5, color: C.ink }}>{o.label}</span>
+                  {o.rec && <Pill tone="gold">Recommended</Pill>}
+                </div>
+                <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>{o.desc}</div>
+                {on && <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: C.green, fontWeight: 600 }}><IconCheck size={13} /> Selected</div>}
+              </Card>
             )
           })}
-        </Table>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 16 }}>
+        {/* channels */}
+        <Card>
+          <Eyebrow>Channels</Eyebrow>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+            {CHANNELS.map(c => {
+              const on = lab.channels[c]
+              return (
+                <button key={c} onClick={() => toggleCh(c)} style={{ display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '8px 13px', borderRadius: 999, cursor: 'pointer', fontFamily: FONT, fontSize: 12, fontWeight: on ? 700 : 500,
+                  background: on ? C.brand : C.card, color: on ? '#fff' : C.ink2, border: `1px solid ${on ? C.brand : C.line}` }}>
+                  {on && <IconCheck size={13} />}{c}
+                </button>
+              )
+            })}
+          </div>
+          <div style={{ fontSize: 11.5, color: C.muted, marginTop: 10 }}>Advisor brief distributes 24h before participant channels.</div>
+        </Card>
+        {/* timeline */}
+        <Card>
+          <Eyebrow>Timeline</Eyebrow>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+            <Stepper label="Rollout window (weeks)" unit="" value={lab.timeline.rolloutWeeks} set={v => setTl('rolloutWeeks', v)} min={2} max={16} />
+            <Stepper label="Measurement window (weeks)" unit="" value={lab.timeline.measureWeeks} set={v => setTl('measureWeeks', v)} min={4} max={26} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', background: C.paper, borderRadius: T.radSm, border: T.rule }}>
+              <span style={{ fontSize: 12.5, color: C.ink2 }}>Rollout tiers</span>
+              <span style={{ fontSize: 12, color: C.faint }}>10% → 40% → 100%</span>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* tracked KPIs — industry aware */}
+      <Card>
+        <Eyebrow>Primary KPIs tracked · {sponsor.industry}</Eyebrow>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+          {trackedKpis(sponsor).map(k => <Pill key={k} tone="gold">{k}</Pill>)}
+        </div>
+        <div style={{ fontSize: 11.5, color: C.muted, marginTop: 10 }}>Projected in Simulation. The last KPI is contextual to this sponsor's industry.</div>
       </Card>
     </div>
   )
@@ -776,64 +817,148 @@ function TabContent({ lab, setLab, d }) {
   )
 }
 
-function TabSimulation({ lab, setLab, d }) {
+function projections(sponsor, d) {
   const lift = d.lift
-  const scen = [
-    { name: 'Do-nothing', lift: 0, deferral: 0, cost: 0, confidence: '—' },
-    { name: 'Recommended', lift, deferral: +(lift * 0.15).toFixed(1), cost: +(lift * 0.23).toFixed(1), confidence: 'High' },
-    { name: 'Cost-aware', lift: +(lift * 0.66).toFixed(1), deferral: +(lift * 0.1).toFixed(1), cost: +(lift * 0.13).toFixed(1), confidence: 'High' },
-    { name: 'Readiness-first', lift: +(lift * 0.48).toFixed(1), deferral: +(lift * 0.08).toFixed(1), cost: +(lift * 0.09).toFixed(1), confidence: 'Med' },
-    { name: 'Max-lift', lift: +(lift * 1.37).toFixed(1), deferral: +(lift * 0.22).toFixed(1), cost: +(lift * 0.39).toFixed(1), confidence: 'Med' },
-  ]
+  const base = sponsor.participation
+  const projected = Math.min(0.99, base + lift / 100)
+  const aum = (lift / 100) * d.treated * AVG_BALANCE / 1e6
+  const cost = (lift / 100) * d.treated * 900 / 1e6
+  const stress = sponsor.employees / 50000 * 14.2
+  const payback = cost > 0 ? stress / cost : 0
+  const deferralLift = +(lift * 0.15).toFixed(1)
+  const fidNew = Math.max(12, Math.round(38 - lift * 1.4))
+  const adp = lift >= 5 ? 'Resolved' : 'At-risk'
+  const ind = INDUSTRY_KPI[sponsor.industry]
+  return { lift, base, projected, aum, cost, stress, payback, deferralLift, fidNew, adp, ind }
+}
+
+function KpiTile({ label, value, sub, tone }) {
   return (
-    <div>
-      <Card style={{ marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+    <div style={{ background: C.paper, border: T.rule, borderRadius: T.radMd, padding: '13px 15px' }}>
+      <div style={{ fontSize: 10.5, color: C.muted, fontWeight: 600 }}>{label}</div>
+      <div style={{ fontFamily: DISP, fontSize: 21, fontWeight: 700, color: tone || C.ink, marginTop: 5, lineHeight: 1 }}>{value}</div>
+      {sub && <div style={{ fontSize: 10.5, color: C.muted, marginTop: 5 }}>{sub}</div>}
+    </div>
+  )
+}
+
+function TabSimulation({ sponsor, lab, setLab, d }) {
+  const p = projections(sponsor, d)
+  const attrib = d.treatCells.map(c => ({ name: c.strategy, w: STRAT_WEIGHT[c.id] || 0 })).sort((a, b) => b.w - a.w)
+  const attTot = attrib.reduce((a, c) => a + c.w, 0) || 1
+  const scen = [
+    { name: 'Do-nothing', part: p.base, cost: 0, conf: '—' },
+    { name: 'Recommended', part: p.projected, cost: +p.cost.toFixed(1), conf: 'High' },
+    { name: 'Cost-aware', part: p.base + p.lift * 0.66 / 100, cost: +(p.cost * 0.6).toFixed(1), conf: 'High' },
+    { name: 'Max-lift', part: Math.min(0.99, p.base + p.lift * 1.37 / 100), cost: +(p.cost * 1.5).toFixed(1), conf: 'Med' },
+  ]
+  const bench = [
+    { k: 'Current', v: p.base }, { k: 'Projected', v: p.projected }, { k: 'Sector benchmark', v: sponsor.benchmark },
+  ]
+
+  if (!lab.simulated) {
+    return (
+      <Card>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <div>
-            <Eyebrow>Portfolio scenario comparison · vs do-nothing baseline</Eyebrow>
-            <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>Projected participation lift (pts)</div>
+            <Eyebrow>Simulation · plan-design outcomes</Eyebrow>
+            <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>Project the portfolio against the sponsor's plan</div>
           </div>
-          <Btn kind={lab.simulated ? 'ghost' : 'gold'} small onClick={() => setLab(l => ({ ...l, simulated: true }))}>
-            {lab.simulated ? 'Re-run simulation' : 'Run 1,000-iteration simulation'}
-          </Btn>
+          <Btn kind="gold" small onClick={() => setLab(l => ({ ...l, simulated: true }))}>Run 1,000-iteration simulation</Btn>
         </div>
-        {lab.simulated ? (
-          <>
-            <div style={{ height: 220 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={scen} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={C.line} vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: C.muted }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: C.muted }} axisLine={false} tickLine={false} />
-                  <Bar dataKey="lift" radius={[4, 4, 0, 0]}>
-                    {scen.map((s, i) => <Cell key={i} fill={s.name === 'Recommended' ? C.gold : s.name === 'Do-nothing' ? C.faint : C.brandLt} />)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <div style={{ fontSize: 12, color: C.muted, marginTop: 8 }}>
-              Recommended: <b style={{ color: C.ink }}>+{lift}% participation</b> (P5 +{(lift * 0.7).toFixed(1)} · P50 +{lift} · P95 +{(lift * 1.3).toFixed(1)}) across {num(d.treated)} treated vs {num(d.holdout)} holdout (portfolio {num(d.portfolioPop)}).
-            </div>
-          </>
-        ) : (
-          <div style={{ display: 'grid', placeItems: 'center', height: 200, color: C.muted, fontSize: 13, textAlign: 'center' }}>
-            <div><IconActivity size={30} color={C.faint} /><div style={{ marginTop: 8 }}>Run the simulation to project lift for the selected portfolio.</div></div>
-          </div>
-        )}
+        <div style={{ display: 'grid', placeItems: 'center', height: 220, color: C.muted, fontSize: 13, textAlign: 'center' }}>
+          <div><IconActivity size={30} color={C.faint} /><div style={{ marginTop: 8 }}>Runs baseline load → parameter application → outcome computation → ADP-margin & fiduciary scoring for {num(d.treated)} treated vs {num(d.holdout)} holdout.</div></div>
+        </div>
       </Card>
-      {lab.simulated && (
-        <Table minWidth={560} head={<><Th>Scenario</Th><Th align="right">Participation lift</Th><Th align="right">Deferral lift</Th><Th align="right">Employer cost</Th><Th>Confidence</Th></>}>
-          {scen.map(s => (
-            <tr key={s.name}>
-              <Td bold>{s.name}</Td>
-              <Td align="right">{s.lift ? `+${s.lift}%` : '—'}</Td>
-              <Td align="right">{s.deferral ? `+${s.deferral}%` : '—'}</Td>
-              <Td align="right">{s.cost ? `+${s.cost}%` : '—'}</Td>
-              <Td>{s.confidence !== '—' ? <Pill tone={s.confidence === 'High' ? 'ok' : 'review'}>{s.confidence}</Pill> : '—'}</Td>
-            </tr>
-          ))}
-        </Table>
-      )}
+    )
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* winner callout */}
+      <Card style={{ background: C.amberBg, borderColor: `${C.gold}55` }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+          <div>
+            <Eyebrow>Recommended portfolio · why it wins</Eyebrow>
+            <div style={{ fontSize: 14, color: C.ink2, lineHeight: 1.6, maxWidth: 640 }}>
+              Projected participation rises to <b style={{ color: C.ink }}>{pct(p.projected)}</b> (from {pct(p.base)}),
+              the ADP test is <b style={{ color: p.adp === 'Resolved' ? C.green : C.red }}>{p.adp.toLowerCase()}</b>, at
+              <b style={{ color: C.ink }}> +${p.cost.toFixed(1)}M</b> incremental sponsor cost. <b style={{ color: C.ink }}>{attrib[0]?.name}</b> is
+              the dominant driver{attrib[1] ? `; ${attrib[1].name.toLowerCase()} compounds it` : ''}.
+            </div>
+          </div>
+          <Btn kind="ghost" small onClick={() => setLab(l => ({ ...l, simulated: true }))}>Re-run</Btn>
+        </div>
+      </Card>
+
+      {/* KPI grid — multiple primary KPIs */}
+      <Card>
+        <Eyebrow>Projected KPIs · P50 · {sponsor.industry}</Eyebrow>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10, marginTop: 4 }}>
+          <KpiTile label="Projected participation" value={pct(p.projected)} sub={`from ${pct(p.base)} · +${p.lift} pts`} tone={C.green} />
+          <KpiTile label="AUM impact" value={`+$${p.aum.toFixed(0)}M`} sub="retained + added" tone={C.goldDk} />
+          <KpiTile label="ADP test" value={p.adp} tone={p.adp === 'Resolved' ? C.green : C.red} sub="HCE–NHCE spread" />
+          <KpiTile label="Incremental cost" value={`+$${p.cost.toFixed(1)}M`} sub="employer match" />
+          <KpiTile label="Deferral lift" value={`+${p.deferralLift} pts`} />
+          <KpiTile label="Fiduciary risk" value={`${p.fidNew}/100`} sub="from 38" tone={C.green} />
+          <KpiTile label="Workforce-stress" value={`−$${p.stress.toFixed(1)}M`} sub="per year" tone={C.green} />
+          <KpiTile label="Payback" value={`${p.payback.toFixed(1)}×`} sub="on incremental cost" tone={C.goldDk} />
+          {p.ind && <KpiTile label={p.ind.label} value={`+${(p.lift * p.ind.factor).toFixed(1)} ${p.ind.unit}`} sub="industry context" />}
+        </div>
+        <div style={{ fontSize: 11.5, color: C.muted, marginTop: 12 }}>
+          Confidence band · participation P5 {pct(Math.max(0, p.base + p.lift * 0.7 / 100))} · P50 {pct(p.projected)} · P95 {pct(Math.min(0.99, p.base + p.lift * 1.3 / 100))} over {num(d.treated)} treated vs {num(d.holdout)} holdout.
+        </div>
+      </Card>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 16 }}>
+        {/* parameter-impact attribution */}
+        <Card>
+          <Eyebrow>Parameter-impact attribution</Eyebrow>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
+            {attrib.map((a, i) => (
+              <div key={a.name}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 4 }}>
+                  <span style={{ color: C.ink2, fontWeight: 500 }}>{a.name}</span>
+                  <span style={{ color: C.muted }}>{Math.round(a.w / attTot * 100)}%</span>
+                </div>
+                <div style={{ height: 8, background: C.line, borderRadius: 4, overflow: 'hidden' }}>
+                  <div style={{ width: `${a.w / attTot * 100}%`, height: '100%', background: i === 0 ? C.gold : C.brandLt, borderRadius: 4 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+        {/* benchmark */}
+        <Card>
+          <Eyebrow>Participation vs sector benchmark</Eyebrow>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
+            {bench.map(b => (
+              <div key={b.k}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 4 }}>
+                  <span style={{ color: C.ink2 }}>{b.k}</span>
+                  <span style={{ fontFamily: DISP, fontWeight: 700, color: C.ink }}>{pct(b.v)}</span>
+                </div>
+                <div style={{ height: 10, background: C.line, borderRadius: 5, overflow: 'hidden' }}>
+                  <div style={{ width: `${b.v * 100}%`, height: '100%', borderRadius: 5,
+                    background: b.k === 'Projected' ? C.green : b.k === 'Sector benchmark' ? C.goldDk : C.faint }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* scenario comparison */}
+      <Table minWidth={560} head={<><Th>Scenario</Th><Th align="right">Projected participation</Th><Th align="right">Incremental cost</Th><Th>Confidence</Th></>}>
+        {scen.map(s => (
+          <tr key={s.name}>
+            <Td bold>{s.name}</Td>
+            <Td align="right">{pct(s.part)}</Td>
+            <Td align="right">{s.cost ? `+$${s.cost}M` : '—'}</Td>
+            <Td>{s.conf !== '—' ? <Pill tone={s.conf === 'High' ? 'ok' : 'review'}>{s.conf}</Pill> : '—'}</Td>
+          </tr>
+        ))}
+      </Table>
     </div>
   )
 }
@@ -982,6 +1107,9 @@ export default function VGApp() {
   const [sponsorId, setSponsorId] = useState(null)
   const [tab, setTab] = useState(0)
   const [lab, setLab] = useState(() => ({
+    objective: 'participation',
+    channels: { Email: true, Portal: true, 'Required notices': true, 'Advisor brief': false, 'In-app nudge': false },
+    timeline: { rolloutWeeks: 6, measureWeeks: 12 },
     cells: { ae: true, ms: true, esc: true, re: true, edu: false, hold: true },
     levers: { aeDefault: 4, aeEsc: 1, aeCap: 10, msTarget: 6, escStep: 1, escCap: 12, holdoutPct: 15 },
     content: 'none',   // none | drafted | locked

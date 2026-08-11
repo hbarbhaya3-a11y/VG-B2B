@@ -105,6 +105,29 @@ export const STRATEGY_CELLS = [
   { id: 'hold', cohort: 'Control cells', population: 2000, strategy: 'Holdout', why: 'Causal proof', kpi: 'Incrementality', content: 'Suppression list', holdout: true },
 ]
 
+// Decision Lab · Objective — what the run optimizes.
+export const OBJECTIVES = [
+  { id: 'participation', label: 'Increase participation', desc: 'Close the gap to benchmark for eligible non-participants.', rec: true },
+  { id: 'leakage', label: 'Reduce hardship leakage', desc: 'Lower early withdrawals that erode balances.' },
+  { id: 'deferral', label: 'Lift deferral rates', desc: 'Move stuck-at-default participants toward the full match.' },
+  { id: 'aum', label: 'Retain & grow AUM', desc: 'Protect assets at risk and improve long-term retention.' },
+]
+
+// Decision Lab · Objective — delivery channels for the run.
+export const CHANNELS = ['Email', 'Portal', 'Required notices', 'Advisor brief', 'In-app nudge']
+
+// Illustrative average participant balance, used to translate lift → AUM.
+export const AVG_BALANCE = 42000
+
+// Industry-context primary KPI surfaced in Objective + Simulation.
+export const INDUSTRY_KPI = {
+  'Transportation & Warehousing': { label: 'New-hire capture', factor: 1.9, unit: 'pts' },
+  'Manufacturing': { label: 'Deferral capture', factor: 1.3, unit: 'pts' },
+  'Healthcare': { label: 'Roth adoption', factor: 1.0, unit: 'pts' },
+  'Retail': { label: 'New-hire capture', factor: 2.1, unit: 'pts' },
+  'Financial Services': { label: 'HCE participation', factor: 0.7, unit: 'pts' },
+}
+
 // Lever packages + controls (Decision Lab · Lever Selection).
 export const LEVERS = [
   { id: 'ae', name: 'Auto Enrollment', controls: ['Eligible population', 'Initial default rate', 'QDIA / default investment', 'Opt-out window', 'Effective date', 'Notice timing'] },
@@ -173,6 +196,6 @@ export const CONTENT_LIBRARY = [
 ]
 
 export const DECISION_TABS = [
-  'Portfolio Recommendation', 'Lever Selection', 'Recommended Segments',
+  'Objective', 'Lever Selection', 'Recommended Segments',
   'Content & Compliance', 'Simulation', 'Approval', 'Deployment',
 ]
