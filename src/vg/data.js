@@ -9,7 +9,7 @@ export const BOOK = {
   aggParticipation: 0.73,     // VRPA plan-weighted participation
   participantWeighted: 0.59,  // VRPA participant-weighted participation
   benchmark: 0.86,
-  valueAtStake: 412, // $M AUM exposure across at-risk sponsors
+  valueAtStake: 10000, // $M AUM exposure across at-risk sponsors ($10B)
   participationTrend: [
     { m: 'Feb', rate: 76 }, { m: 'Mar', rate: 76 }, { m: 'Apr', rate: 77 },
     { m: 'May', rate: 77 }, { m: 'Jun', rate: 78 }, { m: 'Jul', rate: 78 },

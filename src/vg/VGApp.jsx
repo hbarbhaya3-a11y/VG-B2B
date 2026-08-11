@@ -243,7 +243,7 @@ function Home({ onOpenSignals, memoryLog = [] }) {
         <Stat label="Plan sponsors" value={num(BOOK.totalSponsors)} sub="on record" />
         <Stat label="Participant accounts" value={num(BOOK.totalEligible)} sub={`${num(BOOK.totalParticipants)} participating`} />
         <Stat label="Aggregate participation" value={pct(BOOK.aggParticipation)} sub={`${pct(BOOK.participantWeighted)} participant-weighted`} tone={C.red} />
-        <Stat label="Value at stake" value={money(BOOK.valueAtStake)} sub="AUM exposure, at-risk sponsors" tone={C.goldDk} />
+        <Stat label="Value at stake" value={`$${(BOOK.valueAtStake / 1000).toLocaleString()}B`} sub="AUM exposure, at-risk sponsors" tone={C.goldDk} />
       </div>
 
       {/* Growth scorecard — CXO growth lens */}
