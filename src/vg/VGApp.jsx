@@ -238,12 +238,6 @@ function Home({ onOpenSignals, memoryLog = [] }) {
         sub="Overall participation across the plan-sponsor book, the sponsors to act on first, and the KPIs that matter."
         right={<Btn kind="gold" onClick={onOpenSignals}>Review signals <IconArrowRight size={15} /></Btn>} />
 
-      {/* Vanguard scale context — approximate public figures */}
-      <div style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 16 }}>
-        <b style={{ color: C.ink2 }}>Vanguard at scale:</b> $11.09T regulatory assets under management · 50M+ investors worldwide · one of the largest U.S. 401(k) recordkeepers.
-        <span style={{ color: C.faint }}> Public figures for context (Form ADV · How America Saves); campaign metrics below are illustrative.</span>
-      </div>
-
       {/* overall numbers */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
         <Stat label="Plan sponsors" value={num(BOOK.totalSponsors)} sub="on record" />
