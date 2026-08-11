@@ -511,7 +511,7 @@ function Signals({ sponsor, onSelect, onSendToLab }) {
             {[
               { k: 'AUM opportunity if gap closes', v: money(s.valueOpp), tone: C.goldDk },
               { k: 'Illustrative avg balance / participant', v: `$${(AVG_BALANCE / 1000).toFixed(0)}k`, tone: C.ink },
-              { k: 'Est. new assets at full participation', v: money(Math.round(s.nonParticipants * AVG_BALANCE / 1e6)), tone: C.green },
+              { k: 'Participants to reach benchmark', v: num(Math.round(s.gap * s.eligible)), tone: C.green },
               { k: 'Renewal risk', v: s.renewalRisk, tone: s.renewalRisk === 'High' ? C.red : s.renewalRisk === 'Medium' ? C.amber : C.green },
             ].map(r => (
               <div key={r.k} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: C.paper, borderRadius: T.radSm, border: T.rule }}>
@@ -629,7 +629,7 @@ function DecisionLab({ sponsor, tab, setTab, lab, setLab, addMemory }) {
 
       {tab === 0 && <TabObjective sponsor={sponsor} lab={lab} setLab={setLab} d={d} />}
       {tab === 1 && <TabLevers lab={lab} setLab={setLab} d={d} />}
-      {tab === 2 && <TabStrategy lab={lab} setLab={setLab} d={d} />}
+      {tab === 2 && <TabStrategy sponsor={sponsor} lab={lab} setLab={setLab} d={d} />}
       {tab === 3 && <TabContent lab={lab} setLab={setLab} d={d} />}
       {tab === 4 && <TabSimulation sponsor={sponsor} lab={lab} setLab={setLab} d={d} />}
       {tab === 5 && <TabApproval lab={lab} setLab={setLab} d={d} />}
@@ -992,10 +992,26 @@ function ContentModal({ item, status, onClose }) {
   )
 }
 
-function TabStrategy({ lab, setLab, d }) {
+// Posture value derives from the SAME projection the simulation uses, so Balanced matches
+// simulation/results/live exactly; Aggressive/Conservative scale the same base by fixed factors.
+const POSTURE_FACTOR = { aggressive: { lf: 1.37, cf: 1.5 }, balanced: { lf: 1, cf: 1 }, conservative: { lf: 0.48, cf: 0.35 } }
+function postureValue(id, p) {
+  const f = POSTURE_FACTOR[id] || POSTURE_FACTOR.balanced
+  const aum = p.aum * f.lf, cost = p.cost * f.cf
+  return { lift: +(p.lift * f.lf).toFixed(1), enroll: Math.round(p.enroll * f.lf), aum: +aum.toFixed(0), cost: +cost.toFixed(1), roi: cost > 0 ? +(aum / cost).toFixed(1) : 0 }
+}
+// Balanced/Aggressive act on all configured segments; Conservative on the core subset.
+function postureSegments(id, d) {
+  return id === 'conservative' ? d.perCell.filter(c => ['ae', 'ms'].includes(c.id)) : d.perCell
+}
+
+function TabStrategy({ sponsor, lab, setLab, d }) {
   const selectedId = lab.posture || 'balanced'
   const choose = (id) => setLab(l => ({ ...l, posture: id }))
   const active = STRATEGY_PLAYBOOKS.find(p => p.id === selectedId) || STRATEGY_PLAYBOOKS[1]
+  const p = projections(sponsor, d)
+  const activeVal = postureValue(active.id, p)
+  const activeSegs = postureSegments(active.id, d)
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 12.5, color: C.muted }}>
@@ -1006,6 +1022,7 @@ function TabStrategy({ lab, setLab, d }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 12, marginBottom: 18 }}>
         {STRATEGY_PLAYBOOKS.map(pb => {
           const on = pb.id === selectedId
+          const v = postureValue(pb.id, p)
           return (
             <Card key={pb.id} onClick={() => choose(pb.id)} pad={16}
               style={{ cursor: 'pointer', borderColor: on ? C.gold : undefined, borderWidth: on ? 2 : 1, borderStyle: 'solid',
@@ -1016,9 +1033,9 @@ function TabStrategy({ lab, setLab, d }) {
               </div>
               <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5, minHeight: 52 }}>{pb.tagline}</div>
               <div style={{ display: 'flex', gap: 14, marginTop: 12, paddingTop: 12, borderTop: `1px dashed ${C.line}` }}>
-                <div><div style={{ fontSize: 10, color: C.muted }}>Prob. AUM</div><div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: C.goldDk }}>+${pb.value.aum}M</div></div>
-                <div><div style={{ fontSize: 10, color: C.muted }}>Participation</div><div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: C.green }}>+{pb.value.lift} pts</div></div>
-                <div><div style={{ fontSize: 10, color: C.muted }}>Cost</div><div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: C.ink }}>+${pb.value.cost}M</div></div>
+                <div><div style={{ fontSize: 10, color: C.muted }}>Prob. AUM</div><div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: C.goldDk }}>+${v.aum}M</div></div>
+                <div><div style={{ fontSize: 10, color: C.muted }}>Participation</div><div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: C.green }}>+{v.lift} pts</div></div>
+                <div><div style={{ fontSize: 10, color: C.muted }}>Cost</div><div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: C.ink }}>+${v.cost}M</div></div>
               </div>
             </Card>
           )
@@ -1032,24 +1049,24 @@ function TabStrategy({ lab, setLab, d }) {
           <span style={{ fontSize: 12, color: C.muted }}>Estimate — refined in Simulation</span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10, marginTop: 6 }}>
-          <KpiTile label="Participation lift" value={`+${active.value.lift} pts`} tone={C.green} />
-          <KpiTile label="Incremental enrollments" value={`+${num(active.value.enroll)}`} tone={C.green} />
-          <KpiTile label="Incremental AUM" value={`+$${active.value.aum}M`} tone={C.goldDk} />
-          <KpiTile label="Incremental cost" value={`+$${active.value.cost}M`} />
-          <KpiTile label="AUM-to-cost" value={`${active.value.roi}×`} tone={C.goldDk} />
+          <KpiTile label="Participation lift" value={`+${activeVal.lift} pts`} tone={C.green} />
+          <KpiTile label="Incremental enrollments" value={`+${num(activeVal.enroll)}`} tone={C.green} />
+          <KpiTile label="Incremental AUM" value={`+$${activeVal.aum}M`} tone={C.goldDk} />
+          <KpiTile label="Incremental cost" value={`+$${activeVal.cost}M`} />
+          <KpiTile label="AUM-to-cost" value={`${activeVal.roi}×`} tone={C.goldDk} />
         </div>
       </Card>
 
       {/* segment-by-segment playbook for the selected posture */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, fontSize: 12.5, color: C.muted }}>
-        <IconTargetArrow size={15} color={C.gold} /> {active.name} playbook — {active.segments.length} segments · who gets what
+        <IconTargetArrow size={15} color={C.gold} /> {active.name} playbook — {activeSegs.length} segments · who gets what
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {active.segments.map((seg, i) => {
-          const cell = STRATEGY_CELLS.find(c => c.id === seg.cell) || {}
-          const pieces = STRATEGY_CONTENT[seg.cell] || []
+        {activeSegs.map((cell, i) => {
+          const seg = { audience: cell.population }
+          const pieces = STRATEGY_CONTENT[cell.id] || []
           return (
-            <Card key={seg.cell} pad={0}>
+            <Card key={cell.id} pad={0}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px', borderBottom: T.rule }}>
                 <span style={{ width: 26, height: 26, borderRadius: '50%', background: C.brand, color: '#fff',
                   display: 'grid', placeItems: 'center', fontFamily: DISP, fontWeight: 700, fontSize: 13, flexShrink: 0 }}>{i + 1}</span>

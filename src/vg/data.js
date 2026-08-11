@@ -124,7 +124,7 @@ export const STRATEGY_CONTENT = {
         { heading: 'The opportunity', body: '10,700 eligible employees are not enrolled — a 14-point participation gap vs the 86% benchmark, representing $88M in net-new AUM opportunity.' },
         { heading: 'Recommendation', body: 'Activate automatic enrollment at a 4% default deferral with 1%/yr auto-escalation to a 10% cap, invested in the plan\'s QDIA.' },
         { heading: 'Who is affected', body: 'Eligible employees not currently contributing. Employees already contributing are unaffected. A randomized holdout is carved for causal measurement.' },
-        { heading: 'Projected impact', body: '+9.2 pts participation, ~8,600 incremental enrollments, +$79M AUM at ~$1.7M incremental match cost (≈46× AUM-to-cost).' },
+        { heading: 'Projected impact', body: '+9.3 pts participation (to ~81%), ~2,400 incremental enrollments, +$101M AUM at ~$2.2M incremental match cost (≈46.7× AUM-to-cost).' },
         { heading: 'Governance & timeline', body: 'Required notices, opt-out windows, and QDIA disclosures auto-attach. Fiduciary review required. Staged rollout over the configured window.' },
       ],
     },

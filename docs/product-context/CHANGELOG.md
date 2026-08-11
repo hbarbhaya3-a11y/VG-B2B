@@ -5,6 +5,26 @@
 
 ---
 
+## Session 13 — Number-consistency audit + fixes across analysis/strategy/results/live — 2026-08-11
+
+### Build Status
+- `npm run build` — **PASSED** — 0 errors. Verified visually via Playwright (company analysis, recommended strategy).
+
+### Consistency issues found & fixed
+- **Recommended Strategy (postures)** used hardcoded values that disagreed with the simulation (Balanced showed +$79M / 8,600 enrollments / +$1.7M vs the sim's +$101M / +2,403 / +$2.2M). Now every posture's value **derives from the same `projections()` the simulation uses**: Balanced = factor 1 (matches sim/results/live exactly), Aggressive/Conservative scale the same base (1.37 / 0.48 lift). Balanced tile now reads +9.3 pts, +$101M, +$2.2M, 46.7×.
+- **Balanced playbook segments** now reflect the actual configured cells (AE + Match Stretch + Auto Escalation + Re-enrollment = 30,400), matching the levers/simulation/deployment/live run, instead of a stale 3-segment set.
+- **AE committee deck** "Projected impact" slide restated the old numbers (+9.2 / 8,600 / $79M / $1.7M) → updated to the canonical +9.3 pts (~81%), ~2,400 enrollments, +$101M, ~$2.2M, 46.7×.
+- **Company Analysis** value-at-stake had two conflicting AUM figures ($88M opportunity vs a derived $449M "at full participation"). Replaced the derived line with **"Participants to reach benchmark"** (5,352), which now matches the benchmarking callout; the single AUM figure is the $88M value opportunity.
+
+### Verified consistent
+- Non-participants 10,700 = AE cohort = benchmarking; participation 72%→81% (+9.3 pts); portfolio 30,400 / 25,840 treated / 4,560 holdout identical across Strategy, Simulation, Results, and Live run (live derives from `projections` at deploy).
+
+### Watch List
+- Company Analysis cohort composition still lists the Low-readiness (education) cohort as analysis context, though it isn't a deployed segment — intentional (book-level analysis vs chosen plan).
+- Aggressive/Conservative posture numbers are scaled estimates of Balanced, not independently simulated (simulation shows Balanced only).
+
+---
+
 ## Session 12 — Compact current-plan line, single sim scenario, drop strategy secondary KPI — 2026-08-11
 
 ### Build Status
