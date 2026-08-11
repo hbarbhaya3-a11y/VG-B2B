@@ -137,7 +137,7 @@ function Sidebar({ menu, setMenu, collapsed, setCollapsed, themeName, setThemeNa
     <div style={{ width: collapsed ? 72 : 240, flexShrink: 0, background: T.navGrad, color: '#EADFD3',
       display: 'flex', flexDirection: 'column', padding: collapsed ? '22px 12px' : '24px 16px',
       borderRadius: T.radLg, border: '1px solid rgba(255,255,255,.06)', boxShadow: T.shadow3,
-      transition: `width .28s ${T.ease}`, position: 'sticky', top: 16, height: 'calc(100vh - 32px)', overflowY: 'auto' }}>
+      transition: `width .28s ${T.ease}`, height: '100%', overflowY: 'auto' }}>
       {/* brand */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'space-between', marginBottom: 26, gap: 10 }}>
         {!collapsed && (
@@ -1891,10 +1891,10 @@ export default function VGApp() {
   const sendToLab = () => { setTab(0); setMenu('decision') }
 
   return (
-    <div style={{ minHeight: '100vh', background: T.paperGrad, fontFamily: FONT,
-      display: 'flex', gap: 16, padding: 16, color: C.ink }}>
+    <div style={{ height: '100vh', boxSizing: 'border-box', background: T.paperGrad, fontFamily: FONT,
+      display: 'flex', gap: 16, padding: 16, color: C.ink, overflow: 'hidden' }}>
       <Sidebar {...{ menu, setMenu, collapsed, setCollapsed, themeName, setThemeName }} />
-      <main style={{ flex: 1, minWidth: 0, maxWidth: 1180 }}>
+      <main style={{ flex: 1, minWidth: 0, maxWidth: 1180, height: '100%', overflowY: 'auto' }}>
         {menu === 'home' && <Home onOpenSignals={openSignals} memoryLog={memoryLog} />}
         {menu === 'signals' && <Signals sponsor={sponsor} onSelect={setSponsorId} onSendToLab={sendToLab} />}
         {menu === 'decision' && <DecisionLab sponsor={sponsor} tab={tab} setTab={setTab} lab={lab} setLab={setLab} addMemory={addMemory} />}
