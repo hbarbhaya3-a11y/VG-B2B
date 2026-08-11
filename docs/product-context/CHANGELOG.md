@@ -5,6 +5,18 @@
 
 ---
 
+## Session 11 — Step-ribbon completion fix, current-plan summary trim, KPI wording — 2026-08-11
+
+### Build Status
+- `npm run build` — **PASSED** — 0 errors. Verified visually via Playwright (default ribbon, levers panel).
+
+### Fixed / Changed — `src/vg/VGApp.jsx`
+- **Step ribbon** — steps no longer show as complete from preset defaults. A step is marked complete only once the user has actually advanced past it (`lab.maxTab` tracks the furthest tab reached; `done[i] = i < maxTab && stepDone(...)`). On first load only Objective is current; nothing is pre-checked.
+- **Current plan configuration** (Lever Selection) — removed the "· company level" wording; the summary now shows the core recommendation levers (AE, Match Stretch, Auto Escalation) rather than all four.
+- **Simulation results** — dropped the "Primary KPI" / "Secondary KPIs" wording; sections are now "Participation · P50 · <industry>" and "Other projected KPIs".
+
+---
+
 ## Session 10 — Content-type rendering, KPI hierarchy, scenario alignment, lever/company summary — 2026-08-11
 
 ### Build Status

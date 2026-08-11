@@ -594,7 +594,10 @@ function DecisionLab({ sponsor, tab, setTab, lab, setLab, addMemory }) {
   }
   const d = labDerived(lab)
   const tabIcons = [IconTargetArrow, IconAdjustments, IconChartBar, IconFileText, IconActivity, IconChecklist, IconRocket]
-  const done = DECISION_TABS.map((_, i) => stepDone(lab, d, i))
+  // A step is complete only once the user has actually advanced past it (not from preset defaults).
+  const maxTab = lab.maxTab || 0
+  useEffect(() => { setLab(l => (tab > (l.maxTab || 0) ? { ...l, maxTab: tab } : l)) }, [tab, setLab])
+  const done = DECISION_TABS.map((_, i) => i < maxTab && stepDone(lab, d, i))
 
   return (
     <div>
@@ -750,11 +753,11 @@ function TabLevers({ lab, setLab, d }) {
         <IconShieldCheck size={15} color={C.green} /> Levers appear after recommendation. Only strategies in the portfolio are configurable.
       </div>
 
-      {/* company-level current configuration */}
+      {/* current configuration summary */}
       <Card style={{ marginBottom: 14 }}>
-        <Eyebrow>Current plan configuration · company level</Eyebrow>
+        <Eyebrow>Current plan configuration</Eyebrow>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 10, marginTop: 6 }}>
-          {LEVERS.filter(l => activeIds.has(l.id)).map(l => (
+          {LEVERS.filter(l => activeIds.has(l.id) && ['ae', 'ms', 'esc'].includes(l.id)).map(l => (
             <div key={l.id} style={{ padding: '10px 12px', background: C.paper, border: T.rule, borderRadius: T.radMd }}>
               <div style={{ fontSize: 11, color: C.muted, fontWeight: 600 }}>{l.name}</div>
               <div style={{ fontSize: 13, color: C.ink, fontWeight: 600, marginTop: 3 }}>{leverSummary(l.id, L)}</div>
@@ -1329,7 +1332,7 @@ function TabSimulation({ sponsor, lab, setLab, d }) {
 
       {/* Primary KPI — participation */}
       <Card>
-        <Eyebrow>Primary KPI · participation · P50 · {sponsor.industry}</Eyebrow>
+        <Eyebrow>Participation · P50 · {sponsor.industry}</Eyebrow>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 20, flexWrap: 'wrap', marginTop: 4 }}>
           <div>
             <div style={{ fontFamily: DISP, fontSize: 48, fontWeight: 700, color: C.green, lineHeight: 1 }}>{pct(p.projected)}</div>
@@ -1352,7 +1355,7 @@ function TabSimulation({ sponsor, lab, setLab, d }) {
 
       {/* Secondary KPIs */}
       <Card>
-        <Eyebrow>Secondary KPIs</Eyebrow>
+        <Eyebrow>Other projected KPIs</Eyebrow>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10, marginTop: 4 }}>
           <KpiTile label="Incremental enrollments" value={`+${num(p.enroll)}`} sub="newly participating" tone={C.green} />
           <KpiTile label="Incremental AUM" value={`+$${p.aum.toFixed(0)}M`} sub="new assets added" tone={C.goldDk} />
@@ -1866,6 +1869,7 @@ export default function VGApp() {
     channels: { Email: true, Portal: true, Notices: true, 'Advisor brief': false, 'In-app nudge': false },
     timeline: { rolloutWeeks: 6, measureWeeks: 12 },
     posture: 'balanced',
+    maxTab: 0,
     cells: { ae: true, ms: true, esc: true, re: true, edu: false, hold: true },
     levers: { aeDefault: 4, aeEsc: 1, aeCap: 10, msTarget: 6, escStep: 1, escCap: 12, holdoutPct: 15, reFreq: 12, reNotice: 45, eduCadence: 2 },
     content: 'none',   // none | drafted | locked
