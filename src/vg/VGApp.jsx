@@ -284,13 +284,22 @@ function Signals({ sponsor, onSelect, onSendToLab }) {
   const [tab, setTab] = useState('market')
   const [mktFilter, setMktFilter] = useState('All')
   if (!sponsor) {
-    const types = ['All', ...Array.from(new Set(MARKET_SIGNALS.map(s => s.type)))]
-    const filtered = mktFilter === 'All' ? MARKET_SIGNALS : MARKET_SIGNALS.filter(s => s.type === mktFilter)
+    // Company signals — one per at-risk sponsor — surface in the feed and open Company Analysis.
+    const companySignals = SPONSORS.filter(s => s.gap > 0).map(s => ({
+      id: 'co-' + s.id, type: 'Company',
+      impact: s.renewalRisk === 'High' ? 'high' : s.renewalRisk === 'Medium' ? 'medium' : 'low',
+      title: `${s.name} — participation gap`,
+      detail: `${num(s.employees)} employees · participation ${pct(s.participation)} vs ${pct(s.benchmark)} benchmark · ${num(s.nonParticipants)} eligible non-participants.`,
+      when: 'live', sponsor: s.id,
+    }))
+    const feed = [...companySignals, ...MARKET_SIGNALS.filter(m => m.type !== 'Plan Event')]
+    const types = ['All', ...Array.from(new Set(feed.map(s => s.type)))]
+    const filtered = mktFilter === 'All' ? feed : feed.filter(s => s.type === mktFilter)
     const impactTone = (im) => (im === 'high' ? 'high' : im === 'medium' ? 'med' : 'low')
     return (
       <div>
         <SectionTitle kicker="Signals · Participation intelligence" title="What is TwinX seeing across the book?"
-          sub="Market and regulatory intelligence plus the KPIs that move participation. Open a plan event to investigate a company's gap." />
+          sub="Company signals plus market and regulatory intelligence. Open a company signal to go into its analysis." />
 
         {/* tab toggle */}
         <div style={{ display: 'flex', gap: 0, marginBottom: 20, background: C.paper, borderRadius: T.radMd, padding: 4, width: 'fit-content', border: T.rule }}>
@@ -305,7 +314,7 @@ function Signals({ sponsor, onSelect, onSendToLab }) {
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 14, paddingBottom: 12, borderBottom: T.rule }}>
               <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 20, color: C.ink }}>Market Intelligence</div>
-              <span style={{ fontSize: 10.5, color: C.faint, letterSpacing: '.14em', fontWeight: 600, textTransform: 'uppercase' }}>{MARKET_SIGNALS.length} active · streaming</span>
+              <span style={{ fontSize: 10.5, color: C.faint, letterSpacing: '.14em', fontWeight: 600, textTransform: 'uppercase' }}>{feed.length} active · streaming</span>
             </div>
             <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
               {types.map(t => (
@@ -327,7 +336,7 @@ function Signals({ sponsor, onSelect, onSendToLab }) {
                         <Pill tone={impactTone(s.impact)}>{s.type}</Pill>
                         <span style={{ fontSize: 11, color: C.faint }}>{s.when}</span>
                       </div>
-                      {clickable && <span style={{ fontSize: 10.5, color: C.goldDk, fontWeight: 700 }}>Investigate →</span>}
+                      {clickable && <span style={{ fontSize: 10.5, color: C.goldDk, fontWeight: 700 }}>{s.type === 'Company' ? 'Company analysis →' : 'Investigate →'}</span>}
                     </div>
                     <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink, marginBottom: 5 }}>{s.title}</div>
                     <div style={{ fontSize: 12.5, color: C.muted, lineHeight: 1.5 }}>{s.detail}</div>
