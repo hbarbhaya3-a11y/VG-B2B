@@ -1111,120 +1111,97 @@ function TabPolicyImpact({ sponsor, lab, setLab, d }) {
       steps={['Loading cohorts & plan rules…', 'Applying each lever independently…', 'Running 1,000 Monte-Carlo iterations per strategy…', 'Scoring CSAT, churn & AUM impact…', 'Ranking policies vs do-nothing…']}
       onDone={() => setLab(l => ({ ...l, policySimulated: true }))} />
   }
-  const impacts = strategyImpacts(sponsor, d)
   const m = sponsorMetrics(sponsor)
-  const base = sponsor.participation
-  const selected = impacts.find(x => x.id === lab.selectedStrategy) ? lab.selectedStrategy : impacts[0]?.id
-  const selImpact = impacts.find(x => x.id === selected) || impacts[0]
+  const p = projections(sponsor, d)                 // combined new-policy totals
+  const csatTot = Math.max(1, Math.round(p.lift * 0.8))
+  const churnTot = Math.max(1, Math.round(p.lift * 0.5))
+  const selected = d.treatCells.find(c => c.id === lab.selectedStrategy) ? lab.selectedStrategy : d.treatCells[0]?.id
   const pick = (id) => setLab(l => ({ ...l, selectedStrategy: id }))
-  // Full projected-impact KPI set for the selected strategy (updates on selection / lever change).
-  const s = selImpact || {}
-  const projected = Math.min(0.99, base + (s.lift || 0) / 100)
-  const roi = s.cost > 0 ? s.aum / s.cost : 0
-  const deferral = +((s.lift || 0) * 0.15).toFixed(1)
-  const adp = (s.lift || 0) >= 3 ? 'Improved' : 'Neutral'
-  const fid = Math.max(12, Math.round(38 - (s.lift || 0) * 1.4))
-  const ind = INDUSTRY_KPI[sponsor.industry]
-  const selKpis = [
-    { label: 'Projected participation', value: pct(projected), sub: `from ${pct(base)} · +${s.lift} pts`, tone: C.green },
-    { label: 'Participation lift', value: `+${s.lift} pts`, sub: 'vs holdout', tone: C.green },
-    { label: 'Incremental enrollments', value: `+${num(s.enroll || 0)}`, sub: 'newly participating', tone: C.green },
-    { label: 'Incremental AUM', value: `+$${s.aum}M`, sub: 'net-new assets', tone: C.goldDk },
-    { label: 'Incremental cost', value: `+$${s.cost}M`, sub: 'employer match' },
-    { label: 'AUM-to-cost', value: `${roi.toFixed(1)}×`, sub: 'return on cost', tone: C.goldDk },
-    { label: 'Participant CSAT', value: `${Math.min(99, m.csat + s.csat)}/100`, sub: `+${s.csat} from ${m.csat}`, tone: C.green },
-    { label: 'Churn risk', value: `${Math.max(2, m.churn - s.churn)}%`, sub: `−${s.churn} pts from ${m.churn}%`, tone: C.green },
-    { label: 'Deferral lift', value: `+${deferral} pts` },
-    { label: 'ADP headroom', value: adp, sub: 'HCE–NHCE spread', tone: adp === 'Improved' ? C.green : C.ink },
-    { label: 'Fiduciary risk', value: `${fid}/100`, sub: 'from 38', tone: C.green },
-    ...(ind ? [{ label: ind.label, value: `+${((s.lift || 0) * ind.factor).toFixed(1)} ${ind.unit}`, sub: 'industry context' }] : []),
+  const kpis = [
+    { label: 'Projected participation', value: pct(p.projected), sub: `from ${pct(p.base)} · +${p.lift} pts`, tone: C.green },
+    { label: 'Participation lift', value: `+${p.lift} pts`, sub: 'vs holdout', tone: C.green },
+    { label: 'Incremental enrollments', value: `+${num(p.enroll)}`, sub: 'newly participating', tone: C.green },
+    { label: 'Incremental AUM', value: `+$${p.aum.toFixed(0)}M`, sub: 'net-new assets', tone: C.goldDk },
+    { label: 'Incremental cost', value: `+$${p.cost.toFixed(1)}M`, sub: 'employer match' },
+    { label: 'AUM-to-cost', value: `${p.roi.toFixed(1)}×`, sub: 'return on cost', tone: C.goldDk },
+    { label: 'Participant CSAT', value: `${Math.min(99, m.csat + csatTot)}/100`, sub: `+${csatTot} from ${m.csat}`, tone: C.green },
+    { label: 'Churn risk', value: `${Math.max(2, m.churn - churnTot)}%`, sub: `−${churnTot} pts from ${m.churn}%`, tone: C.green },
+    { label: 'Deferral lift', value: `+${p.deferralLift} pts` },
+    { label: 'ADP test', value: p.adp, sub: 'HCE–NHCE spread', tone: p.adp === 'Resolved' ? C.green : C.ink },
+    { label: 'Fiduciary risk', value: `${p.fidNew}/100`, sub: 'from 38', tone: C.green },
+    ...(p.ind ? [{ label: p.ind.label, value: `+${(p.lift * p.ind.factor).toFixed(1)} ${p.ind.unit}`, sub: 'industry context' }] : []),
   ]
-  const graphRows = [
-    { k: 'Do nothing', v: base, tone: C.faint },
-    ...impacts.map(s => ({ k: s.strategy, v: Math.min(0.99, base + s.lift / 100), tone: s.id === selected ? C.green : C.brandLt })),
-    { k: 'Sector benchmark', v: sponsor.benchmark, tone: C.goldDk },
-  ]
+  // Divide the total policy impact across the 4 strategies (contribution / attribution).
+  const totW = d.treatCells.reduce((a, c) => a + (STRAT_WEIGHT[c.id] || 0), 0) || 1
+  const segColors = [C.brand, C.gold, C.green, C.brandLt, C.goldDk]
+  const attr = d.treatCells.map((c, i) => {
+    const w = (STRAT_WEIGHT[c.id] || 0) / totW
+    return { id: c.id, strategy: c.strategy, cohort: c.cohort, rec: c.id === 'ae', share: w, color: segColors[i % segColors.length],
+      aum: +(p.aum * w).toFixed(0), lift: +(p.lift * w).toFixed(1), enroll: Math.round(p.enroll * w) }
+  })
+  // Old vs new policy parameters for each active lever.
+  const L = lab.levers
+  const paramMap = {
+    ae: { name: 'Auto Enrollment', cur: '3% default · opt-in · no escalation', neu: `${L.aeDefault}% auto-enroll · +${L.aeEsc}%/yr → ${L.aeCap}% cap · QDIA` },
+    ms: { name: 'Match Stretch', cur: 'Standard match formula', neu: `Stretch match to ${L.msTarget}% (cost-neutral)` },
+    esc: { name: 'Auto Escalation', cur: 'None for stuck-at-default', neu: `+${L.escStep}%/yr → ${L.escCap}% cap` },
+    re: { name: 'Re-enrollment', cur: 'Legacy / non-QDIA elections', neu: `Sweep every ${L.reFreq} mo → QDIA · ${L.reNotice}-day notice` },
+  }
+  const paramRows = d.treatCells.map(c => paramMap[c.id]).filter(Boolean)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: C.muted, flexWrap: 'wrap' }}>
-        <IconChartBar size={15} color={C.gold} /> Each strategy is simulated independently on its own cohort. Pick one to carry into Content. Opportunity size {money(sponsor.valueOpp)}.
+        <IconChartBar size={15} color={C.gold} /> The new policy combines {d.treatCells.length} levers. Below: its projected impact, how that impact divides across the levers, and what changes vs doing nothing.
         <Btn kind="ghost" small onClick={() => setLab(l => ({ ...l, policySimulated: false }))} style={{ marginLeft: 'auto' }}>Re-simulate</Btn>
       </div>
 
-      {/* 4 strategies in a horizontal strip, KPIs below each */}
-      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
-        {impacts.map(s => {
-          const on = s.id === selected
-          return (
-            <Card key={s.id} onClick={() => pick(s.id)} pad={14}
-              style={{ flex: '1 1 0', minWidth: 236, cursor: 'pointer', borderColor: on ? C.gold : undefined, borderWidth: on ? 2 : 1, borderStyle: 'solid', background: on ? C.amberBg : C.card }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 2 }}>
-                <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14.5, color: C.ink }}>{s.strategy}</span>
-                {s.rec ? <Pill tone="gold">Recommended</Pill> : on ? <IconCheck size={15} color={C.green} /> : <IconChevronRight size={15} color={C.faint} />}
-              </div>
-              <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 10 }}>{s.cohort} · {num(s.audience)}{on ? ' · selected' : ''}</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                <KpiTile label="Participation" value={`+${s.lift} pts`} tone={C.green} />
-                <KpiTile label="AUM impact" value={`+$${s.aum}M`} tone={C.goldDk} />
-              </div>
-            </Card>
-          )
-        })}
-      </div>
-
-      {/* full projected-impact KPIs for the selected strategy */}
+      {/* projected impact — combined new policy */}
       <Card>
-        <Eyebrow>Full projected impact · {s.strategy}</Eyebrow>
+        <Eyebrow>Projected impact · new policy</Eyebrow>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10, marginTop: 6 }}>
-          {selKpis.map(k => <KpiTile key={k.label} label={k.label} value={k.value} sub={k.sub} tone={k.tone} />)}
+          {kpis.map(k => <KpiTile key={k.label} label={k.label} value={k.value} sub={k.sub} tone={k.tone} />)}
         </div>
       </Card>
 
-      {/* graph — projected participation for all strategies vs do-nothing */}
+      {/* impact divided across the 4 strategies */}
       <Card>
-        <Eyebrow>Projected participation · all strategies vs do-nothing</Eyebrow>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
-          {graphRows.map(b => (
-            <div key={b.k} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 12, color: C.ink2, width: 150, flexShrink: 0 }}>{b.k}</span>
-              <div style={{ flex: 1, height: 14, background: C.line, borderRadius: 999, overflow: 'hidden' }}>
-                <div style={{ width: pct(b.v), height: '100%', background: b.tone, borderRadius: 999 }} />
-              </div>
-              <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 13, color: b.tone, width: 46, textAlign: 'right' }}>{pct(b.v)}</span>
-            </div>
+        <Eyebrow>Impact contribution · how the policy splits across levers</Eyebrow>
+        <div style={{ display: 'flex', height: 20, borderRadius: 999, overflow: 'hidden', marginTop: 8, marginBottom: 8 }}>
+          {attr.map(a => (
+            <div key={a.id} title={`${a.strategy} · ${pct(a.share)}`} style={{ width: pct(a.share), background: a.color }} />
           ))}
         </div>
-      </Card>
-
-      {/* comparison table (last) — do-nothing vs each strategy */}
-      <Card pad={0}>
-        <div style={{ padding: '14px 20px', borderBottom: T.rule, fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>Do-nothing vs strategy — simulated impact</div>
-        <Table minWidth={780} head={<><Th>Policy</Th><Th align="right">Participation</Th><Th align="right">AUM impact</Th><Th align="right">CSAT</Th><Th align="right">Churn</Th><Th align="right">Cost</Th><Th align="right"></Th></>}>
-          <tr>
-            <Td bold>Do nothing</Td>
-            <Td align="right">{pct(base)}</Td>
-            <Td align="right">—</Td>
-            <Td align="right">{m.csat}/100</Td>
-            <Td align="right">{m.churn}%</Td>
-            <Td align="right">—</Td>
-            <Td align="right">—</Td>
-          </tr>
-          {impacts.map(s => {
-            const on = s.id === selected
+        <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 10 }}>Total incremental AUM +${p.aum.toFixed(0)}M · +{p.lift} pts participation · +{num(p.enroll)} enrollments, apportioned by lever contribution.</div>
+        <Table minWidth={640} head={<><Th>Lever</Th><Th align="right">Contribution</Th><Th align="right">AUM</Th><Th align="right">Participation</Th><Th align="right">Enrollments</Th><Th align="right"></Th></>}>
+          {attr.map(a => {
+            const on = a.id === selected
             return (
-              <tr key={s.id} style={{ background: on ? C.amberBg : undefined }}>
-                <Td bold>{s.strategy} {s.rec && <Pill tone="gold">Rec</Pill>}</Td>
-                <Td align="right">{pct(base + s.lift / 100)} <span style={{ color: C.green, fontWeight: 600 }}>(+{s.lift})</span></Td>
-                <Td align="right"><span style={{ color: C.goldDk, fontWeight: 600 }}>+${s.aum}M</span></Td>
-                <Td align="right"><span style={{ color: C.green }}>+{s.csat}</span></Td>
-                <Td align="right"><span style={{ color: C.green }}>−{s.churn} pts</span></Td>
-                <Td align="right">+${s.cost}M</Td>
-                <Td align="right">{on ? <Pill tone="gold">Selected</Pill> : <Btn kind="quiet" small onClick={() => pick(s.id)}>Select</Btn>}</Td>
+              <tr key={a.id} style={{ background: on ? C.amberBg : undefined }}>
+                <Td bold><span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: a.color }} />{a.strategy} {a.rec && <Pill tone="gold">Rec</Pill>}</span></Td>
+                <Td align="right">{pct(a.share)}</Td>
+                <Td align="right"><span style={{ color: C.goldDk, fontWeight: 600 }}>+${a.aum}M</span></Td>
+                <Td align="right"><span style={{ color: C.green }}>+{a.lift} pts</span></Td>
+                <Td align="right">+{num(a.enroll)}</Td>
+                <Td align="right">{on ? <Pill tone="gold">Selected</Pill> : <Btn kind="quiet" small onClick={() => pick(a.id)}>Select</Btn>}</Td>
               </tr>
             )
           })}
         </Table>
-        <div style={{ padding: '10px 20px', fontSize: 11.5, color: C.muted }}>Every strategy clears $30M in net-new AUM (capped at $55M each). The selected strategy carries into Content.</div>
+        <div style={{ padding: '10px 0 0', fontSize: 11.5, color: C.muted }}>The selected lever carries into Content.</div>
+      </Card>
+
+      {/* do nothing vs new policy — parameters */}
+      <Card pad={0}>
+        <div style={{ padding: '14px 20px', borderBottom: T.rule, fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>Do nothing vs New Policy — plan parameters</div>
+        <Table minWidth={640} head={<><Th>Lever</Th><Th>Current (do nothing)</Th><Th>New policy</Th></>}>
+          {paramRows.map(r => (
+            <tr key={r.name}>
+              <Td bold>{r.name}</Td>
+              <Td><span style={{ color: C.muted }}>{r.cur}</span></Td>
+              <Td><span style={{ color: C.green, fontWeight: 600 }}>{r.neu}</span></Td>
+            </tr>
+          ))}
+        </Table>
       </Card>
     </div>
   )
