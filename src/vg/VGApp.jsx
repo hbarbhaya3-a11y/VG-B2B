@@ -1174,10 +1174,7 @@ function TabPolicyImpact({ sponsor, lab, setLab, d }) {
 
       {/* full projected-impact KPIs for the selected strategy */}
       <Card>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-          <Eyebrow>Full projected impact · {s.strategy}</Eyebrow>
-          <span style={{ fontSize: 12, color: C.muted }}>Updates when you select a different strategy</span>
-        </div>
+        <Eyebrow>Full projected impact · {s.strategy}</Eyebrow>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10, marginTop: 6 }}>
           {selKpis.map(k => <KpiTile key={k.label} label={k.label} value={k.value} sub={k.sub} tone={k.tone} />)}
         </div>
