@@ -1172,8 +1172,6 @@ function TabPolicyImpact({ sponsor, lab, setLab, d }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 <KpiTile label="Participation" value={`+${s.lift} pts`} tone={C.green} />
                 <KpiTile label="AUM impact" value={`+$${s.aum}M`} tone={C.goldDk} />
-                <KpiTile label="CSAT" value={`+${s.csat}`} sub={`to ${Math.min(99, m.csat + s.csat)}/100`} tone={C.green} />
-                <KpiTile label="Churn" value={`−${s.churn} pts`} sub={`to ${Math.max(2, m.churn - s.churn)}%`} tone={C.green} />
               </div>
             </Card>
           )
