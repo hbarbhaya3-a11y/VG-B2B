@@ -759,7 +759,6 @@ function TabLevers({ lab, setLab, d }) {
             <Card key={l.id}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>{l.name}</div>
-                <Pill tone="ok">Ready</Pill>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {l.id === 'ae' && <>
