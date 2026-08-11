@@ -5,6 +5,19 @@
 
 ---
 
+## Session 14 — Scroll fix, Vanguard-scale context, CSAT/churn KPIs, AUM growth callout — 2026-08-11
+
+### Build Status
+- `npm run build` — **PASSED** — 0 errors. Verified via Playwright (window scroll restored; company + simulation KPIs).
+
+### Fixed / Added — `src/vg/VGApp.jsx`
+- **Scroll restored** — reverted the fixed-height/overflow-hidden shell (which disabled wheel scrolling). Back to natural window scroll; the sidebar now pins reliably via `position: sticky` + `align-self: flex-start` + `max-height: calc(100vh-32px)` + internal overflow, so it stays put without clipping and without blocking page scroll.
+- **Home** — added a "Vanguard at scale" context line with approximate public figures (≈$10T AUM, ≈50M investors, one of the largest U.S. 401(k) recordkeepers), clearly labeled as approximate context (Vanguard is client-owned; book metrics remain illustrative).
+- **Company details** — added **Participant CSAT** and **Churn prediction** snapshot tiles (derived via `sponsorMetrics`), and a prominent **AUM Growth Opportunity** headline callout (net-new AUM potential + participants-to-benchmark).
+- **Simulation results** — added **Participant CSAT** and **Churn risk** KPI tiles, both showing improvement vs the sponsor's current baseline (CSAT +~7, churn −~5 pts), consistent with the company-details figures.
+
+---
+
 ## Session 13 — Number-consistency audit + fixes across analysis/strategy/results/live — 2026-08-11
 
 ### Build Status

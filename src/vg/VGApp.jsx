@@ -24,6 +24,14 @@ const pct = (n, d = 0) => `${(n * 100).toFixed(d)}%`
 const gapPct = (g, d = 1) => `${g >= 0 ? '-' : '+'}${(Math.abs(g) * 100).toFixed(d)}%`
 const num = (n) => n.toLocaleString()
 
+// Synthetic participant-experience metrics derived from a sponsor's participation profile.
+function sponsorMetrics(s) {
+  const csat = Math.round(58 + s.participation * 25)                         // ~72–82
+  const riskAdd = s.renewalRisk === 'High' ? 8 : s.renewalRisk === 'Medium' ? 4 : 1
+  const churn = Math.round(Math.max(4, s.gap * 100 * 0.9 + riskAdd))          // predicted sponsor churn risk %
+  return { csat, churn }
+}
+
 /* ───────────────────────── primitives ───────────────────────── */
 function Card({ children, style, pad = 20, onClick }) {
   return (
@@ -137,7 +145,8 @@ function Sidebar({ menu, setMenu, collapsed, setCollapsed, themeName, setThemeNa
     <div style={{ width: collapsed ? 72 : 240, flexShrink: 0, background: T.navGrad, color: '#EADFD3',
       display: 'flex', flexDirection: 'column', padding: collapsed ? '22px 12px' : '24px 16px',
       borderRadius: T.radLg, border: '1px solid rgba(255,255,255,.06)', boxShadow: T.shadow3,
-      transition: `width .28s ${T.ease}`, height: '100%', overflowY: 'auto' }}>
+      transition: `width .28s ${T.ease}`, position: 'sticky', top: 16, alignSelf: 'flex-start',
+      maxHeight: 'calc(100vh - 32px)', overflowY: 'auto' }}>
       {/* brand */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'space-between', marginBottom: 26, gap: 10 }}>
         {!collapsed && (
@@ -227,6 +236,12 @@ function Home({ onOpenSignals, memoryLog = [] }) {
       <SectionTitle kicker="Vanguard · Book Overview" title="How is our book of sponsors doing?"
         sub="Overall participation across the plan-sponsor book, the sponsors to act on first, and the KPIs that matter."
         right={<Btn kind="gold" onClick={onOpenSignals}>Review signals <IconArrowRight size={15} /></Btn>} />
+
+      {/* Vanguard scale context — approximate public figures */}
+      <div style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 16 }}>
+        <b style={{ color: C.ink2 }}>Vanguard at scale:</b> ≈$10T assets under management · ≈50M investors worldwide · one of the largest U.S. 401(k) recordkeepers.
+        <span style={{ color: C.faint }}> Approximate public figures for context; the book metrics below are illustrative.</span>
+      </div>
 
       {/* overall numbers */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
@@ -430,8 +445,25 @@ function Signals({ sponsor, onSelect, onSendToLab }) {
         <Stat label="Enrolled" value={num(s.participants)} />
         <Stat label="Non-participants" value={num(s.nonParticipants)} tone={C.red} />
         <Stat label="Participation" value={pct(s.participation)} sub={`${gapPct(s.gap)} vs benchmark`} tone={C.red} />
-        <Stat label="Value opportunity" value={money(s.valueOpp)} tone={C.goldDk} />
+        <Stat label="Participant CSAT" value={`${sponsorMetrics(s).csat}/100`} sub="current" tone={C.ink} />
+        <Stat label="Churn prediction" value={`${sponsorMetrics(s).churn}%`} sub="sponsor renewal risk" tone={C.red} />
       </div>
+
+      {/* AUM growth opportunity — headline */}
+      <Card style={{ marginBottom: 16, background: C.amberBg, borderColor: `${C.gold}55`, display: 'flex',
+        alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+        <div>
+          <Eyebrow>AUM growth opportunity</Eyebrow>
+          <div style={{ fontSize: 13.5, color: C.ink2, lineHeight: 1.55, maxWidth: 560 }}>
+            Net-new assets available if {s.name}'s participation closes to the {pct(s.benchmark)} benchmark —
+            roughly {num(Math.round(s.gap * s.eligible))} more participants.
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 40, color: C.goldDk, lineHeight: 1 }}>{money(s.valueOpp)}</div>
+          <div style={{ fontSize: 11.5, color: C.muted, marginTop: 4 }}>net-new AUM potential</div>
+        </div>
+      </Card>
 
       {/* benchmarking — where this plan sits */}
       <Card style={{ marginBottom: 16 }}>
@@ -1272,6 +1304,11 @@ function TabSimulation({ sponsor, lab, setLab, d }) {
   const startRun = () => { setProgress(0); setRunning(true) }
 
   const p = projections(sponsor, d)
+  const sm = sponsorMetrics(sponsor)
+  const csatLift = Math.round(p.lift * 0.8)
+  const churnDrop = Math.round(p.lift * 0.5)
+  const csatNew = Math.min(99, sm.csat + csatLift)
+  const churnNew = Math.max(2, sm.churn - churnDrop)
   const attrib = d.treatCells.map(c => ({ name: c.strategy, w: STRAT_WEIGHT[c.id] || 0 })).sort((a, b) => b.w - a.w)
   const attTot = attrib.reduce((a, c) => a + c.w, 0) || 1
   const mkScen = (name, lf, cf, conf) => ({
@@ -1363,6 +1400,8 @@ function TabSimulation({ sponsor, lab, setLab, d }) {
           <KpiTile label="AUM-to-cost ratio" value={`${p.roi.toFixed(1)}×`} sub="incremental AUM ÷ cost" tone={C.goldDk} />
           <KpiTile label="ADP test" value={p.adp} tone={p.adp === 'Resolved' ? C.green : C.red} sub="HCE–NHCE spread" />
           <KpiTile label="Deferral lift" value={`+${p.deferralLift} pts`} />
+          <KpiTile label="Participant CSAT" value={`${csatNew}/100`} sub={`+${csatLift} from ${sm.csat}`} tone={C.green} />
+          <KpiTile label="Churn risk" value={`${churnNew}%`} sub={`−${churnDrop} pts from ${sm.churn}%`} tone={C.green} />
           <KpiTile label="Fiduciary risk" value={`${p.fidNew}/100`} sub="from 38" tone={C.green} />
           <KpiTile label="Payback" value={`${p.payback.toFixed(1)}×`} sub="on incremental cost" tone={C.goldDk} />
           {p.ind && <KpiTile label={p.ind.label} value={`+${(p.lift * p.ind.factor).toFixed(1)} ${p.ind.unit}`} sub="industry context" />}
@@ -1891,10 +1930,10 @@ export default function VGApp() {
   const sendToLab = () => { setTab(0); setMenu('decision') }
 
   return (
-    <div style={{ height: '100vh', boxSizing: 'border-box', background: T.paperGrad, fontFamily: FONT,
-      display: 'flex', gap: 16, padding: 16, color: C.ink, overflow: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: T.paperGrad, fontFamily: FONT,
+      display: 'flex', gap: 16, padding: 16, color: C.ink, alignItems: 'flex-start' }}>
       <Sidebar {...{ menu, setMenu, collapsed, setCollapsed, themeName, setThemeName }} />
-      <main style={{ flex: 1, minWidth: 0, maxWidth: 1180, height: '100%', overflowY: 'auto' }}>
+      <main style={{ flex: 1, minWidth: 0, maxWidth: 1180 }}>
         {menu === 'home' && <Home onOpenSignals={openSignals} memoryLog={memoryLog} />}
         {menu === 'signals' && <Signals sponsor={sponsor} onSelect={setSponsorId} onSendToLab={sendToLab} />}
         {menu === 'decision' && <DecisionLab sponsor={sponsor} tab={tab} setTab={setTab} lab={lab} setLab={setLab} addMemory={addMemory} />}
