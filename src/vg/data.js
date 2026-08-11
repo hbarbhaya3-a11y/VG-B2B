@@ -50,7 +50,7 @@ export const SPONSORS = [
     get nonParticipants() { return this.eligible - this.participants },
   },
   {
-    id: 'cedar', name: 'Cedar Financial', industry: 'Financial Services',
+    id: 'cedar', name: 'Alderpoint Financial', industry: 'Financial Services',
     employees: 9800, eligible: 9400, participants: 8600, benchmark: 0.88,
     valueOpp: 12, renewalRisk: 'Low', priority: 5,
     get participation() { return this.participants / this.eligible },
@@ -127,7 +127,7 @@ export const LANES = [
 // Memory — prior sponsor decisions, holdout outcomes, reusable policies.
 export const MEMORY_DECISIONS = [
   { sponsor: 'Beacon Freight', signal: 'Participation gap', portfolio: 'Auto Enrollment + Escalation', levers: 'AE 4% +1%, cap 10%', approval: 'Deployed', outcome: '+8.4% participation vs holdout' },
-  { sponsor: 'Pioneer Foods', signal: 'Match leakage', portfolio: 'Match Stretch + education', levers: 'Stretch to 6%, cost-neutral', approval: 'Deployed', outcome: '+1.9% deferral, +2.1% match uptake' },
+  { sponsor: 'Fernhollow Foods', signal: 'Match leakage', portfolio: 'Match Stretch + education', levers: 'Stretch to 6%, cost-neutral', approval: 'Deployed', outcome: '+1.9% deferral, +2.1% match uptake' },
   { sponsor: 'Vantage Media', signal: 'Deferral inertia', portfolio: 'Auto Escalation', levers: '+1%/yr, cap 12%', approval: 'Deployed', outcome: '+1.2% deferral vs holdout' },
 ]
 export const HOLDOUT_OUTCOMES = [
