@@ -201,14 +201,6 @@ function Home({ onOpenSignals, memoryLog = [] }) {
   const avgLift = completed.length ? completed.reduce((a, d) => a + (d.impact?.participationLift || 0), 0) / completed.length : 0
   const liveRuns = memoryLog.filter(r => r.live)
   const liveAum = liveRuns.reduce((a, r) => a + (r.detail?.target?.aum || 0), 0)
-  // Funnel of the CURRENT book narrowing through the decision journey (not historical campaigns).
-  const inLab = SPONSORS.filter(s => s.gap > 0 && s.renewalRisk === 'High')
-  const inLabValue = inLab.reduce((a, s) => a + s.valueOpp, 0)
-  const stages = [
-    { label: 'Opportunity in book', count: atRiskCount, value: oppValue, sub: 'at-risk sponsors', tone: C.red },
-    { label: 'In Decision Lab', count: inLab.length, value: inLabValue, sub: 'high-priority, being modeled', tone: C.gold },
-    { label: 'Deployed & live', count: liveRuns.length, value: liveAum, sub: liveRuns.length ? 'launched this session' : 'none yet — deploy to advance', tone: C.green },
-  ]
   const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()
   const signalCount = SPONSORS.filter(s => s.gap > 0).length + MARKET_SIGNALS.length
   return (
@@ -252,32 +244,6 @@ function Home({ onOpenSignals, memoryLog = [] }) {
         <Stat label="Avg participation lift delivered" value={`+${avgLift.toFixed(1)} pts`} sub="vs holdout, across campaigns" tone={C.green} />
         <Stat label="Campaigns live" value={liveRuns.length} sub={liveRuns.length ? `${money(liveAum)} AUM projected` : 'deploy from Decision Lab'} tone={liveRuns.length ? C.brand : C.muted} />
       </div>
-
-      {/* Growth pipeline — opportunity → deployed → realized */}
-      <Card style={{ marginBottom: 16 }}>
-        <Eyebrow>Growth pipeline · book opportunity through the decision journey</Eyebrow>
-        <div style={{ display: 'flex', alignItems: 'stretch', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
-          {stages.map((st, i) => (
-            <React.Fragment key={st.label}>
-              <div style={{ flex: 1, minWidth: 170, padding: '14px 16px', background: C.paper, border: T.rule, borderRadius: T.radMd,
-                borderLeft: `3px solid ${st.tone}` }}>
-                <div style={{ fontSize: 11, color: C.muted, fontWeight: 600 }}>{st.label}</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 6 }}>
-                  <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 24, color: C.ink, lineHeight: 1 }}>{st.count}</span>
-                  <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: st.tone }}>{money(st.value)}</span>
-                </div>
-                <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>{st.sub}</div>
-              </div>
-              {i < stages.length - 1 && (
-                <div style={{ display: 'grid', placeItems: 'center', color: C.faint }}><IconArrowRight size={18} /></div>
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-        <div style={{ fontSize: 11.5, color: C.muted, marginTop: 10 }}>
-          Separately, {money(realizedAum)} has already been realized across {completed.length} prior campaigns (see the growth scorecard above). Deploy campaigns in the Decision Lab to move book opportunity down the funnel.
-        </div>
-      </Card>
 
       {/* Today's Focus */}
       <Card pad={0} style={{ marginBottom: 16 }}>
@@ -783,6 +749,20 @@ function TabLevers({ lab, setLab, d }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 12.5, color: C.muted }}>
         <IconShieldCheck size={15} color={C.green} /> Levers appear after recommendation. Only strategies in the portfolio are configurable.
       </div>
+
+      {/* company-level current configuration */}
+      <Card style={{ marginBottom: 14 }}>
+        <Eyebrow>Current plan configuration · company level</Eyebrow>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 10, marginTop: 6 }}>
+          {LEVERS.filter(l => activeIds.has(l.id)).map(l => (
+            <div key={l.id} style={{ padding: '10px 12px', background: C.paper, border: T.rule, borderRadius: T.radMd }}>
+              <div style={{ fontSize: 11, color: C.muted, fontWeight: 600 }}>{l.name}</div>
+              <div style={{ fontSize: 13, color: C.ink, fontWeight: 600, marginTop: 3 }}>{leverSummary(l.id, L)}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 14 }}>
         {LEVERS.filter(l => activeIds.has(l.id)).map(l => {
           return (
@@ -790,10 +770,6 @@ function TabLevers({ lab, setLab, d }) {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>{l.name}</div>
                 <Pill tone="ok">Ready</Pill>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 10, padding: '7px 10px', background: C.amberBg, borderRadius: T.radSm, border: `1px solid ${C.gold}33` }}>
-                <span style={{ fontSize: 10, letterSpacing: '.06em', textTransform: 'uppercase', color: C.goldDk, fontWeight: 700 }}>Current</span>
-                <span style={{ fontSize: 12.5, color: C.ink2, fontWeight: 600 }}>{leverSummary(l.id, L)}</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {l.id === 'ae' && <>
@@ -828,6 +804,169 @@ function TabLevers({ lab, setLab, d }) {
   )
 }
 
+function CtaButton({ label }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: T.radMd,
+      background: C.brand, color: '#fff', fontSize: 13, fontWeight: 600 }}>{label} <IconArrowRight size={15} /></span>
+  )
+}
+
+// Renders each content asset in a layout that matches its type: PPT deck, banner, email, notice, or doc.
+function ContentRender({ piece, seg }) {
+  const a = (piece.asset || '').toLowerCase()
+  const isDeck = a.includes('deck')
+  const isBanner = a.includes('banner')
+  const isEmail = a.includes('email') || a.includes('explainer')
+  const isNotice = a.includes('notice')
+
+  // ── PPT-style committee deck ──
+  if (isDeck) {
+    const slides = piece.sections || piece.body.map((b, i) => ({ heading: `Point ${i + 1}`, body: b }))
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* title slide */}
+        <div style={{ aspectRatio: '16 / 9', border: T.rule, borderRadius: T.radMd, background: T.navGrad, color: '#EADFD3',
+          padding: 22, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: C.gold }} />
+          <div style={{ fontSize: 10.5, letterSpacing: '.16em', textTransform: 'uppercase', color: C.gold, fontWeight: 700 }}>Vanguard · Plan-design committee</div>
+          <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 26, marginTop: 8, lineHeight: 1.15, color: '#fff' }}>{piece.headline}</div>
+          {piece.subhead && <div style={{ fontSize: 13.5, color: 'rgba(234,223,211,.85)', marginTop: 8 }}>{piece.subhead}</div>}
+          <div style={{ fontSize: 12, color: 'rgba(234,223,211,.6)', marginTop: 14 }}>{seg.cohort} · {seg.strategy}</div>
+        </div>
+        {/* content slides */}
+        {slides.map((s, i) => (
+          <div key={i} style={{ aspectRatio: '16 / 9', border: T.rule, borderRadius: T.radMd, background: C.card, padding: 20,
+            display: 'flex', flexDirection: 'column', boxShadow: T.shadow1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: `2px solid ${C.gold}`, paddingBottom: 8 }}>
+              <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: C.brand }}>{s.heading}</span>
+              <span style={{ marginLeft: 'auto', fontSize: 11, color: C.faint }}>Slide {i + 2} / {slides.length + 1}</span>
+            </div>
+            <div style={{ fontSize: 14, color: C.ink2, lineHeight: 1.6, marginTop: 12, flex: 1 }}>{s.body}</div>
+            <div style={{ fontSize: 10, color: C.faint, marginTop: 8 }}>Vanguard · Education-classified · not investment advice</div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  // ── Portal banner ──
+  if (isBanner) {
+    return (
+      <div style={{ borderRadius: T.radLg, overflow: 'hidden', border: T.rule }}>
+        <div style={{ background: C.amberBg, padding: '28px 26px', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ fontSize: 10.5, letterSpacing: '.14em', textTransform: 'uppercase', color: C.goldDk, fontWeight: 700 }}>Vanguard plan portal</div>
+            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 24, color: C.ink, lineHeight: 1.15, marginTop: 6 }}>{piece.headline}</div>
+            {piece.subhead && <div style={{ fontSize: 14, color: C.ink2, marginTop: 6 }}>{piece.subhead}</div>}
+          </div>
+          <CtaButton label={piece.cta} />
+        </div>
+        <div style={{ padding: '14px 18px', background: C.card, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {piece.body.map((para, i) => <p key={i} style={{ margin: 0, fontSize: 12.5, lineHeight: 1.6, color: C.muted }}>{para}</p>)}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Participant email ──
+  if (isEmail) {
+    const variants = piece.variants
+    return (
+      <div>
+        <div style={{ border: T.rule, borderRadius: T.radMd, overflow: 'hidden' }}>
+          <div style={{ padding: '10px 14px', background: C.paper, borderBottom: T.rule, fontSize: 12, color: C.muted }}>
+            <div><b style={{ color: C.ink2 }}>From:</b> Vanguard Plan Services</div>
+            <div><b style={{ color: C.ink2 }}>To:</b> Plan participant</div>
+            {piece.subject && <div><b style={{ color: C.ink2 }}>Subject:</b> <span style={{ color: C.ink, fontWeight: 600 }}>{piece.subject}</span></div>}
+          </div>
+          <div style={{ padding: 16 }}>
+            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 17, color: C.ink }}>{piece.headline}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+              {piece.body.map((para, i) => <p key={i} style={{ margin: 0, fontSize: 13, lineHeight: 1.65, color: C.ink2 }}>{para}</p>)}
+            </div>
+            <div style={{ marginTop: 14 }}><CtaButton label={piece.cta} /></div>
+          </div>
+        </div>
+        {variants && (
+          <div style={{ marginTop: 14 }}>
+            <div style={{ fontSize: 10.5, letterSpacing: '.06em', textTransform: 'uppercase', color: C.muted, fontWeight: 700, marginBottom: 8 }}>A/B variants</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 10 }}>
+              {variants.map(v => (
+                <div key={v.letter} style={{ border: T.rule, borderRadius: T.radMd, overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: C.paper, borderBottom: T.rule }}>
+                    <span style={{ width: 20, height: 20, borderRadius: '50%', background: C.gold, color: '#fff', display: 'grid', placeItems: 'center', fontFamily: DISP, fontWeight: 700, fontSize: 11 }}>{v.letter}</span>
+                    <span style={{ fontSize: 11.5, color: C.muted, fontWeight: 600 }}>{v.label}</span>
+                  </div>
+                  <div style={{ padding: 12 }}>
+                    {v.subject && <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 4 }}><b style={{ color: C.ink2 }}>Subject:</b> {v.subject}</div>}
+                    <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 13, color: C.ink, lineHeight: 1.3 }}>{v.headline}</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+                      {v.body.map((para, i) => <p key={i} style={{ margin: 0, fontSize: 12, lineHeight: 1.55, color: C.ink2 }}>{para}</p>)}
+                    </div>
+                    <div style={{ marginTop: 8, fontSize: 12, color: C.goldDk, fontWeight: 600 }}>{v.cta} →</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ── Required notice (formal document) ──
+  if (isNotice) {
+    return (
+      <div style={{ border: T.rule, borderRadius: T.radMd, background: C.card, padding: 20 }}>
+        <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: C.ink, textAlign: 'center' }}>{piece.headline}</div>
+        <div style={{ fontSize: 11, color: C.muted, textAlign: 'center', marginTop: 4, textTransform: 'uppercase', letterSpacing: '.08em' }}>ERISA participant notice · effective date [effective date] · 30-day notice</div>
+        <div style={{ height: 1, background: C.line, margin: '14px 0' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {(piece.sections || piece.body.map((b, i) => ({ heading: `Section ${i + 1}`, body: b }))).map((s, i) => (
+            <div key={i}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: C.muted, letterSpacing: '.04em' }}>{s.heading}</div>
+              <div style={{ fontSize: 13, color: C.ink2, lineHeight: 1.6, marginTop: 3 }}>{s.body}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ height: 1, background: C.line, margin: '14px 0' }} />
+        <div style={{ fontSize: 11, color: C.muted, fontStyle: 'italic' }}>Provided in compliance with ERISA notice requirements. Retain for your records.</div>
+      </div>
+    )
+  }
+
+  // ── Generic (FAQ, portal confirm, explainer text) ──
+  return (
+    <div>
+      {piece.subject && (
+        <div style={{ marginBottom: 12, padding: '10px 12px', background: C.paper, borderRadius: T.radSm, border: T.rule }}>
+          <span style={{ fontSize: 10.5, letterSpacing: '.06em', textTransform: 'uppercase', color: C.muted, fontWeight: 700 }}>Subject</span>
+          <div style={{ fontSize: 13.5, color: C.ink, fontWeight: 600, marginTop: 3 }}>{piece.subject}</div>
+        </div>
+      )}
+      <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 19, color: C.ink, lineHeight: 1.25 }}>{piece.headline}</div>
+      {piece.subhead && <div style={{ fontSize: 13.5, color: C.ink2, marginTop: 4 }}>{piece.subhead}</div>}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 14 }}>
+        {piece.body.map((para, i) => <p key={i} style={{ margin: 0, fontSize: 13.5, lineHeight: 1.65, color: C.ink2 }}>{para}</p>)}
+      </div>
+      {piece.sections && (
+        <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {piece.sections.map((s, i) => (
+            <div key={i} style={{ display: 'flex', gap: 12, padding: '12px 14px', background: C.paper, border: T.rule, borderRadius: T.radMd }}>
+              <span style={{ width: 24, height: 24, borderRadius: 6, background: C.brand, color: '#fff', flexShrink: 0, display: 'grid', placeItems: 'center', fontFamily: DISP, fontWeight: 700, fontSize: 12 }}>{i + 1}</span>
+              <div>
+                <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 13.5, color: C.ink }}>{s.heading}</div>
+                <div style={{ fontSize: 12.5, color: C.ink2, lineHeight: 1.55, marginTop: 3 }}>{s.body}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{ marginTop: 16 }}><CtaButton label={piece.cta} /></div>
+    </div>
+  )
+}
+
 function ContentModal({ item, status, onClose }) {
   if (!item) return null
   const { piece, seg } = item
@@ -851,61 +990,7 @@ function ContentModal({ item, status, onClose }) {
         </div>
         <div style={{ padding: 20 }}>
           <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 14 }}>Format · {piece.format}</div>
-          {piece.subject && (
-            <div style={{ marginBottom: 12, padding: '10px 12px', background: C.paper, borderRadius: T.radSm, border: T.rule }}>
-              <span style={{ fontSize: 10.5, letterSpacing: '.06em', textTransform: 'uppercase', color: C.muted, fontWeight: 700 }}>Subject</span>
-              <div style={{ fontSize: 13.5, color: C.ink, fontWeight: 600, marginTop: 3 }}>{piece.subject}</div>
-            </div>
-          )}
-          <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 19, color: C.ink, lineHeight: 1.25 }}>{piece.headline}</div>
-          {piece.subhead && <div style={{ fontSize: 13.5, color: C.ink2, marginTop: 4 }}>{piece.subhead}</div>}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 14 }}>
-            {piece.body.map((para, i) => (
-              <p key={i} style={{ margin: 0, fontSize: 13.5, lineHeight: 1.65, color: C.ink2 }}>{para}</p>
-            ))}
-          </div>
-
-          {/* Deck-style sections (slides) */}
-          {piece.sections && (
-            <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {piece.sections.map((s, i) => (
-                <div key={i} style={{ display: 'flex', gap: 12, padding: '12px 14px', background: C.paper, border: T.rule, borderRadius: T.radMd }}>
-                  <span style={{ width: 24, height: 24, borderRadius: 6, background: C.brand, color: '#fff', flexShrink: 0,
-                    display: 'grid', placeItems: 'center', fontFamily: DISP, fontWeight: 700, fontSize: 12 }}>{i + 1}</span>
-                  <div>
-                    <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 13.5, color: C.ink }}>{s.heading}</div>
-                    <div style={{ fontSize: 12.5, color: C.ink2, lineHeight: 1.55, marginTop: 3 }}>{s.body}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* A/B variants */}
-          {piece.variants && (
-            <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 10 }}>
-              {piece.variants.map(v => (
-                <div key={v.letter} style={{ padding: 14, background: C.paper, border: T.rule, borderRadius: T.radMd }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <span style={{ width: 22, height: 22, borderRadius: '50%', background: C.gold, color: '#fff',
-                      display: 'grid', placeItems: 'center', fontFamily: DISP, fontWeight: 700, fontSize: 12 }}>{v.letter}</span>
-                    <span style={{ fontSize: 11.5, color: C.muted, fontWeight: 600 }}>{v.label}</span>
-                  </div>
-                  {v.subject && <div style={{ fontSize: 12, color: C.muted, marginBottom: 4 }}><b style={{ color: C.ink2 }}>Subject:</b> {v.subject}</div>}
-                  <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 13.5, color: C.ink, lineHeight: 1.3 }}>{v.headline}</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-                    {v.body.map((para, i) => <p key={i} style={{ margin: 0, fontSize: 12, lineHeight: 1.55, color: C.ink2 }}>{para}</p>)}
-                  </div>
-                  <div style={{ marginTop: 8, fontSize: 12, color: C.goldDk, fontWeight: 600 }}>{v.cta} →</div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div style={{ marginTop: 16 }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: T.radMd,
-              background: C.brand, color: '#fff', fontSize: 13, fontWeight: 600 }}>{piece.cta} <IconArrowRight size={15} /></span>
-          </div>
+          <ContentRender piece={piece} seg={seg} />
           <div style={{ marginTop: 18, padding: '12px 14px', background: C.amberBg, borderRadius: T.radMd, border: `1px solid ${C.gold}44` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10.5, letterSpacing: '.08em', textTransform: 'uppercase', color: C.goldDk, fontWeight: 700, marginBottom: 5 }}>
               <IconShieldCheck size={13} /> Compliance note
@@ -989,7 +1074,8 @@ function TabStrategy({ lab, setLab, d }) {
                 {[
                   { k: 'Segment', v: cell.cohort },
                   { k: 'Audience size', v: `${num(seg.audience)} participants` },
-                  { k: 'Primary KPI', v: cell.kpi },
+                  { k: 'Primary KPI', v: 'Participation' },
+                  { k: 'Secondary KPI', v: cell.kpi },
                 ].map((f, j) => (
                   <div key={f.k} style={{ padding: '13px 20px', borderTop: T.rule, borderLeft: j === 0 ? 'none' : T.rule }}>
                     <div style={{ fontSize: 10.5, letterSpacing: '.06em', textTransform: 'uppercase', color: C.muted, fontWeight: 700 }}>{f.k}</div>
@@ -1088,7 +1174,7 @@ function TabContent({ lab, setLab, d }) {
               <div key={c.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                 <span style={{ fontSize: 12.5, color: C.ink2 }}>{c.label}</span>
                 {st === 'blocked'
-                  ? <Btn kind="primary" small onClick={() => setLab(l => ({ ...l, compFixed: { ...l.compFixed, [c.label]: true } }))}>Resolve</Btn>
+                  ? <Btn kind="primary" small onClick={() => setLab(l => ({ ...l, compFixed: { ...l.compFixed, [c.label]: true } }))}>Run</Btn>
                   : <Pill tone={st}>{st === 'ok' ? 'Approved' : 'In review'}</Pill>}
               </div>
             )
@@ -1195,9 +1281,9 @@ function TabSimulation({ sponsor, lab, setLab, d }) {
   })
   const scen = [
     { name: 'Do-nothing', part: p.base, lift: 0, enroll: 0, aum: 0, cost: 0, roi: 0, deferral: 0, conf: '—' },
-    mkScen('Recommended', 1, 1, 'High'),
-    mkScen('Cost-aware', 0.66, 0.6, 'High'),
-    mkScen('Max-lift', 1.37, 1.5, 'Med'),
+    mkScen('Conservative', 0.48, 0.35, 'High'),
+    mkScen('Balanced', 1, 1, 'High'),
+    mkScen('Aggressive', 1.37, 1.5, 'Med'),
   ]
   const bench = [
     { k: 'Current', v: p.base }, { k: 'Projected', v: p.projected }, { k: 'Sector benchmark', v: sponsor.benchmark },
@@ -1228,7 +1314,7 @@ function TabSimulation({ sponsor, lab, setLab, d }) {
       <Card style={{ background: C.amberBg, borderColor: `${C.gold}55` }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
           <div>
-            <Eyebrow>Recommended portfolio · why it wins</Eyebrow>
+            <Eyebrow>Balanced portfolio · why it wins</Eyebrow>
             <div style={{ fontSize: 14, color: C.ink2, lineHeight: 1.6, maxWidth: 640 }}>
               Projected participation rises to <b style={{ color: C.ink }}>{pct(p.projected)}</b> (from {pct(p.base)}),
               adding <b style={{ color: C.ink }}>{num(p.enroll)}</b> participants and <b style={{ color: C.goldDk }}>+${p.aum.toFixed(0)}M</b> in AUM
@@ -1241,11 +1327,33 @@ function TabSimulation({ sponsor, lab, setLab, d }) {
         </div>
       </Card>
 
-      {/* KPI grid — all primary KPIs surfaced */}
+      {/* Primary KPI — participation */}
       <Card>
-        <Eyebrow>Projected KPIs · P50 · {sponsor.industry}</Eyebrow>
+        <Eyebrow>Primary KPI · participation · P50 · {sponsor.industry}</Eyebrow>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 20, flexWrap: 'wrap', marginTop: 4 }}>
+          <div>
+            <div style={{ fontFamily: DISP, fontSize: 48, fontWeight: 700, color: C.green, lineHeight: 1 }}>{pct(p.projected)}</div>
+            <div style={{ fontSize: 12.5, color: C.muted, marginTop: 6 }}>from {pct(p.base)} · <b style={{ color: C.green }}>+{p.lift} pts</b> vs holdout · target {pct(sponsor.benchmark)}</div>
+          </div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 6 }}>Confidence band</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: C.ink2 }}>
+              <span>P5 {pct(Math.max(0, p.base + p.lift * 0.7 / 100))}</span>
+              <span>P50 {pct(p.projected)}</span>
+              <span>P95 {pct(Math.min(0.99, p.base + p.lift * 1.3 / 100))}</span>
+            </div>
+            <div style={{ height: 8, background: C.line, borderRadius: 4, overflow: 'hidden', marginTop: 6 }}>
+              <div style={{ width: pct(p.projected), height: '100%', background: C.green, borderRadius: 4 }} />
+            </div>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>over {num(d.treated)} treated vs {num(d.holdout)} holdout</div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Secondary KPIs */}
+      <Card>
+        <Eyebrow>Secondary KPIs</Eyebrow>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10, marginTop: 4 }}>
-          <KpiTile label="Projected participation" value={pct(p.projected)} sub={`from ${pct(p.base)} · +${p.lift} pts`} tone={C.green} />
           <KpiTile label="Incremental enrollments" value={`+${num(p.enroll)}`} sub="newly participating" tone={C.green} />
           <KpiTile label="Incremental AUM" value={`+$${p.aum.toFixed(0)}M`} sub="new assets added" tone={C.goldDk} />
           <KpiTile label="Incremental cost" value={`+$${p.cost.toFixed(1)}M`} sub="employer match" />
@@ -1253,12 +1361,8 @@ function TabSimulation({ sponsor, lab, setLab, d }) {
           <KpiTile label="ADP test" value={p.adp} tone={p.adp === 'Resolved' ? C.green : C.red} sub="HCE–NHCE spread" />
           <KpiTile label="Deferral lift" value={`+${p.deferralLift} pts`} />
           <KpiTile label="Fiduciary risk" value={`${p.fidNew}/100`} sub="from 38" tone={C.green} />
-          <KpiTile label="Workforce-stress" value={`−$${p.stress.toFixed(1)}M`} sub="per year" tone={C.green} />
           <KpiTile label="Payback" value={`${p.payback.toFixed(1)}×`} sub="on incremental cost" tone={C.goldDk} />
           {p.ind && <KpiTile label={p.ind.label} value={`+${(p.lift * p.ind.factor).toFixed(1)} ${p.ind.unit}`} sub="industry context" />}
-        </div>
-        <div style={{ fontSize: 11.5, color: C.muted, marginTop: 12 }}>
-          Confidence band · participation P5 {pct(Math.max(0, p.base + p.lift * 0.7 / 100))} · P50 {pct(p.projected)} · P95 {pct(Math.min(0.99, p.base + p.lift * 1.3 / 100))} over {num(d.treated)} treated vs {num(d.holdout)} holdout.
         </div>
       </Card>
 

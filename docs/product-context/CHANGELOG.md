@@ -5,6 +5,26 @@
 
 ---
 
+## Session 10 — Content-type rendering, KPI hierarchy, scenario alignment, lever/company summary — 2026-08-11
+
+### Build Status
+- `npm run build` — **PASSED** — 0 errors. Verified visually via Playwright (levers, deck/banner/email content, simulation results).
+
+### Added / Changed — `src/vg/VGApp.jsx` + `src/vg/data.js`
+- **US context** confirmed — the app is US 401(k)/IRA, ERISA/SECURE 2.0, ADP/ACP, QDIA, USD throughout; no changes needed.
+- **Lever Selection** — current levers now shown at **company level** in a single "Current plan configuration" panel at the top; removed the per-strategy "Current" chip from each lever card.
+- **Segments** — removed **Education-only** from the Conservative posture (now AE + cost-neutral Match Stretch); education no longer appears as a segment.
+- **Compliance** — the blocker action button renamed from **"Resolve"** to **"Run"**.
+- **Content rendering** — new `ContentRender` component renders each asset in a format that matches its type: committee decks as a **PPT-style slide deck** (title slide + numbered content slides, modeled on the default-branch board deck), **portal banners as banners** (hero headline + CTA), participant emails as **email chrome** (From/To/Subject + A/B variants), required notices as a **formal ERISA notice document**, and FAQ/portal-confirm as docs.
+- **KPI hierarchy** — **Participation is the primary KPI** (large hero tile with confidence band in Simulation; "Primary KPI · Participation" in strategy segment cards), all others demoted to a **Secondary KPIs** group. Removed the **Workforce-stress** KPI from results.
+- **Scenario alignment** — Simulation scenario titles now match the Recommended Strategy postures: **Do-nothing / Conservative / Balanced / Aggressive** (winner callout relabeled "Balanced portfolio").
+- **Home** — removed the **Growth pipeline** card (kept the growth scorecard).
+
+### Watch List
+- Deck/banner/email/notice rendering keys off the asset name substring (deck/banner/email/notice); new asset names fall back to the generic doc renderer.
+
+---
+
 ## Session 9 — Home morning-brief, strategy postures, richer content/sim/memory, UI polish — 2026-08-11
 
 ### Build Status

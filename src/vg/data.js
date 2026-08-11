@@ -366,11 +366,11 @@ export const STRATEGY_PLAYBOOKS = [
   },
   {
     id: 'conservative', name: 'Conservative',
-    tagline: 'Lowest cost and operational risk — education-led with selective, notice-heavy automation.',
+    tagline: 'Lowest cost and operational risk — selective, notice-heavy automation plus a cost-neutral match stretch.',
     value: { lift: 4.4, enroll: 4100, aum: 38, cost: 0.6, roi: 63.3 },
     segments: [
       { cell: 'ae', audience: 6000 },
-      { cell: 'edu', audience: 3300 },
+      { cell: 'ms', audience: 3000 },
     ],
   },
 ]
