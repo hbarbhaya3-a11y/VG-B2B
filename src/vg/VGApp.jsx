@@ -795,7 +795,10 @@ function TabLevers({ lab, setLab, d }) {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {l.id === 'ae' && <Stepper label="Initial default rate" unit="%" value={L.aeDefault} set={v => setL('aeDefault', v)} min={2} max={10} />}
-                {l.id === 'ms' && <Stepper label="Stretch match target" unit="%" value={L.msTarget} set={v => setL('msTarget', v)} min={3} max={8} />}
+                {l.id === 'ms' && <>
+                  <Stepper label="Stretch match target" unit="%" value={L.msTarget} set={v => setL('msTarget', v)} min={3} max={8} />
+                  <Stepper label="Company share" unit="%" value={L.msCompanyShare} set={v => setL('msCompanyShare', v)} min={0} max={100} step={10} />
+                </>}
                 {l.id === 'esc' && <>
                   <Stepper label="Annual increase" unit="%" value={L.escStep} set={v => setL('escStep', v)} min={1} max={3} />
                   <Stepper label="Cap" unit="%" value={L.escCap} set={v => setL('escCap', v)} min={8} max={15} />
@@ -1139,7 +1142,7 @@ function TabPolicyImpact({ sponsor, lab, setLab, d }) {
   const L = lab.levers
   const paramMap = {
     ae: { name: 'Auto Enrollment', cur: '3% default · opt-in', neu: `${L.aeDefault}% auto-enroll · QDIA` },
-    ms: { name: 'Match Stretch', cur: '3% default match', neu: `Stretch match to ${L.msTarget}% (cost-neutral)` },
+    ms: { name: 'Match Stretch', cur: `3% default match · company share ${L.msCompanyShare}%`, neu: `Stretch match to ${L.msTarget}% · company share 100% (cost-neutral)` },
     esc: { name: 'Auto Escalation', cur: 'None for stuck-at-default', neu: `+${L.escStep}%/yr → ${L.escCap}% cap` },
     re: { name: 'Re-enrollment', cur: 'Legacy / non-QDIA elections', neu: `Sweep every ${L.reFreq} mo → QDIA · ${L.reNotice}-day notice` },
   }
@@ -1958,7 +1961,7 @@ export default function VGApp() {
     contentReady: false,      // step 4 live-run gate
     complianceDone: false,    // step 5 compliance-run gate
     cells: { ae: true, ms: true, esc: true, re: true, edu: false, hold: true },
-    levers: { aeDefault: 4, msTarget: 6, escStep: 1, escCap: 12, holdoutPct: 15, reFreq: 12, reNotice: 45, eduCadence: 2 },
+    levers: { aeDefault: 4, msTarget: 6, msCompanyShare: 50, escStep: 1, escCap: 12, holdoutPct: 15, reFreq: 12, reNotice: 45, eduCadence: 2 },
     content: 'none',   // none | drafted | locked
     simulated: false,
     compFixed: {},     // compliance blockers resolved in-flow
