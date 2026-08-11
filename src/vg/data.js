@@ -419,7 +419,33 @@ export const COMPLIANCE = [
   { label: 'QDIA review status', state: 'review' },
   { label: 'Opt-out / change-election path present', state: 'ok' },
   { label: 'Sponsor committee version ready', state: 'review' },
-  { label: 'Check for content compliance', state: 'blocked' },
+]
+
+// Five-rail compliance pipeline (Guardrail Clearance) — run on the selected strategy's content.
+export const COMPLIANCE_RUN = {
+  processed: 12, cleared: 10, corrected: 1, removed: 1, escalated: 0,
+  clearanceRate: 0.83, brandVoiceScore: 0.94, brandVoiceThreshold: 0.85,
+}
+export const COMPLIANCE_RAILS = [
+  { id: 1, name: 'Advice vs Education Boundary', status: 'pass',
+    detail: 'All assets classified as participant education. No advice-classified content in the payload.' },
+  { id: 2, name: 'Eligibility & Suitability Guardrail', status: 'pass',
+    detail: 'Actions verified against plan eligibility, QDIA, and default rules. No ineligible offers surfaced.' },
+  { id: 3, name: 'Disclosure & Risk Language', status: 'flag',
+    detail: 'One participant-email variant contained implied performance-outcome language. Auto-corrected before output — 11 of 12 assets cleared first-pass.',
+    flag: {
+      rule: 'ERISA · disclosure requirement', type: 'Implied performance outcome',
+      original: 'A small step now, a bigger balance later — see what 4% could grow into.',
+      corrected: 'A small step now for your retirement savings — see how automatic enrollment works. Educational only; not a projection of returns.',
+    } },
+  { id: 4, name: 'Contact Policy / Consent / Frequency Cap', status: 'pass',
+    detail: 'Consent and do-not-contact flags checked; contact frequency within policy. 1,240 participants suppressed for frequency cap.' },
+  { id: 5, name: 'Fiduciary & Brand Tone', status: 'removed',
+    detail: 'One portal-banner line used solicitation phrasing outside the fiduciary boundary and was removed before output.',
+    removed: {
+      rule: 'Fiduciary · no solicitation', type: 'Solicitation language',
+      text: 'Sign up for advice and upgrade your plan today — talk to a Vanguard advisor now.',
+    } },
 ]
 
 // Simulation — projected portfolio scenarios vs do-nothing.
@@ -504,6 +530,6 @@ export const CONTENT_LIBRARY = [
 ]
 
 export const DECISION_TABS = [
-  'Objective', 'Lever Selection', 'Recommended Strategy',
-  'Content & Compliance', 'Simulation', 'Approval', 'Deployment',
+  'Objective', 'Lever Selection', 'Simulated Policy Impact',
+  'Content & Compliance', 'Compliance', 'Approval', 'Deployment',
 ]

@@ -5,6 +5,24 @@
 
 ---
 
+## Session 15 — Decision Lab restructure: policy-impact sim, board/customer content, compliance step — 2026-08-11
+
+### Build Status
+- `npm run build` — **PASSED** — 0 errors. Verified via Playwright (steps 3–5 flow).
+
+### Changed — `src/vg/VGApp.jsx` + `src/vg/data.js`
+- **Step 3 → "Simulated Policy Impact"** (`TabPolicyImpact`): each of the 4 strategies is simulated **independently on its own cohort**, with a live-run loader on entry. Shows a **Do-nothing vs strategy** table (Participation / AUM / CSAT / Churn / Cost) and per-strategy KPI cards. Each strategy's AUM is a weight-share of the $88M opportunity, **capped at $55M**. User selects one strategy (drives Content). Participation-vs-benchmark carried over from the old Simulation step.
+- **Step 2 Next button** renamed to **"Simulate strategies"**.
+- **Step 4 (Content)**: live-run loader, then content for the **selected strategy only**, split into **For the board** (committee deck — strategy-level) and **For customers** (participant emails/banners/notices). Added a **"Run compliance check"** button that jumps to step 5. Removed the "Check for content compliance" blocker row from the side panel.
+- **Step 5 → "Compliance"** (`TabCompliance`): a five-rail Guardrail Clearance page modeled on this repo's default-branch compliance panel, in our theme. Animated rail-by-rail scan, first-pass clearance % + processed/cleared/corrected/removed counts, **Rail 3 auto-corrected** (original struck-through → corrected) and **Rail 5 removed** (struck-through solicitation line), plus an experience-approver brand-voice check. New `COMPLIANCE_RAILS` / `COMPLIANCE_RUN` data.
+- **Loaders** below steps 2 and 3 give the live-run feel entering steps 3 and 4.
+
+### Watch List
+- Step 5 content is placeholder/illustrative pending the next round of instructions.
+- `STRATEGY_PLAYBOOKS`, `postureValue/Segments`, and the old `SimRunning`/`SIM_STEPS`/`TabSimulation` are now unused (left in place; safe to prune later).
+
+---
+
 ## Session 14 — Scroll fix, Vanguard-scale context, CSAT/churn KPIs, AUM growth callout — 2026-08-11
 
 ### Build Status
