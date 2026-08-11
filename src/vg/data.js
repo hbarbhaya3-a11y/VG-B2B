@@ -59,6 +59,33 @@ export const SPONSORS = [
   },
 ]
 
+// Signals landing — Today's Focus (live monitoring strip).
+export const TODAYS_FOCUS = [
+  { tag: 'Priority', tone: 'urgent', text: 'Meridian Logistics — participation 14 pts below benchmark (10,700 eligible non-participants)', sponsor: 'meridian' },
+  { tag: 'Regulatory', tone: 'amber', text: 'SECURE 2.0 mandatory auto-enrollment now applies to new plans across the book' },
+  { tag: 'Renewal', tone: 'amber', text: 'Summit Retail Group renewal window opens in 45 days', sponsor: 'summit' },
+]
+
+// Signals landing — KPI tab (book-level behavior radar).
+export const SIGNAL_KPIS = [
+  { label: 'Aggregate participation', val: '78%', sub: '−8 pts vs benchmark', chip: 'Participation', up: false, spark: [7, 7, 6, 7, 7, 7, 8] },
+  { label: 'Hardship leakage', val: '2.4%', sub: '+0.3 pts YoY', chip: 'Leakage', up: false, spark: [4, 4, 5, 5, 6, 6, 6] },
+  { label: 'Roth adoption', val: '31%', sub: '+2 pts YoY', chip: 'Roth', up: true, spark: [3, 4, 4, 5, 5, 6, 6] },
+  { label: 'Avg deferral rate', val: '6.8%', sub: '+0.2 pts QoQ', chip: 'Deferral', up: true, spark: [5, 5, 6, 6, 6, 7, 7] },
+  { label: 'Digital engagement', val: '54%', sub: '−3 pts vs median', chip: 'Digital', up: false, spark: [6, 6, 5, 5, 5, 5, 5] },
+  { label: 'Sponsor retention', val: '93%', sub: '+0.5 pts QoQ', chip: 'Retention', up: true, spark: [6, 6, 7, 7, 7, 7, 7] },
+]
+
+// Signals landing — Market Intelligence tab (reaction-based taxonomy).
+export const MARKET_SIGNALS = [
+  { id: 'm1', type: 'Regulatory', impact: 'high', title: 'SECURE 2.0 mandatory auto-enrollment', detail: 'New 401(k)/403(b) plans must auto-enroll at 3–10% with escalation. Affects plan-design defaults across the book.', when: '2h ago' },
+  { id: 'm2', type: 'Market', impact: 'medium', title: 'Equity volatility spike (VIX regime break)', detail: 'Elevated volatility historically drives reactive reallocation; watch panic-trading cohorts.', when: '5h ago' },
+  { id: 'm3', type: 'Rates', impact: 'medium', title: '10Y yield +28 bps this week', detail: 'Rate move affects target-date glidepaths and stable-value flows.', when: '1d ago' },
+  { id: 'm4', type: 'Plan Event', impact: 'high', title: 'Meridian Logistics — participation gap', detail: '42,000 employees; 10,700 eligible non-participants. Below-benchmark participation flagged.', when: '1d ago', sponsor: 'meridian' },
+  { id: 'm5', type: 'Regulatory', impact: 'low', title: 'IRS 2026 contribution limits released', detail: 'Elective deferral limit updated; notice variables need a refresh.', when: '2d ago' },
+  { id: 'm6', type: 'Plan Event', impact: 'medium', title: 'Summit Retail Group — renewal window', detail: 'Renewal in 45 days; participation 9 pts below benchmark presents an enablement opportunity.', when: '2d ago', sponsor: 'summit' },
+]
+
 // Participation "why" insights for a sponsor (Signals drill-down).
 export const INSIGHTS = [
   { key: 'newhire', label: 'New-hire enrollment lag', detail: '38% of hires in last 12 mo not enrolled after 90 days', weight: 'High' },
@@ -146,6 +173,6 @@ export const CONTENT_LIBRARY = [
 ]
 
 export const DECISION_TABS = [
-  'Portfolio Recommendation', 'Lever Selection', 'Content & Compliance',
-  'Simulation', 'Approval', 'Deployment',
+  'Portfolio Recommendation', 'Lever Selection', 'Recommended Segments',
+  'Content & Compliance', 'Simulation', 'Approval', 'Deployment',
 ]

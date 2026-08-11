@@ -3,7 +3,8 @@ import {
   IconHome, IconActivity, IconFlask, IconBrain, IconChevronRight, IconChevronLeft,
   IconArrowRight, IconArrowLeft, IconAlertTriangle, IconSun, IconMoon, IconCheck,
   IconTargetArrow, IconBuilding, IconShieldCheck, IconRocket, IconChecklist,
-  IconAdjustments, IconFileText, IconPointFilled,
+  IconAdjustments, IconFileText, IconPointFilled, IconTrendingUp, IconTrendingDown,
+  IconBolt, IconChartBar,
 } from '@tabler/icons-react'
 import {
   ResponsiveContainer, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Cell,
@@ -13,6 +14,7 @@ import {
   BOOK, SPONSORS, INSIGHTS, STRATEGY_CELLS, LEVERS, ASSETS, COMPLIANCE,
   MEMORY_DECISIONS, HOLDOUT_OUTCOMES, POLICIES,
   CONTENT_LIBRARY, DECISION_TABS,
+  TODAYS_FOCUS, SIGNAL_KPIS, MARKET_SIGNALS,
 } from './data'
 
 /* ───────────────────────── helpers ───────────────────────── */
@@ -22,9 +24,9 @@ const gapPct = (g, d = 1) => `${g >= 0 ? '-' : '+'}${(Math.abs(g) * 100).toFixed
 const num = (n) => n.toLocaleString()
 
 /* ───────────────────────── primitives ───────────────────────── */
-function Card({ children, style, pad = 20 }) {
+function Card({ children, style, pad = 20, onClick }) {
   return (
-    <div style={{ background: C.card, border: T.rule, borderRadius: T.radLg, padding: pad,
+    <div onClick={onClick} style={{ background: C.card, border: T.rule, borderRadius: T.radLg, padding: pad,
       boxShadow: T.shadow1, ...style }}>{children}</div>
   )
 }
@@ -86,6 +88,18 @@ function Stat({ label, value, sub, tone }) {
       <div style={{ fontFamily: DISP, fontSize: 26, fontWeight: 700, color: tone || C.ink, marginTop: 6, lineHeight: 1 }}>{value}</div>
       {sub && <div style={{ fontSize: 11.5, color: C.muted, marginTop: 6 }}>{sub}</div>}
     </Card>
+  )
+}
+
+function Spark({ data, up }) {
+  const max = Math.max(...data)
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 22 }}>
+      {data.map((d, i) => (
+        <div key={i} style={{ width: 5, height: `${(d / max) * 100}%`, borderRadius: 1,
+          background: up ? C.green : C.red, opacity: 0.4 + 0.6 * (i / data.length) }} />
+      ))}
+    </div>
   )
 }
 
@@ -192,6 +206,28 @@ function Home({ onOpenSignals }) {
         <Stat label="Value at stake" value={money(BOOK.valueAtStake)} sub="AUM exposure, at-risk sponsors" tone={C.goldDk} />
       </div>
 
+      {/* Today's Focus */}
+      <Card pad={0} style={{ marginBottom: 16 }}>
+        <div style={{ padding: '12px 20px', borderBottom: T.rule, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <IconBolt size={15} color={C.gold} />
+          <span style={{ fontSize: 10.5, letterSpacing: '.18em', textTransform: 'uppercase', color: C.goldDk, fontWeight: 700 }}>Today's Focus · Live monitoring</span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {TODAYS_FOCUS.map((f, i) => {
+            const clickable = !!f.sponsor
+            return (
+              <div key={i} onClick={clickable ? () => onOpenSignals(f.sponsor) : undefined}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 20px',
+                  borderTop: i ? T.rule : 'none', cursor: clickable ? 'pointer' : 'default' }}>
+                <Pill tone={f.tone === 'urgent' ? 'high' : f.tone === 'amber' ? 'med' : 'neutral'}>{f.tag}</Pill>
+                <span style={{ flex: 1, fontSize: 13, color: C.ink2 }}>{f.text}</span>
+                {clickable && <IconChevronRight size={15} color={C.faint} />}
+              </div>
+            )
+          })}
+        </div>
+      </Card>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.6fr) minmax(0,1fr)', gap: 16 }}>
         {/* priority items */}
         <Card pad={0}>
@@ -244,29 +280,87 @@ function Home({ onOpenSignals }) {
 
 /* ───────────────────────── SIGNALS ───────────────────────── */
 function Signals({ sponsor, onSelect, onSendToLab }) {
+  const [tab, setTab] = useState('market')
+  const [mktFilter, setMktFilter] = useState('All')
   if (!sponsor) {
+    const types = ['All', ...Array.from(new Set(MARKET_SIGNALS.map(s => s.type)))]
+    const filtered = mktFilter === 'All' ? MARKET_SIGNALS : MARKET_SIGNALS.filter(s => s.type === mktFilter)
+    const impactTone = (im) => (im === 'high' ? 'high' : im === 'medium' ? 'med' : 'low')
     return (
       <div>
-        <SectionTitle kicker="Signals · Participation" title="Which company has a participation gap?"
-          sub="Pick a sponsor to open its participation gap and the insights behind it." />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 14 }}>
-          {SPONSORS.map(s => (
-            <Card key={s.id} style={{ cursor: 'pointer' }} >
-              <div onClick={() => onSelect(s.id)}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <IconAlertTriangle size={16} color={C.red} />
-                  <Pill tone={s.renewalRisk === 'High' ? 'high' : 'med'}>{s.renewalRisk} risk</Pill>
-                </div>
-                <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>{s.name}</div>
-                <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{s.industry}</div>
-                <div style={{ display: 'flex', gap: 14, marginTop: 12 }}>
-                  <div><div style={{ fontSize: 10.5, color: C.muted }}>Participation</div><div style={{ fontFamily: DISP, fontWeight: 700, color: C.red }}>{pct(s.participation)}</div></div>
-                  <div><div style={{ fontSize: 10.5, color: C.muted }}>Gap</div><div style={{ fontFamily: DISP, fontWeight: 700, color: s.gap >= 0 ? C.ink : C.green }}>{gapPct(s.gap)}</div></div>
-                </div>
-              </div>
-            </Card>
+        <SectionTitle kicker="Signals · Participation intelligence" title="What is TwinX seeing across the book?"
+          sub="Market and regulatory intelligence plus the KPIs that move participation. Open a plan event to investigate a company's gap." />
+
+        {/* tab toggle */}
+        <div style={{ display: 'flex', gap: 0, marginBottom: 20, background: C.paper, borderRadius: T.radMd, padding: 4, width: 'fit-content', border: T.rule }}>
+          {[['market', 'Market Intelligence'], ['kpis', 'KPIs']].map(([k, l]) => (
+            <button key={k} onClick={() => setTab(k)} style={{ fontSize: 12, fontWeight: 600, padding: '9px 18px', borderRadius: T.radSm,
+              cursor: 'pointer', fontFamily: FONT, letterSpacing: '.02em', background: tab === k ? C.card : 'transparent',
+              color: tab === k ? C.ink : C.muted, border: 'none', boxShadow: tab === k ? T.shadow1 : 'none' }}>{l}</button>
           ))}
         </div>
+
+        {tab === 'market' ? (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 14, paddingBottom: 12, borderBottom: T.rule }}>
+              <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 20, color: C.ink }}>Market Intelligence</div>
+              <span style={{ fontSize: 10.5, color: C.faint, letterSpacing: '.14em', fontWeight: 600, textTransform: 'uppercase' }}>{MARKET_SIGNALS.length} active · streaming</span>
+            </div>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
+              {types.map(t => (
+                <button key={t} onClick={() => setMktFilter(t)} style={{ fontSize: 11.5, fontWeight: mktFilter === t ? 700 : 500,
+                  padding: '6px 13px', borderRadius: 999, cursor: 'pointer', fontFamily: FONT, background: mktFilter === t ? C.ink : C.card,
+                  color: mktFilter === t ? '#fff' : C.ink2, border: `1px solid ${mktFilter === t ? C.ink : C.line}` }}>{t}</button>
+              ))}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              {filtered.map(s => {
+                const clickable = !!s.sponsor
+                const bar = s.impact === 'high' ? C.red : s.impact === 'medium' ? C.amber : C.green
+                return (
+                  <Card key={s.id} onClick={clickable ? () => onSelect(s.sponsor) : undefined}
+                    style={{ position: 'relative', overflow: 'hidden', cursor: clickable ? 'pointer' : 'default' }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: bar, opacity: .65 }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 9 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Pill tone={impactTone(s.impact)}>{s.type}</Pill>
+                        <span style={{ fontSize: 11, color: C.faint }}>{s.when}</span>
+                      </div>
+                      {clickable && <span style={{ fontSize: 10.5, color: C.goldDk, fontWeight: 700 }}>Investigate →</span>}
+                    </div>
+                    <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink, marginBottom: 5 }}>{s.title}</div>
+                    <div style={{ fontSize: 12.5, color: C.muted, lineHeight: 1.5 }}>{s.detail}</div>
+                  </Card>
+                )
+              })}
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 14, paddingBottom: 12, borderBottom: T.rule }}>
+              <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 20, color: C.ink }}>KPI movement · behavior radar</div>
+              <span style={{ fontSize: 10.5, color: C.faint, letterSpacing: '.14em', fontWeight: 600, textTransform: 'uppercase' }}>Book-level · QoQ lens</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 14 }}>
+              {SIGNAL_KPIS.map(k => (
+                <Card key={k.label}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <div style={{ fontSize: 11.5, color: C.muted, fontWeight: 600 }}>{k.label}</div>
+                      <div style={{ fontFamily: DISP, fontSize: 24, fontWeight: 700, color: C.ink, marginTop: 5, lineHeight: 1 }}>{k.val}</div>
+                    </div>
+                    <Spark data={k.spark} up={k.up} />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10 }}>
+                    {k.up ? <IconTrendingUp size={14} color={C.green} /> : <IconTrendingDown size={14} color={C.red} />}
+                    <span style={{ fontSize: 12, color: k.up ? C.green : C.red, fontWeight: 600 }}>{k.sub}</span>
+                    <span style={{ marginLeft: 'auto' }}><Pill tone="gold">{k.chip}</Pill></span>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     )
   }
@@ -275,7 +369,7 @@ function Signals({ sponsor, onSelect, onSendToLab }) {
     <div>
       <button onClick={() => onSelect(null)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6,
         background: 'transparent', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 12, marginBottom: 12, fontFamily: FONT }}>
-        <IconArrowLeft size={14} /> All companies
+        <IconArrowLeft size={14} /> Back to signals
       </button>
       <SectionTitle kicker={`Signals · ${s.industry}`} title={`${s.name} — participation gap`}
         sub="The company analysis snapshot and the reasons employees are not participating, then the candidate strategies."
@@ -373,10 +467,11 @@ function stepDone(lab, d, i) {
   return [
     d.treatCells.length > 0,               // 0 recommendation
     d.portfolioPop > 0,                    // 1 levers
-    lab.content !== 'none',                // 2 content
-    lab.simulated,                         // 3 simulation
-    d.allApproved,                         // 4 approval
-    Object.keys(lab.deployed).length > 0,  // 5 deployment
+    d.treatCells.length > 0,               // 2 recommended segments
+    lab.content !== 'none',                // 3 content
+    lab.simulated,                         // 4 simulation
+    d.allApproved,                         // 5 approval
+    Object.keys(lab.deployed).length > 0,  // 6 deployment
   ][i]
 }
 
@@ -386,7 +481,7 @@ function DecisionLab({ sponsor, tab, setTab, lab, setLab }) {
       body="Open a company from Signals and send it to Decision Lab to configure a portfolio." />
   }
   const d = labDerived(lab)
-  const tabIcons = [IconTargetArrow, IconAdjustments, IconFileText, IconActivity, IconChecklist, IconRocket]
+  const tabIcons = [IconTargetArrow, IconAdjustments, IconChartBar, IconFileText, IconActivity, IconChecklist, IconRocket]
   const done = DECISION_TABS.map((_, i) => stepDone(lab, d, i))
 
   return (
@@ -419,17 +514,18 @@ function DecisionLab({ sponsor, tab, setTab, lab, setLab }) {
 
       {tab === 0 && <TabRecommendation lab={lab} setLab={setLab} d={d} />}
       {tab === 1 && <TabLevers lab={lab} setLab={setLab} d={d} />}
-      {tab === 2 && <TabContent lab={lab} setLab={setLab} d={d} />}
-      {tab === 3 && <TabSimulation lab={lab} setLab={setLab} d={d} />}
-      {tab === 4 && <TabApproval lab={lab} setLab={setLab} d={d} />}
-      {tab === 5 && <TabDeployment lab={lab} setLab={setLab} d={d} />}
+      {tab === 2 && <TabSegments d={d} />}
+      {tab === 3 && <TabContent lab={lab} setLab={setLab} d={d} />}
+      {tab === 4 && <TabSimulation lab={lab} setLab={setLab} d={d} />}
+      {tab === 5 && <TabApproval lab={lab} setLab={setLab} d={d} />}
+      {tab === 6 && <TabDeployment lab={lab} setLab={setLab} d={d} />}
 
       {/* footer nav */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20 }}>
         <Btn kind="quiet" onClick={() => setTab(Math.max(0, tab - 1))} style={{ visibility: tab === 0 ? 'hidden' : 'visible' }}>
           <IconArrowLeft size={15} /> Back
         </Btn>
-        {tab < 5 && <Btn kind="primary" onClick={() => setTab(tab + 1)}>Next: {DECISION_TABS[tab + 1]} <IconArrowRight size={15} /></Btn>}
+        {tab < DECISION_TABS.length - 1 && <Btn kind="primary" onClick={() => setTab(tab + 1)}>Next: {DECISION_TABS[tab + 1]} <IconArrowRight size={15} /></Btn>}
       </div>
     </div>
   )
@@ -530,37 +626,137 @@ function TabLevers({ lab, setLab, d }) {
   )
 }
 
+// Sample draft content per asset + segment (education-framed, no solicitation).
+function draftFor(asset, seg) {
+  const a = asset.toLowerCase()
+  const S = seg.strategy
+  if (a.includes('committee deck')) return { kind: 'Committee deck', body:
+    `PLAN-DESIGN RECOMMENDATION — ${seg.cohort}\n\n1. Objective: lift participation for this cohort\n2. Recommended lever: ${S}\n3. Population: ${seg.treated.toLocaleString()} treated · ${seg.holdout.toLocaleString()} holdout\n4. Primary KPI: ${seg.kpi}\n5. Rollout: tiered (10% → 40% → 100%) with holdout preserved\n6. Governance: disclosures auto-attached; fiduciary review required` }
+  if (a.includes('email') || a.includes('escalation')) return { kind: 'Participant email', body:
+    `Subject: A simple step for your retirement savings\n\nHi,\n\nYour plan now offers ${S.toLowerCase()}. This is an educational notice — it explains a change to help you stay on track. No action is required, and you can opt out or adjust anytime in your account.\n\n[View my options]\n\nRequired disclosures apply.` }
+  if (a.includes('portal')) return { kind: 'Portal copy', body:
+    `PORTAL BANNER — ${seg.cohort}\n\nHeadline: Your plan just got easier\nBody: ${S} is now active for eligible participants. See how it affects your contributions and what you can change.\nCTA: Review my plan\n\n(Education content class · no advice language)` }
+  if (a.includes('notice')) return { kind: 'Required notice', body:
+    `REQUIRED PARTICIPANT NOTICE\n\nRe: ${S}\n\nThis notice describes an automatic plan feature affecting your account. It includes your default contribution rate, your right to opt out or change your election, the default investment (QDIA), and the effective date. Please review before the effective date.` }
+  if (a.includes('faq')) return { kind: 'FAQ', body:
+    `FREQUENTLY ASKED QUESTIONS — ${S}\n\nQ: What is changing?\nA: An educational update for ${seg.cohort}.\nQ: Do I have to do anything?\nA: No — this is informational. You can adjust anytime.\nQ: Where can I learn more?\nA: Visit your plan portal.` }
+  if (a.includes('match explainer')) return { kind: 'Match explainer', body:
+    `MATCH EXPLAINER — ${seg.cohort}\n\nYour employer match may be worth more than you're capturing today. This educational summary shows how the match works and the deferral level needed to receive the full match. Educational only — not advice.` }
+  return { kind: asset, body: `Draft ${asset} for ${seg.cohort} (${S}).\n\nEducational content class · disclosures auto-attached.` }
+}
+
+function ContentModal({ item, status, onClose }) {
+  if (!item) return null
+  const draft = draftFor(item.asset, item.seg)
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(10,15,25,.55)', zIndex: 50,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: 'min(640px,100%)', maxHeight: '84vh', overflow: 'auto',
+        background: C.card, border: T.rule, borderRadius: T.radLg, boxShadow: T.shadow3 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: T.rule }}>
+          <div>
+            <div style={{ fontSize: 10.5, letterSpacing: '.16em', textTransform: 'uppercase', color: C.goldDk, fontWeight: 700 }}>{draft.kind}</div>
+            <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 16, color: C.ink }}>{item.seg.cohort}</div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Pill tone={status === 'locked' ? 'ok' : status === 'drafted' ? 'review' : 'neutral'}>
+              {status === 'locked' ? 'Locked' : status === 'drafted' ? 'Draft' : 'Not generated'}
+            </Pill>
+            <button onClick={onClose} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: C.muted, fontSize: 20, lineHeight: 1 }}>×</button>
+          </div>
+        </div>
+        <pre style={{ margin: 0, padding: 20, whiteSpace: 'pre-wrap', fontFamily: FONT, fontSize: 13, lineHeight: 1.65, color: C.ink2 }}>{draft.body}</pre>
+      </div>
+    </div>
+  )
+}
+
+function TabSegments({ d }) {
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 12.5, color: C.muted }}>
+        <IconChartBar size={15} color={C.gold} /> Recommended audience segments after lever selection — these carry into Content, generated per segment.
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 14 }}>
+        {d.perCell.map(seg => (
+          <Card key={seg.id}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <Pill tone="gold">{seg.strategy}</Pill>
+              <span style={{ fontSize: 11, color: C.muted }}>{seg.kpi}</span>
+            </div>
+            <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>{seg.cohort}</div>
+            <div style={{ display: 'flex', gap: 16, marginTop: 12 }}>
+              <div><div style={{ fontSize: 10.5, color: C.muted }}>Treated</div><div style={{ fontFamily: DISP, fontWeight: 700, color: C.ink }}>{num(seg.treated)}</div></div>
+              <div><div style={{ fontSize: 10.5, color: C.muted }}>Holdout</div><div style={{ fontFamily: DISP, fontWeight: 700, color: C.goldDk }}>{seg.holdout ? num(seg.holdout) : '—'}</div></div>
+            </div>
+            <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px dashed ${C.line}`, fontSize: 12, color: C.muted }}>
+              Channels: {seg.content}
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function AssetChip({ label, color, onClick }) {
+  return (
+    <div onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 11px',
+      background: C.paper, borderRadius: T.radMd, border: T.rule, cursor: 'pointer', transition: `all .15s ${T.ease}` }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = C.gold; e.currentTarget.style.background = C.amberBg }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.background = C.paper }}>
+      <IconFileText size={14} color={color} />
+      <span style={{ fontSize: 12, color: C.ink2, textTransform: 'capitalize' }}>{label}</span>
+      <IconChevronRight size={12} color={C.faint} style={{ marginLeft: 2 }} />
+    </div>
+  )
+}
+
 function TabContent({ lab, setLab, d }) {
+  const [preview, setPreview] = useState(null)
   const status = lab.content
   const canLock = lab.simulated && d.complianceOk
+  const assetIcon = status === 'locked' ? C.green : C.gold
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.4fr) minmax(0,1fr)', gap: 16 }}>
-      <Card>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <Eyebrow>Stage-2 assets · draft before sim, lock after</Eyebrow>
-          <Pill tone={status === 'locked' ? 'ok' : status === 'drafted' ? 'review' : 'neutral'}>
-            {status === 'locked' ? 'Locked' : status === 'drafted' ? 'Draft' : 'Not started'}
-          </Pill>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}>
-          {ASSETS.map(a => (
-            <div key={a} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 12px',
-              background: C.paper, borderRadius: T.radMd, border: T.rule, opacity: status === 'none' ? 0.5 : 1 }}>
-              <IconFileText size={15} color={status === 'locked' ? C.green : C.gold} />
-              <span style={{ fontSize: 12.5, color: C.ink2 }}>{a}</span>
-            </div>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-          <Btn kind="gold" small onClick={() => setLab(l => ({ ...l, content: 'drafted' }))}>Generate draft assets</Btn>
-          <Btn kind={canLock ? 'primary' : 'quiet'} small onClick={() => canLock && setLab(l => ({ ...l, content: 'locked' }))}
-            style={{ opacity: canLock ? 1 : 0.5, cursor: canLock ? 'pointer' : 'not-allowed' }}>
-            Lock content
-          </Btn>
-        </div>
-        {!canLock && <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8 }}>Locking needs a completed simulation and no compliance blockers.</div>}
-      </Card>
-      <Card>
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.5fr) minmax(0,1fr)', gap: 16 }}>
+      <ContentModal item={preview} status={status} onClose={() => setPreview(null)} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Card>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Eyebrow>Content · generated per segment · draft before sim, lock after</Eyebrow>
+            <Pill tone={status === 'locked' ? 'ok' : status === 'drafted' ? 'review' : 'neutral'}>
+              {status === 'locked' ? 'Locked' : status === 'drafted' ? 'Draft' : 'Not started'}
+            </Pill>
+          </div>
+          <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+            <Btn kind="gold" small onClick={() => setLab(l => ({ ...l, content: 'drafted' }))}>Generate per-segment drafts</Btn>
+            <Btn kind={canLock ? 'primary' : 'quiet'} small onClick={() => canLock && setLab(l => ({ ...l, content: 'locked' }))}
+              style={{ opacity: canLock ? 1 : 0.5, cursor: canLock ? 'pointer' : 'not-allowed' }}>Lock content</Btn>
+          </div>
+          {!canLock && <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8 }}>Locking needs a completed simulation and no compliance blockers.</div>}
+        </Card>
+        {d.perCell.map(seg => {
+          const assets = seg.content.split(',').map(x => x.trim())
+          return (
+            <Card key={seg.id} pad={16}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontFamily: DISP, fontWeight: 600, fontSize: 14, color: C.ink }}>{seg.cohort}</span>
+                  <Pill tone="gold">{seg.strategy}</Pill>
+                </div>
+                <span style={{ fontSize: 11, color: C.muted }}>{num(seg.treated)} treated · click to preview</span>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                <AssetChip label="Committee deck" color={assetIcon} onClick={() => setPreview({ asset: 'Committee deck', seg })} />
+                {assets.map(a => (
+                  <AssetChip key={a} label={a} color={assetIcon} onClick={() => setPreview({ asset: a, seg })} />
+                ))}
+              </div>
+            </Card>
+          )
+        })}
+      </div>
+      <Card style={{ alignSelf: 'flex-start' }}>
         <Eyebrow>Compliance checks · blockers surface here</Eyebrow>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 6 }}>
           {COMPLIANCE.map(c => {
