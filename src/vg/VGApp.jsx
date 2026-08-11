@@ -11,7 +11,7 @@ import {
 } from 'recharts'
 import { C, T, FONT, DISP, THEMES, applyTheme } from './theme'
 import {
-  BOOK, SPONSORS, INSIGHTS, STRATEGY_CELLS, STRATEGY_CONTENT, LEVERS, ASSETS, COMPLIANCE,
+  BOOK, SPONSORS, INSIGHTS, STRATEGY_CELLS, STRATEGY_CONTENT, STRATEGY_PLAYBOOKS, LEVERS, ASSETS, COMPLIANCE,
   MEMORY_DECISIONS, HOLDOUT_OUTCOMES, POLICIES,
   CONTENT_LIBRARY, DECISION_TABS,
   TODAYS_FOCUS, SIGNAL_KPIS, MARKET_SIGNALS,
@@ -50,7 +50,7 @@ function Pill({ tone = 'neutral', children }) {
 function Btn({ children, onClick, kind = 'primary', small, style }) {
   const styles = {
     primary: { background: C.brand, color: '#fff', border: 'none', boxShadow: T.shadow1 },
-    gold: { background: T.goldFoil, color: C.navBg, border: 'none', fontWeight: 700, boxShadow: T.shadowGoldGlow },
+    gold: { background: C.gold, color: '#fff', border: 'none', fontWeight: 700, boxShadow: T.shadow1 },
     ghost: { background: C.card, color: C.ink, border: `1px solid ${C.line2}`, boxShadow: T.shadow1 },
     quiet: { background: 'transparent', color: C.ink2, border: `1px solid ${C.line}`, boxShadow: 'none' },
   }[kind]
@@ -168,7 +168,7 @@ function Sidebar({ menu, setMenu, collapsed, setCollapsed, themeName, setThemeNa
                 justifyContent: collapsed ? 'center' : 'flex-start', borderRadius: T.radMd, cursor: 'pointer',
                 background: on ? 'rgba(255,255,255,.06)' : 'transparent', border: 'none', position: 'relative',
                 color: on ? '#F4F1EA' : 'rgba(244,241,234,.62)', fontFamily: FONT, fontSize: 13, fontWeight: on ? 600 : 500, width: '100%' }}>
-              {on && <span style={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 2, background: T.goldFoil, borderRadius: 2 }} />}
+              {on && <span style={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 2, background: C.gold, borderRadius: 2 }} />}
               <Icon size={17} color={on ? C.gold : 'rgba(244,241,234,.5)'} />
               {!collapsed && <span>{label}</span>}
             </button>
@@ -190,22 +190,91 @@ function Sidebar({ menu, setMenu, collapsed, setCollapsed, themeName, setThemeNa
 }
 
 /* ───────────────────────── HOME ───────────────────────── */
-function Home({ onOpenSignals }) {
+function Home({ onOpenSignals, memoryLog = [] }) {
   const trend = BOOK.participationTrend
   const atRisk = SPONSORS
+  // Growth-CXO rollups — opportunity, in-flight, and realized AUM growth.
+  const oppValue = SPONSORS.reduce((a, s) => a + s.valueOpp, 0)
+  const atRiskCount = SPONSORS.filter(s => s.gap > 0).length
+  const completed = MEMORY_DECISIONS
+  const realizedAum = completed.reduce((a, d) => a + (d.impact?.aum || 0), 0)
+  const avgLift = completed.length ? completed.reduce((a, d) => a + (d.impact?.participationLift || 0), 0) / completed.length : 0
+  const liveRuns = memoryLog.filter(r => r.live)
+  const liveAum = liveRuns.reduce((a, r) => a + (r.detail?.target?.aum || 0), 0)
+  const stages = [
+    { label: 'Opportunities identified', count: atRiskCount, value: oppValue, sub: 'at-risk sponsors', tone: C.red },
+    { label: 'Campaigns deployed', count: completed.length + liveRuns.length, value: realizedAum + liveAum, sub: `${liveRuns.length} live · ${completed.length} completed`, tone: C.brand },
+    { label: 'AUM realized', count: completed.length, value: realizedAum, sub: 'measured vs holdout', tone: C.green },
+  ]
+  const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()
+  const signalCount = SPONSORS.filter(s => s.gap > 0).length + MARKET_SIGNALS.length
   return (
     <div>
+      {/* Morning brief header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 24 }}>
+        <div>
+          <div style={{ fontSize: 12, letterSpacing: '.18em', color: C.muted, fontWeight: 600 }}>{dateStr}</div>
+          <div style={{ fontFamily: DISP, fontSize: 44, fontWeight: 700, color: C.ink, letterSpacing: '-.02em', lineHeight: 1.05, marginTop: 12 }}>
+            Good morning, <span style={{ color: C.goldDk, fontStyle: 'italic' }}>Alex.</span>
+          </div>
+          <div style={{ fontSize: 15, color: C.muted, marginTop: 10 }}>{signalCount} signals need your attention this morning.</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 16px', background: C.card, borderRadius: T.radPill,
+          border: T.rule, boxShadow: T.shadow1, whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: C.ink }}>NYSEARCA: VTI</span>
+          <span style={{ width: 1, height: 14, background: C.line2 }} />
+          <span style={{ fontSize: 12.5, fontWeight: 600, color: C.ink }}>$291.40</span>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: C.red }}>▼ 0.62%</span>
+          <span style={{ fontSize: 12, color: C.faint }}>Closed: last close</span>
+        </div>
+      </div>
+
       <SectionTitle kicker="Vanguard · Book Overview" title="How is our book of sponsors doing?"
         sub="Overall participation across the plan-sponsor book, the sponsors to act on first, and the KPIs that matter."
         right={<Btn kind="gold" onClick={onOpenSignals}>Review signals <IconArrowRight size={15} /></Btn>} />
 
       {/* overall numbers */}
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
         <Stat label="Plan sponsors" value={BOOK.totalSponsors} sub="in book" />
         <Stat label="Eligible participants" value={num(BOOK.totalEligible)} sub={`${num(BOOK.totalParticipants)} enrolled`} />
         <Stat label="Aggregate participation" value={pct(BOOK.aggParticipation)} sub={`vs ${pct(BOOK.benchmark)} benchmark`} tone={C.red} />
         <Stat label="Value at stake" value={money(BOOK.valueAtStake)} sub="AUM exposure, at-risk sponsors" tone={C.goldDk} />
       </div>
+
+      {/* Growth scorecard — CXO growth lens */}
+      <Eyebrow>Growth scorecard · net-new AUM engine</Eyebrow>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 6, marginBottom: 16 }}>
+        <Stat label="Net-new AUM opportunity" value={money(oppValue)} sub={`${atRiskCount} sponsors in play`} tone={C.goldDk} />
+        <Stat label="AUM realized to date" value={money(realizedAum)} sub={`${completed.length} campaigns measured`} tone={C.green} />
+        <Stat label="Avg participation lift delivered" value={`+${avgLift.toFixed(1)} pts`} sub="vs holdout, across campaigns" tone={C.green} />
+        <Stat label="Campaigns live" value={liveRuns.length} sub={liveRuns.length ? `${money(liveAum)} AUM projected` : 'deploy from Decision Lab'} tone={liveRuns.length ? C.brand : C.muted} />
+      </div>
+
+      {/* Growth pipeline — opportunity → deployed → realized */}
+      <Card style={{ marginBottom: 16 }}>
+        <Eyebrow>Growth pipeline · opportunity to realized AUM</Eyebrow>
+        <div style={{ display: 'flex', alignItems: 'stretch', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
+          {stages.map((st, i) => (
+            <React.Fragment key={st.label}>
+              <div style={{ flex: 1, minWidth: 170, padding: '14px 16px', background: C.paper, border: T.rule, borderRadius: T.radMd,
+                borderLeft: `3px solid ${st.tone}` }}>
+                <div style={{ fontSize: 11, color: C.muted, fontWeight: 600 }}>{st.label}</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 6 }}>
+                  <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 24, color: C.ink, lineHeight: 1 }}>{st.count}</span>
+                  <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: st.tone }}>{money(st.value)}</span>
+                </div>
+                <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>{st.sub}</div>
+              </div>
+              {i < stages.length - 1 && (
+                <div style={{ display: 'grid', placeItems: 'center', color: C.faint }}><IconArrowRight size={18} /></div>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+        <div style={{ fontSize: 11.5, color: C.muted, marginTop: 10 }}>
+          {money(realizedAum)} realized across completed campaigns; {money(oppValue)} still in active opportunity across the book. Deploy campaigns in the Decision Lab to advance the pipeline.
+        </div>
+      </Card>
 
       {/* Today's Focus */}
       <Card pad={0} style={{ marginBottom: 16 }}>
@@ -588,7 +657,7 @@ function DecisionLab({ sponsor, tab, setTab, lab, setLab, addMemory }) {
 
       {tab === 0 && <TabObjective sponsor={sponsor} lab={lab} setLab={setLab} d={d} />}
       {tab === 1 && <TabLevers lab={lab} setLab={setLab} d={d} />}
-      {tab === 2 && <TabStrategy d={d} />}
+      {tab === 2 && <TabStrategy lab={lab} setLab={setLab} d={d} />}
       {tab === 3 && <TabContent lab={lab} setLab={setLab} d={d} />}
       {tab === 4 && <TabSimulation sponsor={sponsor} lab={lab} setLab={setLab} d={d} />}
       {tab === 5 && <TabApproval lab={lab} setLab={setLab} d={d} />}
@@ -619,12 +688,12 @@ function TabObjective({ sponsor, lab, setLab, d }) {
       {/* objective */}
       <div>
         <Eyebrow>Objective · what are we optimizing?</Eyebrow>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: 10, marginTop: 4 }}>
+        <div style={{ display: 'flex', gap: 10, marginTop: 4, overflowX: 'auto' }}>
           {OBJECTIVES.map(o => {
             const on = lab.objective === o.id
             return (
               <Card key={o.id} onClick={() => setObj(o.id)} pad={12}
-                style={{ cursor: 'pointer', borderColor: on ? C.gold : undefined, borderWidth: on ? 2 : 1, borderStyle: 'solid',
+                style={{ flex: '1 1 0', minWidth: 180, cursor: 'pointer', borderColor: on ? C.gold : undefined, borderWidth: on ? 2 : 1, borderStyle: 'solid',
                   background: on ? C.amberBg : C.card }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 4 }}>
                   <span style={{ fontFamily: DISP, fontWeight: 600, fontSize: 13, color: C.ink }}>{o.label}</span>
@@ -661,10 +730,6 @@ function TabObjective({ sponsor, lab, setLab, d }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
             <Stepper label="Rollout window (weeks)" unit="" value={lab.timeline.rolloutWeeks} set={v => setTl('rolloutWeeks', v)} min={2} max={16} />
             <Stepper label="Measurement window (weeks)" unit="" value={lab.timeline.measureWeeks} set={v => setTl('measureWeeks', v)} min={4} max={26} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', background: C.paper, borderRadius: T.radSm, border: T.rule }}>
-              <span style={{ fontSize: 12.5, color: C.ink2 }}>Rollout tiers</span>
-              <span style={{ fontSize: 12, color: C.faint }}>10% → 40% → 100%</span>
-            </div>
           </div>
         </Card>
       </div>
@@ -695,6 +760,17 @@ function Stepper({ label, unit, value, set, min, max, step = 1 }) {
 }
 const sBtn = { width: 24, height: 24, borderRadius: 6, border: '1px solid rgba(128,128,128,.35)', background: 'transparent', cursor: 'pointer', fontSize: 15, lineHeight: 1, color: '#888', fontWeight: 700 }
 
+function leverSummary(id, L) {
+  switch (id) {
+    case 'ae': return `${L.aeDefault}% default · +${L.aeEsc}%/yr · cap ${L.aeCap}%`
+    case 'ms': return `stretch target ${L.msTarget}%`
+    case 'esc': return `+${L.escStep}%/yr · cap ${L.escCap}%`
+    case 're': return `sweep every ${L.reFreq} mo · ${L.reNotice}-day notice · QDIA`
+    case 'edu': return `every ${L.eduCadence} wk · plan basics`
+    default: return '—'
+  }
+}
+
 function TabLevers({ lab, setLab, d }) {
   const setL = (k, v) => setLab(l => ({ ...l, levers: { ...l.levers, [k]: v } }))
   const L = lab.levers
@@ -711,6 +787,10 @@ function TabLevers({ lab, setLab, d }) {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>{l.name}</div>
                 <Pill tone="ok">Ready</Pill>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 10, padding: '7px 10px', background: C.amberBg, borderRadius: T.radSm, border: `1px solid ${C.gold}33` }}>
+                <span style={{ fontSize: 10, letterSpacing: '.06em', textTransform: 'uppercase', color: C.goldDk, fontWeight: 700 }}>Current</span>
+                <span style={{ fontSize: 12.5, color: C.ink2, fontWeight: 600 }}>{leverSummary(l.id, L)}</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {l.id === 'ae' && <>
@@ -781,6 +861,44 @@ function ContentModal({ item, status, onClose }) {
               <p key={i} style={{ margin: 0, fontSize: 13.5, lineHeight: 1.65, color: C.ink2 }}>{para}</p>
             ))}
           </div>
+
+          {/* Deck-style sections (slides) */}
+          {piece.sections && (
+            <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {piece.sections.map((s, i) => (
+                <div key={i} style={{ display: 'flex', gap: 12, padding: '12px 14px', background: C.paper, border: T.rule, borderRadius: T.radMd }}>
+                  <span style={{ width: 24, height: 24, borderRadius: 6, background: C.brand, color: '#fff', flexShrink: 0,
+                    display: 'grid', placeItems: 'center', fontFamily: DISP, fontWeight: 700, fontSize: 12 }}>{i + 1}</span>
+                  <div>
+                    <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 13.5, color: C.ink }}>{s.heading}</div>
+                    <div style={{ fontSize: 12.5, color: C.ink2, lineHeight: 1.55, marginTop: 3 }}>{s.body}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* A/B variants */}
+          {piece.variants && (
+            <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 10 }}>
+              {piece.variants.map(v => (
+                <div key={v.letter} style={{ padding: 14, background: C.paper, border: T.rule, borderRadius: T.radMd }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <span style={{ width: 22, height: 22, borderRadius: '50%', background: C.gold, color: '#fff',
+                      display: 'grid', placeItems: 'center', fontFamily: DISP, fontWeight: 700, fontSize: 12 }}>{v.letter}</span>
+                    <span style={{ fontSize: 11.5, color: C.muted, fontWeight: 600 }}>{v.label}</span>
+                  </div>
+                  {v.subject && <div style={{ fontSize: 12, color: C.muted, marginBottom: 4 }}><b style={{ color: C.ink2 }}>Subject:</b> {v.subject}</div>}
+                  <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 13.5, color: C.ink, lineHeight: 1.3 }}>{v.headline}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+                    {v.body.map((para, i) => <p key={i} style={{ margin: 0, fontSize: 12, lineHeight: 1.55, color: C.ink2 }}>{para}</p>)}
+                  </div>
+                  <div style={{ marginTop: 8, fontSize: 12, color: C.goldDk, fontWeight: 600 }}>{v.cta} →</div>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div style={{ marginTop: 16 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: T.radMd,
               background: C.brand, color: '#fff', fontSize: 13, fontWeight: 600 }}>{piece.cta} <IconArrowRight size={15} /></span>
@@ -797,32 +915,78 @@ function ContentModal({ item, status, onClose }) {
   )
 }
 
-function TabStrategy({ d }) {
+function TabStrategy({ lab, setLab, d }) {
+  const selectedId = lab.posture || 'balanced'
+  const choose = (id) => setLab(l => ({ ...l, posture: id }))
+  const active = STRATEGY_PLAYBOOKS.find(p => p.id === selectedId) || STRATEGY_PLAYBOOKS[1]
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 12.5, color: C.muted }}>
-        <IconChartBar size={15} color={C.gold} /> {d.perCell.length} recommended strategies — each pairs a target segment with the channels and content it carries into the next step.
+        <IconChartBar size={15} color={C.gold} /> Three strategy postures — pick the stance, then see exactly which segment gets which lever, channel, and content, and the value it should create.
+      </div>
+
+      {/* 3 posture tiles */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 12, marginBottom: 18 }}>
+        {STRATEGY_PLAYBOOKS.map(pb => {
+          const on = pb.id === selectedId
+          return (
+            <Card key={pb.id} onClick={() => choose(pb.id)} pad={16}
+              style={{ cursor: 'pointer', borderColor: on ? C.gold : undefined, borderWidth: on ? 2 : 1, borderStyle: 'solid',
+                background: on ? C.amberBg : C.card }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+                <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 17, color: C.ink }}>{pb.name}</span>
+                {pb.rec ? <Pill tone="gold">Recommended</Pill> : on && <IconCheck size={16} color={C.green} />}
+              </div>
+              <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5, minHeight: 52 }}>{pb.tagline}</div>
+              <div style={{ display: 'flex', gap: 14, marginTop: 12, paddingTop: 12, borderTop: `1px dashed ${C.line}` }}>
+                <div><div style={{ fontSize: 10, color: C.muted }}>Prob. AUM</div><div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: C.goldDk }}>+${pb.value.aum}M</div></div>
+                <div><div style={{ fontSize: 10, color: C.muted }}>Participation</div><div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: C.green }}>+{pb.value.lift} pts</div></div>
+                <div><div style={{ fontSize: 10, color: C.muted }}>Cost</div><div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: C.ink }}>+${pb.value.cost}M</div></div>
+              </div>
+            </Card>
+          )
+        })}
+      </div>
+
+      {/* probable value created for the selected posture */}
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+          <Eyebrow>Probable value created · {active.name}</Eyebrow>
+          <span style={{ fontSize: 12, color: C.muted }}>Estimate — refined in Simulation</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10, marginTop: 6 }}>
+          <KpiTile label="Participation lift" value={`+${active.value.lift} pts`} tone={C.green} />
+          <KpiTile label="Incremental enrollments" value={`+${num(active.value.enroll)}`} tone={C.green} />
+          <KpiTile label="Incremental AUM" value={`+$${active.value.aum}M`} tone={C.goldDk} />
+          <KpiTile label="Incremental cost" value={`+$${active.value.cost}M`} />
+          <KpiTile label="AUM-to-cost" value={`${active.value.roi}×`} tone={C.goldDk} />
+        </div>
+      </Card>
+
+      {/* segment-by-segment playbook for the selected posture */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, fontSize: 12.5, color: C.muted }}>
+        <IconTargetArrow size={15} color={C.gold} /> {active.name} playbook — {active.segments.length} segments · who gets what
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {d.perCell.map((seg, i) => {
-          const pieces = STRATEGY_CONTENT[seg.id] || []
-          const cell = STRATEGY_CELLS.find(c => c.id === seg.id) || {}
+        {active.segments.map((seg, i) => {
+          const cell = STRATEGY_CELLS.find(c => c.id === seg.cell) || {}
+          const pieces = STRATEGY_CONTENT[seg.cell] || []
           return (
-            <Card key={seg.id} pad={0}>
+            <Card key={seg.cell} pad={0}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px', borderBottom: T.rule }}>
                 <span style={{ width: 26, height: 26, borderRadius: '50%', background: C.brand, color: '#fff',
                   display: 'grid', placeItems: 'center', fontFamily: DISP, fontWeight: 700, fontSize: 13, flexShrink: 0 }}>{i + 1}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: C.ink }}>{seg.strategy}</div>
-                  <div style={{ fontSize: 12, color: C.muted }}>Why recommended · {cell.why}</div>
+                  <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: C.ink }}>{cell.strategy}</div>
+                  <div style={{ fontSize: 12, color: C.muted }}>Why · {cell.why}</div>
                 </div>
-                <Pill tone="gold">Recommended</Pill>
+                <Pill tone="gold">{num(seg.audience)} in audience</Pill>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 0 }}>
                 {[
-                  { k: 'Target segment', v: seg.cohort },
-                  { k: 'Population', v: `${num(seg.treated)} treated · ${seg.holdout ? num(seg.holdout) : '—'} holdout` },
-                  { k: 'Primary KPI', v: seg.kpi },
+                  { k: 'Segment', v: cell.cohort },
+                  { k: 'Audience size', v: `${num(seg.audience)} participants` },
+                  { k: 'Primary KPI', v: cell.kpi },
                 ].map((f, j) => (
                   <div key={f.k} style={{ padding: '13px 20px', borderTop: T.rule, borderLeft: j === 0 ? 'none' : T.rule }}>
                     <div style={{ fontSize: 10.5, letterSpacing: '.06em', textTransform: 'uppercase', color: C.muted, fontWeight: 700 }}>{f.k}</div>
@@ -872,7 +1036,7 @@ function AssetChip({ label, color, onClick }) {
 function TabContent({ lab, setLab, d }) {
   const [preview, setPreview] = useState(null)
   const status = lab.content
-  const canLock = lab.simulated && d.complianceOk
+  const canLock = lab.content === 'drafted' || lab.content === 'locked'
   const assetIcon = status === 'locked' ? C.green : C.gold
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.5fr) minmax(0,1fr)', gap: 16 }}>
@@ -890,7 +1054,7 @@ function TabContent({ lab, setLab, d }) {
             <Btn kind={canLock ? 'primary' : 'quiet'} small onClick={() => canLock && setLab(l => ({ ...l, content: 'locked' }))}
               style={{ opacity: canLock ? 1 : 0.5, cursor: canLock ? 'pointer' : 'not-allowed' }}>Lock content</Btn>
           </div>
-          {!canLock && <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8 }}>Locking needs a completed simulation and no compliance blockers.</div>}
+          {!canLock && <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8 }}>Generate per-segment drafts to enable locking.</div>}
         </Card>
         {d.perCell.map(seg => {
           const pieces = STRATEGY_CONTENT[seg.id] || []
@@ -1016,11 +1180,21 @@ function TabSimulation({ sponsor, lab, setLab, d }) {
   const p = projections(sponsor, d)
   const attrib = d.treatCells.map(c => ({ name: c.strategy, w: STRAT_WEIGHT[c.id] || 0 })).sort((a, b) => b.w - a.w)
   const attTot = attrib.reduce((a, c) => a + c.w, 0) || 1
+  const mkScen = (name, lf, cf, conf) => ({
+    name, conf,
+    part: Math.min(0.99, p.base + p.lift * lf / 100),
+    lift: +(p.lift * lf).toFixed(1),
+    enroll: Math.round(p.enroll * lf),
+    aum: +(p.aum * lf).toFixed(0),
+    cost: +(p.cost * cf).toFixed(1),
+    roi: cf > 0 ? +((p.aum * lf) / (p.cost * cf)).toFixed(1) : 0,
+    deferral: +(p.deferralLift * lf).toFixed(1),
+  })
   const scen = [
-    { name: 'Do-nothing', part: p.base, aum: 0, cost: 0, conf: '—' },
-    { name: 'Recommended', part: p.projected, aum: +p.aum.toFixed(0), cost: +p.cost.toFixed(1), conf: 'High' },
-    { name: 'Cost-aware', part: p.base + p.lift * 0.66 / 100, aum: +(p.aum * 0.66).toFixed(0), cost: +(p.cost * 0.6).toFixed(1), conf: 'High' },
-    { name: 'Max-lift', part: Math.min(0.99, p.base + p.lift * 1.37 / 100), aum: +(p.aum * 1.37).toFixed(0), cost: +(p.cost * 1.5).toFixed(1), conf: 'Med' },
+    { name: 'Do-nothing', part: p.base, lift: 0, enroll: 0, aum: 0, cost: 0, roi: 0, deferral: 0, conf: '—' },
+    mkScen('Recommended', 1, 1, 'High'),
+    mkScen('Cost-aware', 0.66, 0.6, 'High'),
+    mkScen('Max-lift', 1.37, 1.5, 'Med'),
   ]
   const bench = [
     { k: 'Current', v: p.base }, { k: 'Projected', v: p.projected }, { k: 'Sector benchmark', v: sponsor.benchmark },
@@ -1124,13 +1298,17 @@ function TabSimulation({ sponsor, lab, setLab, d }) {
       </div>
 
       {/* scenario comparison */}
-      <Table minWidth={640} head={<><Th>Scenario</Th><Th align="right">Projected participation</Th><Th align="right">Incremental AUM</Th><Th align="right">Incremental cost</Th><Th>Confidence</Th></>}>
+      <Table minWidth={860} head={<><Th>Scenario</Th><Th align="right">Participation</Th><Th align="right">Lift</Th><Th align="right">Enrollments</Th><Th align="right">Incr. AUM</Th><Th align="right">Incr. cost</Th><Th align="right">AUM-to-cost</Th><Th align="right">Deferral lift</Th><Th>Confidence</Th></>}>
         {scen.map(s => (
           <tr key={s.name}>
             <Td bold>{s.name}</Td>
             <Td align="right">{pct(s.part)}</Td>
+            <Td align="right">{s.lift ? `+${s.lift} pts` : '—'}</Td>
+            <Td align="right">{s.enroll ? `+${num(s.enroll)}` : '—'}</Td>
             <Td align="right">{s.aum ? `+$${s.aum}M` : '—'}</Td>
             <Td align="right">{s.cost ? `+$${s.cost}M` : '—'}</Td>
+            <Td align="right">{s.roi ? `${s.roi}×` : '—'}</Td>
+            <Td align="right">{s.deferral ? `+${s.deferral} pts` : '—'}</Td>
             <Td>{s.conf !== '—' ? <Pill tone={s.conf === 'High' ? 'ok' : 'review'}>{s.conf}</Pill> : '—'}</Td>
           </tr>
         ))}
@@ -1221,7 +1399,7 @@ function TabDeployment({ sponsor, lab, setLab, d, addMemory }) {
       <div style={{ padding: '14px 20px', borderBottom: T.rule, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>Deployment lanes · holdouts preserved</div>
-          <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>One lane per strategy · tiered rollout with suppression + rollback.</div>
+          <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>One lane per strategy · staged rollout with suppression + rollback.</div>
         </div>
         {!ready ? <Pill tone="review">Approve all to enable launch</Pill>
           : allLive ? <Pill tone="ok"><IconCheck size={12} /> Full strategy live · logged to Memory</Pill>
@@ -1304,7 +1482,7 @@ function LiveCampaignDetail({ record }) {
         <div style={{ marginTop: 12, height: 10, background: C.line, borderRadius: 5, overflow: 'hidden' }}>
           <div style={{ width: `${frac / 0.42 * 100}%`, height: '100%', background: T.goldFoil, borderRadius: 5, transition: 'width 1s linear' }} />
         </div>
-        <div style={{ fontSize: 11.5, color: C.muted, marginTop: 6 }}>{Math.round(frac / 0.42 * 100)}% through the current rollout tier.</div>
+        <div style={{ fontSize: 11.5, color: C.muted, marginTop: 6 }}>{Math.round(frac / 0.42 * 100)}% through the current rollout stage.</div>
       </Card>
 
       <Card>
@@ -1316,6 +1494,28 @@ function LiveCampaignDetail({ record }) {
           <KpiTile label="AUM added so far" value={`+$${soFar.aum.toFixed(1)}M`} sub={`of +$${tgt.aum}M projected`} tone={C.goldDk} />
           <KpiTile label="Cost incurred" value={`+$${soFar.cost.toFixed(2)}M`} sub={`of +$${tgt.cost}M projected`} />
           <KpiTile label="AUM-to-cost" value={`${tgt.roi}×`} sub="projected at full run" tone={C.goldDk} />
+        </div>
+      </Card>
+
+      <Card>
+        <Eyebrow>Enrollment ramp · to-date vs projected</Eyebrow>
+        <div style={{ height: 200, marginTop: 8 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={Array.from({ length: totalWeeks + 1 }, (_, i) => {
+              const f = i / totalWeeks; const proj = Math.round(tgt.enroll * (1 - Math.pow(1 - f, 2)))
+              return { wk: `W${i}`, Projected: proj, 'To-date': i <= weekOf ? Math.round(proj * 0.97) : null }
+            })} margin={{ top: 6, right: 10, bottom: 0, left: -6 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={C.line} vertical={false} />
+              <XAxis dataKey="wk" tick={{ fontSize: 10, fill: C.muted }} axisLine={false} tickLine={false} interval={2} />
+              <YAxis tick={{ fontSize: 10, fill: C.muted }} axisLine={false} tickLine={false} />
+              <Line type="monotone" dataKey="Projected" stroke={C.goldDk} strokeWidth={2} strokeDasharray="4 3" dot={false} />
+              <Line type="monotone" dataKey="To-date" stroke={C.green} strokeWidth={2.5} dot={false} connectNulls={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <div style={{ display: 'flex', gap: 14, fontSize: 11.5, color: C.muted, marginTop: 4 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 12, height: 3, background: C.green, borderRadius: 2 }} /> To-date (actual)</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 12, height: 3, background: C.goldDk, borderRadius: 2 }} /> Projected</span>
         </div>
       </Card>
 
@@ -1346,6 +1546,19 @@ function CompletedCampaignDetail({ record }) {
     { k: 'Holdout', v: im.holdoutPart, tone: C.goldDk },
     { k: 'Baseline', v: im.baseline, tone: C.faint },
   ]
+  const weeks = parseInt(im.window) || parseInt(record.window) || 12
+  const trajectory = Array.from({ length: weeks + 1 }, (_, i) => {
+    const f = i / weeks; const ease = 1 - Math.pow(1 - f, 2)
+    return {
+      wk: `W${i}`,
+      Treatment: +((im.baseline + (im.treatmentPart - im.baseline) * ease) * 100).toFixed(1),
+      Holdout: +((im.baseline + (im.holdoutPart - im.baseline) * ease * 0.6) * 100).toFixed(1),
+    }
+  })
+  const laneAum = (() => {
+    const tot = im.lanes.reduce((a, l) => a + l.treated, 0) || 1
+    return im.lanes.map(l => ({ name: l.strategy, AUM: +(im.aum * l.treated / tot).toFixed(0) }))
+  })()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <Card>
@@ -1355,6 +1568,42 @@ function CompletedCampaignDetail({ record }) {
         </div>
         <div style={{ fontSize: 14, color: C.ink2, lineHeight: 1.65, marginTop: 6, maxWidth: 700 }}>{im.summary}</div>
       </Card>
+
+      {/* graphs */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.4fr) minmax(0,1fr)', gap: 16 }}>
+        <Card>
+          <Eyebrow>Participation trajectory · treatment vs holdout</Eyebrow>
+          <div style={{ height: 200, marginTop: 8 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={trajectory} margin={{ top: 6, right: 10, bottom: 0, left: -18 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={C.line} vertical={false} />
+                <XAxis dataKey="wk" tick={{ fontSize: 10, fill: C.muted }} axisLine={false} tickLine={false} interval={2} />
+                <YAxis tick={{ fontSize: 10, fill: C.muted }} axisLine={false} tickLine={false} domain={['dataMin - 2', 'dataMax + 2']} />
+                <Line type="monotone" dataKey="Treatment" stroke={C.green} strokeWidth={2.5} dot={false} />
+                <Line type="monotone" dataKey="Holdout" stroke={C.goldDk} strokeWidth={2} strokeDasharray="4 3" dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{ display: 'flex', gap: 14, fontSize: 11.5, color: C.muted, marginTop: 4 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 12, height: 3, background: C.green, borderRadius: 2 }} /> Treatment</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 12, height: 3, background: C.goldDk, borderRadius: 2 }} /> Holdout</span>
+          </div>
+        </Card>
+        <Card>
+          <Eyebrow>AUM contribution by lane</Eyebrow>
+          <div style={{ height: 200, marginTop: 8 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={laneAum} margin={{ top: 6, right: 10, bottom: 0, left: -18 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={C.line} vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 9, fill: C.muted }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: C.muted }} axisLine={false} tickLine={false} />
+                <Bar dataKey="AUM" fill={C.gold} radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{ fontSize: 11.5, color: C.muted, marginTop: 4 }}>Incremental AUM ($M) attributed by treated population.</div>
+        </Card>
+      </div>
 
       <Card>
         <Eyebrow>Realized KPIs</Eyebrow>
@@ -1507,9 +1756,10 @@ export default function VGApp() {
   const [tab, setTab] = useState(0)
   const [lab, setLab] = useState(() => ({
     objective: 'participation',
-    channels: { Email: true, Portal: true, 'Required notices': true, 'Advisor brief': false, 'In-app nudge': false },
+    channels: { Email: true, Portal: true, Notices: true, 'Advisor brief': false, 'In-app nudge': false },
     timeline: { rolloutWeeks: 6, measureWeeks: 12 },
-    cells: { ae: true, ms: true, esc: true, re: false, edu: false, hold: true },
+    posture: 'balanced',
+    cells: { ae: true, ms: true, esc: true, re: true, edu: false, hold: true },
     levers: { aeDefault: 4, aeEsc: 1, aeCap: 10, msTarget: 6, escStep: 1, escCap: 12, holdoutPct: 15, reFreq: 12, reNotice: 45, eduCadence: 2 },
     content: 'none',   // none | drafted | locked
     simulated: false,
@@ -1534,7 +1784,7 @@ export default function VGApp() {
       display: 'flex', gap: 16, padding: 16, color: C.ink }}>
       <Sidebar {...{ menu, setMenu, collapsed, setCollapsed, themeName, setThemeName }} />
       <main style={{ flex: 1, minWidth: 0, maxWidth: 1180 }}>
-        {menu === 'home' && <Home onOpenSignals={openSignals} />}
+        {menu === 'home' && <Home onOpenSignals={openSignals} memoryLog={memoryLog} />}
         {menu === 'signals' && <Signals sponsor={sponsor} onSelect={setSponsorId} onSendToLab={sendToLab} />}
         {menu === 'decision' && <DecisionLab sponsor={sponsor} tab={tab} setTab={setTab} lab={lab} setLab={setLab} addMemory={addMemory} />}
         {menu === 'memory' && <Memory memoryLog={memoryLog} />}

@@ -5,6 +5,30 @@
 
 ---
 
+## Session 9 — Home morning-brief, strategy postures, richer content/sim/memory, UI polish — 2026-08-11
+
+### Build Status
+- `npm run build` — **PASSED** — 0 errors. Verified visually via Playwright (home, strategy postures, content deck, memory graphs).
+
+### Added / Changed — `src/vg/VGApp.jsx` + `src/vg/data.js` + `src/vg/theme.js`
+- **No gradients on buttons / left menu** — `gold` button and the active nav accent bar are now flat `C.gold` (was `T.goldFoil`).
+- **Home — growth-CXO items**: personalized **morning-brief header** (date, "Good morning, Alex.", signals count, VTI market-ticker chip) matching the requested reference; **Growth scorecard** (net-new AUM opportunity, AUM realized, avg lift delivered, campaigns live) and a **Growth pipeline** funnel (opportunity → deployed → realized), wired to real data incl. this session's deployed campaigns.
+- **Objective tiles** — now a single horizontal strip (`flex`, overflow-x) instead of a wrapping grid.
+- **Recommended Strategy** — redesigned to **3 posture tiles** (Aggressive / **Balanced** default / Conservative), each clickable, showing **probable value created** (lift, enrollments, AUM, cost, AUM-to-cost) and a per-segment playbook (segment → lever, audience size, channels, content types). New `STRATEGY_PLAYBOOKS` in data; `lab.posture` drives selection.
+- **Levers** — re-enrollment kept active; each lever card now shows a **"Current" configuration** summary (`leverSummary`).
+- **Channels** — "Required notices" renamed to **"Notices"** (CHANNELS, strategy channels, lab state).
+- **Rollout tiers removed** — dropped the Objective "Rollout tiers 10%→40%→100%" row; deployment/live copy reworded to "staged rollout".
+- **Content** — richer, more granular: committee decks render **deck-style numbered sections**; participant emails render **A/B variants**. `STRATEGY_CONTENT` gained `sections`/`variants` (AE deck+email, MS deck, Esc deck). **Lock content** now enables as soon as per-segment drafts are generated.
+- **Compliance** — "Content approval state" renamed to **"Check for content compliance"**.
+- **Simulation** — scenario table expanded with more KPIs (lift, enrollments, incr. AUM, incr. cost, AUM-to-cost, deferral lift).
+- **Memory detail pages** — added **graphs**: completed campaigns show a participation-trajectory line chart (treatment vs holdout) and an AUM-by-lane bar chart; live campaigns show an enrollment-ramp line chart (to-date vs projected).
+
+### Watch List
+- Posture tiles are an advisory presentation layer; they set `lab.posture` but do not rewrite `lab.cells` (levers/content/sim/deploy still run off the configured cells, which include re-enrollment).
+- A/B variants + deck sections added for the balanced-posture strategies; `re`/`edu` decks not yet expanded with sections.
+
+---
+
 ## Session 8 — Memory detail pages (live + completed) + light-blue retheme — 2026-08-11
 
 ### Build Status

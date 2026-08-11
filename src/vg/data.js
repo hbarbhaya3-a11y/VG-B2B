@@ -97,10 +97,10 @@ export const INSIGHTS = [
 
 // Candidate strategy cells — the portfolio allocator model.
 export const STRATEGY_CELLS = [
-  { id: 'ae', cohort: 'Eligible non-participants', population: 10700, strategy: 'Auto Enrollment', why: 'Participation gap / default friction', kpi: 'Incremental enrollment', content: 'Email, portal, notices', channels: ['Participant email', 'Portal banner', 'Required notices'], holdout: true },
+  { id: 'ae', cohort: 'Eligible non-participants', population: 10700, strategy: 'Auto Enrollment', why: 'Participation gap / default friction', kpi: 'Incremental enrollment', content: 'Email, portal, notices', channels: ['Participant email', 'Portal banner', 'Notices'], holdout: true },
   { id: 'ms', cohort: 'Below-match participants', population: 6200, strategy: 'Match Stretch + education', why: 'Match leakage', kpi: 'Deferral / match utilization', content: 'Match explainer, portal', channels: ['Match explainer', 'Participant email', 'Portal banner'], holdout: true },
-  { id: 'esc', cohort: 'Stuck-at-default participants', population: 9400, strategy: 'Auto Escalation', why: 'Deferral inertia', kpi: 'Deferral lift', content: 'Escalation email, portal', channels: ['Escalation email', 'Portal banner', 'Required notices'], holdout: true },
-  { id: 're', cohort: 'Legacy-election holders', population: 4100, strategy: 'Re-enrollment', why: 'Outdated elections', kpi: 'Re-election / reset', content: 'Notices, portal confirm', channels: ['Required notices', 'Portal confirm'], holdout: true },
+  { id: 'esc', cohort: 'Stuck-at-default participants', population: 9400, strategy: 'Auto Escalation', why: 'Deferral inertia', kpi: 'Deferral lift', content: 'Escalation email, portal', channels: ['Escalation email', 'Portal banner', 'Notices'], holdout: true },
+  { id: 're', cohort: 'Legacy-election holders', population: 4100, strategy: 'Re-enrollment', why: 'Outdated elections', kpi: 'Re-election / reset', content: 'Notices, portal confirm', channels: ['Notices', 'Portal confirm'], holdout: true },
   { id: 'edu', cohort: 'Low-readiness cohort', population: 3300, strategy: 'Education-only', why: 'Lower operational risk', kpi: 'Engagement', content: 'FAQ, email', channels: ['FAQ', 'Participant email'], holdout: false },
   { id: 'hold', cohort: 'Control cells', population: 2000, strategy: 'Holdout', why: 'Causal proof', kpi: 'Incrementality', content: 'Suppression list', channels: ['Suppression list'], holdout: true },
 ]
@@ -120,6 +120,13 @@ export const STRATEGY_CONTENT = {
       ],
       cta: 'Approve for participant rollout',
       complianceNote: 'Education-classified plan-design recommendation. Holdout preserved for incrementality. QDIA review status must clear before deploy.',
+      sections: [
+        { heading: 'The opportunity', body: '10,700 eligible employees are not enrolled — a 14-point participation gap vs the 86% benchmark, representing $88M in net-new AUM opportunity.' },
+        { heading: 'Recommendation', body: 'Activate automatic enrollment at a 4% default deferral with 1%/yr auto-escalation to a 10% cap, invested in the plan\'s QDIA.' },
+        { heading: 'Who is affected', body: 'Eligible employees not currently contributing. Employees already contributing are unaffected. A randomized holdout is carved for causal measurement.' },
+        { heading: 'Projected impact', body: '+9.2 pts participation, ~8,600 incremental enrollments, +$79M AUM at ~$1.7M incremental match cost (≈46× AUM-to-cost).' },
+        { heading: 'Governance & timeline', body: 'Required notices, opt-out windows, and QDIA disclosures auto-attach. Fiduciary review required. Staged rollout over the configured window.' },
+      ],
     },
     {
       asset: 'Participant email', format: 'Participant email — pre-enrollment notice',
@@ -132,6 +139,16 @@ export const STRATEGY_CONTENT = {
       ],
       cta: 'Review my options',
       complianceNote: 'Personalization token [First Name] must resolve; fallback "Hi there". Opt-out path and effective date required. "Not advice" footer auto-attaches.',
+      variants: [
+        { letter: 'A', label: 'Simplicity framing', subject: 'An easier way to start saving for retirement',
+          headline: 'Saving just got automatic',
+          body: ['Your plan will enroll you at 4%, rising 1% a year to 10%, invested in the plan default.', 'Nothing to do to start — and you can change or opt out anytime before the effective date.'],
+          cta: 'Review my options' },
+        { letter: 'B', label: 'Future-value framing', subject: 'A small step now, a bigger balance later',
+          headline: 'What 4% could grow into',
+          body: ['Starting at a 4% contribution — automatically escalated over time — can compound meaningfully by retirement.', 'This is educational, not advice. You stay in full control of your rate, investments, and the choice to opt out.'],
+          cta: 'See what I could save' },
+      ],
     },
     {
       asset: 'Portal banner', format: 'Secure-site portal banner + guided flow', subject: null,
@@ -167,6 +184,12 @@ export const STRATEGY_CONTENT = {
       ],
       cta: 'Approve cost-neutral stretch',
       complianceNote: 'Cost-neutral toggle must be verified. Fairness impact (HCE/NHCE) reviewed. Education-classified.',
+      sections: [
+        { heading: 'The opportunity', body: '6,200 participants contribute below the full-match threshold, leaving employer match dollars uncaptured.' },
+        { heading: 'Recommendation', body: 'Restructure toward a stretch match (target 6%) so full match requires a higher deferral, paired with an education campaign. Modeled cost-neutral.' },
+        { heading: 'Fairness check', body: 'ADP/ACP and HCE–NHCE impact modeled; a holdout is preserved to measure incremental deferral and match uptake.' },
+        { heading: 'Projected impact', body: '+1.9 pts deferral and +2.1 pts match utilization at effectively zero incremental match spend (Fernhollow Foods analog).' },
+      ],
     },
     {
       asset: 'Match explainer', format: 'Participant education — match explainer', subject: null,
@@ -215,6 +238,12 @@ export const STRATEGY_CONTENT = {
       ],
       cta: 'Approve escalation schedule',
       complianceNote: 'Opt-out path required at each step. Payroll schedule alignment verified. Holdout preserved.',
+      sections: [
+        { heading: 'The opportunity', body: '9,400 participants have never moved off the 3% default — deferral inertia, not affordability, is the barrier.' },
+        { heading: 'Recommendation', body: 'Apply automatic annual escalation of 1%/yr to a 12% cap, with a clear opt-out presented at each step.' },
+        { heading: 'Participant protection', body: 'Every increase is preceded by notice and an easy opt-out/pause path; a holdout is preserved for measurement.' },
+        { heading: 'Projected impact', body: '+1.2 pts deferral vs holdout (Vantage Media analog), compounding over subsequent escalation cycles.' },
+      ],
     },
     {
       asset: 'Escalation email', format: 'Participant email — escalation notice',
@@ -311,6 +340,41 @@ export const STRATEGY_CONTENT = {
   ],
 }
 
+// Recommended Strategy postures — three portfolio stances. Balanced is the default/recommended.
+// Each segment references a STRATEGY_CELLS id and the audience size that receives that lever.
+export const STRATEGY_PLAYBOOKS = [
+  {
+    id: 'aggressive', name: 'Aggressive',
+    tagline: 'Maximize participation and net-new AUM fast — every lever, broad reach, smaller holdout.',
+    value: { lift: 12.6, enroll: 11800, aum: 121, cost: 3.4, roi: 35.6 },
+    segments: [
+      { cell: 'ae', audience: 10700 },
+      { cell: 'ms', audience: 6200 },
+      { cell: 'esc', audience: 9400 },
+      { cell: 're', audience: 4100 },
+    ],
+  },
+  {
+    id: 'balanced', name: 'Balanced', rec: true,
+    tagline: 'The recommended mix — strong lift with contained cost and a preserved holdout for causal proof.',
+    value: { lift: 9.2, enroll: 8600, aum: 79, cost: 1.7, roi: 46.5 },
+    segments: [
+      { cell: 'ae', audience: 10700 },
+      { cell: 'ms', audience: 6200 },
+      { cell: 'esc', audience: 9400 },
+    ],
+  },
+  {
+    id: 'conservative', name: 'Conservative',
+    tagline: 'Lowest cost and operational risk — education-led with selective, notice-heavy automation.',
+    value: { lift: 4.4, enroll: 4100, aum: 38, cost: 0.6, roi: 63.3 },
+    segments: [
+      { cell: 'ae', audience: 6000 },
+      { cell: 'edu', audience: 3300 },
+    ],
+  },
+]
+
 // Decision Lab · Objective — what the run optimizes.
 export const OBJECTIVES = [
   { id: 'participation', label: 'Increase participation', desc: 'Close the gap to benchmark for eligible non-participants.', rec: true },
@@ -320,7 +384,7 @@ export const OBJECTIVES = [
 ]
 
 // Decision Lab · Objective — delivery channels for the run.
-export const CHANNELS = ['Email', 'Portal', 'Required notices', 'Advisor brief', 'In-app nudge']
+export const CHANNELS = ['Email', 'Portal', 'Notices', 'Advisor brief', 'In-app nudge']
 
 // Illustrative average participant balance, used to translate lift → AUM.
 export const AVG_BALANCE = 42000
@@ -346,7 +410,7 @@ export const LEVERS = [
 
 // Stage-2 content assets + compliance checks.
 export const ASSETS = [
-  'Committee deck', 'Participant email', 'Portal banner + guided flow', 'Required notices',
+  'Committee deck', 'Participant email', 'Portal banner + guided flow', 'Notices',
   'Relationship executive brief', 'Payroll / recordkeeping kit', 'Measurement readout template',
 ]
 export const COMPLIANCE = [
@@ -355,7 +419,7 @@ export const COMPLIANCE = [
   { label: 'QDIA review status', state: 'review' },
   { label: 'Opt-out / change-election path present', state: 'ok' },
   { label: 'Sponsor committee version ready', state: 'review' },
-  { label: 'Content approval state', state: 'blocked' },
+  { label: 'Check for content compliance', state: 'blocked' },
 ]
 
 // Simulation — projected portfolio scenarios vs do-nothing.
