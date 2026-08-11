@@ -1197,8 +1197,23 @@ function TabDeployment({ sponsor, lab, setLab, d, addMemory }) {
       portfolio: d.treatCells.map(c => c.strategy).join(' + '),
       levers: `AE ${lab.levers.aeDefault}% +${lab.levers.aeEsc}%/yr · Stretch ${lab.levers.msTarget}% · Esc +${lab.levers.escStep}%/yr`,
       approval: 'Deployed',
-      outcome: `Projected +${p.lift} pts participation · +$${p.aum.toFixed(0)}M AUM`,
+      status: 'Live',
+      live: true,
       isNew: true,
+      deployedAt: Date.now(),
+      outcome: `Projected +${p.lift} pts participation · +$${p.aum.toFixed(0)}M AUM`,
+      detail: {
+        industry: sponsor.industry,
+        treated: d.treated,
+        holdout: d.holdout,
+        target: {
+          lift: p.lift, base: p.base, projected: p.projected, enroll: p.enroll,
+          aum: +p.aum.toFixed(0), cost: +p.cost.toFixed(1), roi: +p.roi.toFixed(1),
+          deferralLift: p.deferralLift, benchmark: sponsor.benchmark,
+        },
+        lanes: d.perCell.map(c => ({ strategy: c.strategy, treated: c.treated, holdout: c.holdout, channel: c.content })),
+        window: `${lab.timeline.measureWeeks}-week measurement window`,
+      },
     })
   }
   return (
@@ -1240,23 +1255,197 @@ function TabDeployment({ sponsor, lab, setLab, d, addMemory }) {
 }
 
 /* ───────────────────────── MEMORY ───────────────────────── */
+function LiveDot() {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+      <style>{`@keyframes vgpulse{0%{box-shadow:0 0 0 0 rgba(168,69,59,.5)}70%{box-shadow:0 0 0 6px rgba(168,69,59,0)}100%{box-shadow:0 0 0 0 rgba(168,69,59,0)}}`}</style>
+      <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.red, animation: 'vgpulse 1.5s infinite' }} />
+    </span>
+  )
+}
+
+function StatusPill({ record }) {
+  if (record.live) return <Pill tone="high"><LiveDot /> Live</Pill>
+  return <Pill tone="ok"><IconCheck size={12} /> Completed</Pill>
+}
+
+// Live campaign detail — ramps to-date metrics from the deploy timestamp.
+function LiveCampaignDetail({ record }) {
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const iv = setInterval(() => setTick(t => t + 1), 1000)
+    return () => clearInterval(iv)
+  }, [])
+  const dt = record.detail
+  const elapsed = (Date.now() - record.deployedAt) / 1000
+  const frac = Math.min(0.42, elapsed / 20)         // in-flight; caps at 42%
+  const tgt = dt.target
+  const soFar = {
+    lift: +(tgt.lift * frac).toFixed(2),
+    part: tgt.base + (tgt.projected - tgt.base) * frac,
+    enroll: Math.round(tgt.enroll * frac),
+    aum: tgt.aum * frac,
+    cost: tgt.cost * frac,
+  }
+  const weekOf = Math.max(1, Math.round(frac / 0.42 * 4))   // ~week 1–4 of measurement
+  const totalWeeks = parseInt(dt.window) || 12
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <Card style={{ background: C.amberBg, borderColor: `${C.gold}55` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <LiveDot />
+          <Eyebrow>Campaign live · updating in real time</Eyebrow>
+          <span style={{ marginLeft: 'auto', fontSize: 12, color: C.muted }}>Week {weekOf} of {totalWeeks} · {dt.window}</span>
+        </div>
+        <div style={{ fontSize: 14, color: C.ink2, lineHeight: 1.6, marginTop: 6, maxWidth: 680 }}>
+          Rolling out across <b style={{ color: C.ink }}>{num(dt.treated)}</b> treated participants ({num(dt.holdout)} held out for causal measurement).
+          Results below are to-date and will continue to accrue toward the projection.
+        </div>
+        <div style={{ marginTop: 12, height: 10, background: C.line, borderRadius: 5, overflow: 'hidden' }}>
+          <div style={{ width: `${frac / 0.42 * 100}%`, height: '100%', background: T.goldFoil, borderRadius: 5, transition: 'width 1s linear' }} />
+        </div>
+        <div style={{ fontSize: 11.5, color: C.muted, marginTop: 6 }}>{Math.round(frac / 0.42 * 100)}% through the current rollout tier.</div>
+      </Card>
+
+      <Card>
+        <Eyebrow>Live results to-date · vs projection</Eyebrow>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 10, marginTop: 4 }}>
+          <KpiTile label="Participation so far" value={pct(soFar.part)} sub={`toward ${pct(tgt.projected)} projected`} tone={C.green} />
+          <KpiTile label="Lift so far" value={`+${soFar.lift} pts`} sub={`of +${tgt.lift} projected`} tone={C.green} />
+          <KpiTile label="Enrollments so far" value={`+${num(soFar.enroll)}`} sub={`of +${num(tgt.enroll)} projected`} tone={C.green} />
+          <KpiTile label="AUM added so far" value={`+$${soFar.aum.toFixed(1)}M`} sub={`of +$${tgt.aum}M projected`} tone={C.goldDk} />
+          <KpiTile label="Cost incurred" value={`+$${soFar.cost.toFixed(2)}M`} sub={`of +$${tgt.cost}M projected`} />
+          <KpiTile label="AUM-to-cost" value={`${tgt.roi}×`} sub="projected at full run" tone={C.goldDk} />
+        </div>
+      </Card>
+
+      <Card pad={0}>
+        <div style={{ padding: '14px 20px', borderBottom: T.rule, fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>Deployment lanes · live</div>
+        <Table minWidth={640} head={<><Th>Lane</Th><Th align="right">Treated</Th><Th align="right">Holdout</Th><Th>Channel</Th><Th align="center">Status</Th></>}>
+          {dt.lanes.map(l => (
+            <tr key={l.strategy}>
+              <Td bold>{l.strategy}</Td>
+              <Td align="right">{num(l.treated)}</Td>
+              <Td align="right">{l.holdout ? num(l.holdout) : '—'}</Td>
+              <Td>{l.channel}</Td>
+              <Td align="center"><Pill tone="high"><LiveDot /> Rolling out</Pill></Td>
+            </tr>
+          ))}
+        </Table>
+      </Card>
+    </div>
+  )
+}
+
+// Completed campaign detail — realized impact vs holdout.
+function CompletedCampaignDetail({ record }) {
+  const im = record.impact
+  if (!im) return <div style={{ fontSize: 13, color: C.muted }}>{record.outcome}</div>
+  const bars = [
+    { k: 'Treatment', v: im.treatmentPart, tone: C.green },
+    { k: 'Holdout', v: im.holdoutPart, tone: C.goldDk },
+    { k: 'Baseline', v: im.baseline, tone: C.faint },
+  ]
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <Card>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+          <Eyebrow>Impact created · realized vs holdout</Eyebrow>
+          <span style={{ fontSize: 12, color: C.muted }}>{record.window}</span>
+        </div>
+        <div style={{ fontSize: 14, color: C.ink2, lineHeight: 1.65, marginTop: 6, maxWidth: 700 }}>{im.summary}</div>
+      </Card>
+
+      <Card>
+        <Eyebrow>Realized KPIs</Eyebrow>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 10, marginTop: 4 }}>
+          <KpiTile label="Participation lift" value={`+${im.participationLift} pts`} sub="vs holdout" tone={C.green} />
+          <KpiTile label="Incremental enrollments" value={`+${num(im.enrollments)}`} sub="newly participating" tone={C.green} />
+          <KpiTile label="Incremental AUM" value={`+$${im.aum}M`} sub="assets added" tone={C.goldDk} />
+          <KpiTile label="Incremental cost" value={im.cost ? `+$${im.cost}M` : 'Cost-neutral'} sub="employer match" />
+          <KpiTile label="AUM-to-cost" value={im.cost ? `${im.roi}×` : '∞'} sub="return on cost" tone={C.goldDk} />
+          <KpiTile label="Deferral lift" value={`+${im.deferralLift} pts`} />
+          <KpiTile label="Opt-out rate" value={pct(im.optOut / 100)} sub="below plan assumption" tone={C.green} />
+          <KpiTile label="Predicted vs realized" value={`${im.predictedLift} → ${im.participationLift}`} sub="pts participation" />
+        </div>
+      </Card>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 16 }}>
+        <Card>
+          <Eyebrow>Treatment vs holdout · participation</Eyebrow>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
+            {bars.map(b => (
+              <div key={b.k}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 4 }}>
+                  <span style={{ color: C.ink2 }}>{b.k}</span>
+                  <span style={{ fontFamily: DISP, fontWeight: 700, color: C.ink }}>{pct(b.v)}</span>
+                </div>
+                <div style={{ height: 10, background: C.line, borderRadius: 5, overflow: 'hidden' }}>
+                  <div style={{ width: pct(b.v), height: '100%', background: b.tone, borderRadius: 5 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card pad={0}>
+          <div style={{ padding: '16px 20px', borderBottom: T.rule, fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>Lane-level realized impact</div>
+          <Table minWidth={360} head={<><Th>Lane</Th><Th align="right">Treated</Th><Th>Realized</Th></>}>
+            {im.lanes.map(l => (
+              <tr key={l.strategy}>
+                <Td bold>{l.strategy}</Td>
+                <Td align="right">{num(l.treated)}</Td>
+                <Td><span style={{ color: C.green, fontWeight: 600 }}>{l.realized}</span></Td>
+              </tr>
+            ))}
+          </Table>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
+function MemoryDetail({ record, onBack }) {
+  return (
+    <div>
+      <button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: 6,
+        background: 'transparent', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 12, marginBottom: 12, fontFamily: FONT }}>
+        <IconArrowLeft size={14} /> Back to Memory
+      </button>
+      <SectionTitle kicker={`Memory · ${record.live ? 'Live campaign' : 'Completed campaign'} · ${record.signal}`}
+        title={`${record.sponsor} — ${record.portfolio}`}
+        sub={record.live
+          ? 'This experiment is deployed and running. Results below update live as the rollout progresses.'
+          : `Deployed ${record.completedOn || ''} — here is the impact this campaign created, measured against the preserved holdout.`}
+        right={<StatusPill record={record} />} />
+      {record.live ? <LiveCampaignDetail record={record} /> : <CompletedCampaignDetail record={record} />}
+    </div>
+  )
+}
+
 function Memory({ memoryLog = [] }) {
+  const [selected, setSelected] = useState(null)
   const rows = [...memoryLog, ...MEMORY_DECISIONS]
+  const active = rows.find(r => (r.id || r.sponsor) === selected)
+  if (active) return <MemoryDetail record={active} onBack={() => setSelected(null)} />
   return (
     <div>
       <SectionTitle kicker="Memory · Institutional learning" title="What have we learned, and what can we reuse?"
-        sub="Prior sponsor decisions, how holdout outcomes compared with prediction, and reusable decision policies." />
+        sub="Prior sponsor decisions, how holdout outcomes compared with prediction, and reusable decision policies. Select any decision to open its live or completed results." />
       <Card pad={0} style={{ marginBottom: 16 }}>
         <div style={{ padding: '16px 20px', borderBottom: T.rule, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>Prior sponsor decisions</span>
           {memoryLog.length > 0 && <Pill tone="gold">{memoryLog.length} deployed this session</Pill>}
         </div>
-        <Table minWidth={720} head={<><Th>Sponsor</Th><Th>Signal</Th><Th>Portfolio</Th><Th>Levers</Th><Th>Status</Th><Th>Outcome</Th></>}>
+        <Table minWidth={760} head={<><Th>Sponsor</Th><Th>Signal</Th><Th>Portfolio</Th><Th>Status</Th><Th>Outcome</Th><Th></Th></>}>
           {rows.map((d, i) => (
-            <tr key={d.id || d.sponsor + i} style={d.isNew ? { background: C.amberBg } : undefined}>
-              <Td bold>{d.sponsor} {d.isNew && <Pill tone="gold">New</Pill>}</Td><Td>{d.signal}</Td><Td>{d.portfolio}</Td><Td>{d.levers}</Td>
-              <Td><Pill tone="ok">{d.approval}</Pill></Td>
+            <tr key={d.id || d.sponsor + i} onClick={() => setSelected(d.id || d.sponsor)}
+              style={{ cursor: 'pointer', background: d.isNew ? C.amberBg : undefined }}
+              onMouseEnter={e => { e.currentTarget.style.background = C.paper }}
+              onMouseLeave={e => { e.currentTarget.style.background = d.isNew ? C.amberBg : '' }}>
+              <Td bold>{d.sponsor} {d.isNew && <Pill tone="gold">New</Pill>}</Td><Td>{d.signal}</Td><Td>{d.portfolio}</Td>
+              <Td><StatusPill record={d} /></Td>
               <Td><span style={{ color: C.green, fontWeight: 600 }}>{d.outcome}</span></Td>
+              <Td align="right"><span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: C.goldDk, fontWeight: 700 }}>{d.live ? 'Live results' : 'View impact'} <IconChevronRight size={13} /></span></Td>
             </tr>
           ))}
         </Table>

@@ -5,6 +5,25 @@
 
 ---
 
+## Session 8 — Memory detail pages (live + completed) + light-blue retheme — 2026-08-11
+
+### Build Status
+- `npm run build` — **PASSED** — 6,745 modules, 0 errors. Verified visually via Playwright (home, memory list, completed detail, live detail).
+
+### Added / Changed
+- **Theme (`src/vg/theme.js`)** — retheme from gold/yellow to **light blue**. Swapped the `gold`/`goldDk`/`amber`/`amberBg` accent tokens (and swatches) to blue in both Wall Street (light) and Onyx (dark) themes. Because every component references these tokens, the accent — buttons, kickers, pills, selected states, foil gradient, glow, charts — turns blue globally with no per-component edits.
+- **Memory detail pages (`src/vg/VGApp.jsx`)** — Memory rows are now clickable and open a full detail page:
+  - **Live campaign** (session-deployed experiments): pulsing "Live" indicator, rollout progress bar, "Week X of N", and to-date KPIs (participation, lift, enrollments, AUM, cost) that **ramp live** (1s tick) toward the projection, plus live "Rolling out" lane statuses. Metrics derive from the deploy timestamp and cap in-flight (~42%).
+  - **Completed campaign** (historical records): realized-impact summary, realized KPI grid (participation lift, incremental enrollments/AUM/cost, AUM-to-cost, deferral, opt-out, predicted-vs-realized), treatment-vs-holdout bars, and lane-level realized impact.
+  - New components: `LiveDot`, `StatusPill`, `LiveCampaignDetail`, `CompletedCampaignDetail`, `MemoryDetail`.
+- **Data (`src/vg/data.js`)** — `MEMORY_DECISIONS` enriched with structured `impact` metrics, `status`, `completedOn`, and `window` per record. Session-deployed records (from "Run full strategy") now carry `live`, `deployedAt`, and a `detail` payload (treated/holdout, target metrics, lanes, window).
+
+### Watch List
+- Live-detail progress is derived from a real timestamp but is illustrative (caps ~42% over ~20s of viewing) — not a real telemetry feed.
+- `memoryLog` remains session-only (resets on reload).
+
+---
+
 ## Session 7 — Decision Lab overhaul: strategy view, live sim, deploy→memory — 2026-08-11
 
 ### Build Status

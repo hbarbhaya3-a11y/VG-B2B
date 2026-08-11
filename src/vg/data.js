@@ -382,9 +382,47 @@ export const LANES = [
 
 // Memory — prior sponsor decisions, holdout outcomes, reusable policies.
 export const MEMORY_DECISIONS = [
-  { sponsor: 'Beacon Freight', signal: 'Participation gap', portfolio: 'Auto Enrollment + Escalation', levers: 'AE 4% +1%, cap 10%', approval: 'Deployed', outcome: '+8.4% participation vs holdout' },
-  { sponsor: 'Fernhollow Foods', signal: 'Match leakage', portfolio: 'Match Stretch + education', levers: 'Stretch to 6%, cost-neutral', approval: 'Deployed', outcome: '+1.9% deferral, +2.1% match uptake' },
-  { sponsor: 'Vantage Media', signal: 'Deferral inertia', portfolio: 'Auto Escalation', levers: '+1%/yr, cap 12%', approval: 'Deployed', outcome: '+1.2% deferral vs holdout' },
+  {
+    id: 'beacon', sponsor: 'Beacon Freight', signal: 'Participation gap', portfolio: 'Auto Enrollment + Escalation',
+    levers: 'AE 4% +1%, cap 10%', approval: 'Deployed', status: 'Completed', outcome: '+8.4% participation vs holdout',
+    completedOn: 'Mar 2025', window: '12-week measurement window · closed',
+    impact: {
+      participationLift: 8.4, treatmentPart: 0.822, holdoutPart: 0.738, baseline: 0.72,
+      enrollments: 3210, aum: 134, cost: 2.9, roi: 46.2, deferralLift: 1.1, optOut: 9.4, predictedLift: 9.0,
+      lanes: [
+        { strategy: 'Auto Enrollment', treated: 8700, holdout: 2000, realized: '+7.9 pts enrollment' },
+        { strategy: 'Auto Escalation', treated: 7600, holdout: 1800, realized: '+1.1 pts deferral' },
+      ],
+      summary: 'Automatic enrollment closed most of the participation gap within a single quarter; escalation compounded deferral gains. Incremental AUM of $134M was captured against $2.9M of employer match cost — a 46× return — with opt-out staying below the 11% plan assumption.',
+    },
+  },
+  {
+    id: 'fernhollow', sponsor: 'Fernhollow Foods', signal: 'Match leakage', portfolio: 'Match Stretch + education',
+    levers: 'Stretch to 6%, cost-neutral', approval: 'Deployed', status: 'Completed', outcome: '+1.9% deferral, +2.1% match uptake',
+    completedOn: 'Jan 2025', window: '16-week measurement window · closed',
+    impact: {
+      participationLift: 2.3, treatmentPart: 0.851, holdoutPart: 0.828, baseline: 0.83,
+      enrollments: 640, aum: 58, cost: 0.0, roi: 999, deferralLift: 1.9, optOut: 4.1, predictedLift: 2.0,
+      lanes: [
+        { strategy: 'Match Stretch', treated: 5100, holdout: 1100, realized: '+2.1 pts match uptake' },
+        { strategy: 'Education-only', treated: 3300, holdout: 0, realized: '+0.6 pts engagement' },
+      ],
+      summary: 'The cost-neutral match stretch moved below-match participants toward full-match deferral without adding employer cost. Deferral rose +1.9 pts and match utilization +2.1 pts, adding $58M in AUM at effectively zero incremental match spend.',
+    },
+  },
+  {
+    id: 'vantage', sponsor: 'Vantage Media', signal: 'Deferral inertia', portfolio: 'Auto Escalation',
+    levers: '+1%/yr, cap 12%', approval: 'Deployed', status: 'Completed', outcome: '+1.2% deferral vs holdout',
+    completedOn: 'Nov 2024', window: '12-week measurement window · closed',
+    impact: {
+      participationLift: 0.8, treatmentPart: 0.796, holdoutPart: 0.788, baseline: 0.79,
+      enrollments: 210, aum: 41, cost: 1.4, roi: 29.3, deferralLift: 1.2, optOut: 7.8, predictedLift: 1.3,
+      lanes: [
+        { strategy: 'Auto Escalation', treated: 9400, holdout: 2100, realized: '+1.2 pts deferral' },
+      ],
+      summary: 'Auto escalation alone lifted deferral +1.2 pts against holdout for stuck-at-default participants, adding $41M in AUM. Opt-out stayed contained at 7.8%, confirming inertia — not intent — was the barrier.',
+    },
+  },
 ]
 export const HOLDOUT_OUTCOMES = [
   { metric: 'Participation lift', predicted: '9.0%', treatment: '35.2%', holdout: '26.4%', incremental: '+8.8%' },

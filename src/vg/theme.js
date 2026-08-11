@@ -5,19 +5,19 @@
 export const THEMES = {
   wallStreet: {
     name: 'Wall Street Executive', mode: 'light',
-    swatch: ['#FAF8F3', '#0A1628', '#B89B5E'],
-    paper: '#FAF8F3', navBg: '#0A1628', navBg2: '#0F1F36', brand: '#1B3A6B', brandLt: '#34568A',
-    gold: '#B89B5E', goldDk: '#7F6938', ink: '#0C1116', ink2: '#2C3540', muted: '#6A7480', faint: '#9DA6B0',
-    card: '#FFFFFF', line: '#EAE6DC', line2: '#D9D2C4',
-    red: '#A8453B', redBg: '#FBECEA', green: '#2D6B4A', greenBg: '#EAF3EE', amber: '#B5862C', amberBg: '#FAF1DD',
+    swatch: ['#F4F7FB', '#0A1628', '#3E86C8'],
+    paper: '#F4F7FB', navBg: '#0A1628', navBg2: '#0F1F36', brand: '#1B3A6B', brandLt: '#34568A',
+    gold: '#3E86C8', goldDk: '#255E93', ink: '#0C1116', ink2: '#2C3540', muted: '#6A7480', faint: '#9DA6B0',
+    card: '#FFFFFF', line: '#E4EAF1', line2: '#D2DBE6',
+    red: '#A8453B', redBg: '#FBECEA', green: '#2D6B4A', greenBg: '#EAF3EE', amber: '#2F79BD', amberBg: '#E7F1FB',
   },
   onyx: {
     name: 'Onyx Midnight', mode: 'dark',
-    swatch: ['#0E0F12', '#16181D', '#D4B574'],
-    paper: '#0E0F12', navBg: '#050609', navBg2: '#0A0B0E', brand: '#C9A961', brandLt: '#E6C77F',
-    gold: '#D4B574', goldDk: '#A38845', ink: '#F0EDE3', ink2: '#C3BDB0', muted: '#7A7468', faint: '#4E4940',
+    swatch: ['#0E0F12', '#16181D', '#6BADE6'],
+    paper: '#0E0F12', navBg: '#050609', navBg2: '#0A0B0E', brand: '#6BADE6', brandLt: '#8EC4F0',
+    gold: '#6BADE6', goldDk: '#4C8FD1', ink: '#F0EDE3', ink2: '#C3BDB0', muted: '#7A7468', faint: '#4E4940',
     card: '#16181D', line: '#232529', line2: '#2E3036',
-    red: '#D4634D', redBg: '#2A1411', green: '#5DAA85', greenBg: '#0F2218', amber: '#D9B265', amberBg: '#25190A',
+    red: '#D4634D', redBg: '#2A1411', green: '#5DAA85', greenBg: '#0F2218', amber: '#6BADE6', amberBg: '#0F2333',
   },
 }
 
