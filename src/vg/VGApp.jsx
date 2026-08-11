@@ -797,7 +797,7 @@ function TabLevers({ lab, setLab, d }) {
                 {l.id === 'ae' && <Stepper label="Initial default rate" unit="%" value={L.aeDefault} set={v => setL('aeDefault', v)} min={2} max={10} />}
                 {l.id === 'ms' && <>
                   <Stepper label="Stretch match target" unit="%" value={L.msTarget} set={v => setL('msTarget', v)} min={3} max={8} />
-                  <Stepper label="Company share" unit="%" value={L.msCompanyShare} set={v => setL('msCompanyShare', v)} min={0} max={100} step={10} />
+                  <Stepper label="Company match" unit="%" value={L.msCompanyShare} set={v => setL('msCompanyShare', v)} min={0} max={100} step={10} />
                 </>}
                 {l.id === 'esc' && <>
                   <Stepper label="Annual increase" unit="%" value={L.escStep} set={v => setL('escStep', v)} min={1} max={3} />
@@ -1142,7 +1142,7 @@ function TabPolicyImpact({ sponsor, lab, setLab, d }) {
   const L = lab.levers
   const paramMap = {
     ae: { name: 'Auto Enrollment', cur: '3% default · opt-in', neu: `${L.aeDefault}% auto-enroll · QDIA` },
-    ms: { name: 'Match Stretch', cur: '3% default match · company share 100%', neu: `Stretch match to ${L.msTarget}% · company share ${L.msCompanyShare}% (cost-neutral)` },
+    ms: { name: 'Match Stretch', cur: '3% default match · company match 100%', neu: `Stretch match to ${L.msTarget}% · company match ${L.msCompanyShare}% (cost-neutral)` },
     esc: { name: 'Auto Escalation', cur: 'None for stuck-at-default', neu: `+${L.escStep}%/yr → ${L.escCap}% cap` },
     re: { name: 'Re-enrollment', cur: 'Legacy / non-QDIA elections', neu: `Sweep every ${L.reFreq} mo → QDIA · ${L.reNotice}-day notice` },
   }
