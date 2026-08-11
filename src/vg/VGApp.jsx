@@ -1280,6 +1280,7 @@ function TabSimulation({ sponsor, lab, setLab, d }) {
     deferral: +(p.deferralLift * lf).toFixed(1),
   })
   const scen = [
+    { name: 'Do-nothing', part: p.base, lift: 0, enroll: 0, aum: 0, cost: 0, roi: 0, deferral: 0, conf: '—' },
     mkScen('Balanced', 1, 1, 'High'),
   ]
   const bench = [
