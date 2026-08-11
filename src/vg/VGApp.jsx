@@ -137,7 +137,7 @@ function Sidebar({ menu, setMenu, collapsed, setCollapsed, themeName, setThemeNa
     <div style={{ width: collapsed ? 72 : 240, flexShrink: 0, background: T.navGrad, color: '#EADFD3',
       display: 'flex', flexDirection: 'column', padding: collapsed ? '22px 12px' : '24px 16px',
       borderRadius: T.radLg, border: '1px solid rgba(255,255,255,.06)', boxShadow: T.shadow3,
-      transition: `width .28s ${T.ease}`, position: 'sticky', top: 16, height: 'calc(100vh - 32px)' }}>
+      transition: `width .28s ${T.ease}`, position: 'sticky', top: 16, height: 'calc(100vh - 32px)', overflowY: 'auto' }}>
       {/* brand */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'space-between', marginBottom: 26, gap: 10 }}>
         {!collapsed && (
@@ -176,7 +176,7 @@ function Sidebar({ menu, setMenu, collapsed, setCollapsed, themeName, setThemeNa
         })}
       </nav>
       {/* theme toggle */}
-      <div style={{ paddingTop: 16, borderTop: '1px solid rgba(255,255,255,.08)' }}>
+      <div style={{ paddingTop: 16, marginTop: 12, borderTop: '1px solid rgba(255,255,255,.08)', flexShrink: 0 }}>
         <button onClick={() => setThemeName(isDark ? 'wallStreet' : 'onyx')} title="Toggle theme"
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%',
             padding: '9px 10px', borderRadius: T.radMd, cursor: 'pointer', background: 'rgba(255,255,255,.05)',
