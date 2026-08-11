@@ -5,6 +5,29 @@
 
 ---
 
+## Session 6 — Company Analysis deep-dive + Objective tile resize — 2026-08-11
+
+### Build Status
+- `npm run build` — **PASSED** — 6,745 modules, 0 errors, built in 7.11s
+
+### Added / Changed — `src/vg/VGApp.jsx`
+- **Company Analysis (Signals sponsor drill-down)** — reworked into a holistic, detailed deep-dive:
+  - Removed the **Candidate strategy cells** table from Company Analysis (strategy design stays in Decision Lab, keeping the advice/analysis boundary clean)
+  - Enriched snapshot stats (eligible-as-% of workforce, gap vs benchmark inline)
+  - New **Benchmarking** card — participation bars for this plan vs industry benchmark vs Vanguard book average, with a "participants below benchmark" callout
+  - New **Cohort composition** card — addressable population by condition with share-of-addressable bars and primary driver (analytical framing, not strategy recommendation)
+  - Renamed "why" card to **Root-cause insights**
+  - New **Value at stake** deep-dive card — AUM opportunity, illustrative avg balance, est. new assets at full participation, renewal risk, and an industry-lens KPI note
+  - Analog card restyled to a two-column layout referencing the current sponsor
+
+### Fixed
+- **Objective tiles (Decision Lab · Objective)** — resized down: grid min column 240px→200px, card padding 16→12, tighter label/desc fonts, and the "Selected/Recommended" affordance condensed to an inline check/`Rec` pill
+
+### Watch List
+- `STRATEGY_CELLS` remains the shared model for Decision Lab (Segments/Levers) and now also feeds the read-only cohort-composition analysis in Company Analysis
+
+---
+
 ## Session 5 — VG B2B Plan (Version B) participation-lift re-skin — 2026-08-10
 
 ### Build Status

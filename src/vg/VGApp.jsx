@@ -382,23 +382,77 @@ function Signals({ sponsor, onSelect, onSendToLab }) {
         <IconArrowLeft size={14} /> Back to signals
       </button>
       <SectionTitle kicker={`Signals · ${s.industry}`} title={`${s.name} — participation gap`}
-        sub="The company analysis snapshot and the reasons employees are not participating, then the candidate strategies."
+        sub="A deep-dive analysis of the participation gap — the plan snapshot, how it benchmarks, the cohorts driving the shortfall, the root-cause reasons, and the value at stake."
         right={<Btn kind="gold" onClick={onSendToLab}>Send to Decision Lab <IconArrowRight size={15} /></Btn>} />
 
       {/* snapshot */}
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 18 }}>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
         <Stat label="Total employees" value={num(s.employees)} />
-        <Stat label="Eligible" value={num(s.eligible)} />
+        <Stat label="Eligible" value={num(s.eligible)} sub={`${pct(s.eligible / s.employees)} of workforce`} />
         <Stat label="Enrolled" value={num(s.participants)} />
         <Stat label="Non-participants" value={num(s.nonParticipants)} tone={C.red} />
-        <Stat label="Participation" value={pct(s.participation)} sub={`vs ${pct(s.benchmark)}`} tone={C.red} />
+        <Stat label="Participation" value={pct(s.participation)} sub={`${gapPct(s.gap)} vs benchmark`} tone={C.red} />
         <Stat label="Value opportunity" value={money(s.valueOpp)} tone={C.goldDk} />
       </div>
+
+      {/* benchmarking — where this plan sits */}
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+          <Eyebrow>Benchmarking · participation vs peers</Eyebrow>
+          <span style={{ fontSize: 12, color: C.red, fontWeight: 600 }}>
+            {Math.round(s.gap * s.eligible).toLocaleString()} participants below benchmark ({gapPct(s.gap)})
+          </span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 10 }}>
+          {[
+            { label: 'This plan', v: s.participation, tone: C.red },
+            { label: `${s.industry} benchmark`, v: s.benchmark, tone: C.gold },
+            { label: 'Vanguard book average', v: BOOK.aggParticipation, tone: C.muted },
+          ].map(b => (
+            <div key={b.label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 12, color: C.ink2, width: 180, flexShrink: 0 }}>{b.label}</span>
+              <div style={{ flex: 1, height: 14, background: C.line, borderRadius: 999, overflow: 'hidden' }}>
+                <div style={{ width: pct(b.v), height: '100%', background: b.tone, borderRadius: 999 }} />
+              </div>
+              <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: b.tone, width: 52, textAlign: 'right' }}>{pct(b.v)}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* cohort composition — analytical breakdown of the gap */}
+      <Card pad={0} style={{ marginBottom: 16 }}>
+        <div style={{ padding: '16px 20px', borderBottom: T.rule }}>
+          <Eyebrow>Cohort composition · where the gap lives</Eyebrow>
+          <div style={{ fontSize: 12, color: C.muted }}>Addressable population segmented by condition — the analytical basis for later strategy design.</div>
+        </div>
+        <Table head={<><Th>Cohort / condition</Th><Th align="right">Population</Th><Th align="right">Share of addressable</Th><Th>Primary driver</Th></>} minWidth={560}>
+          {(() => {
+            const cohorts = STRATEGY_CELLS.filter(c => c.id !== 'hold')
+            const total = cohorts.reduce((a, c) => a + c.population, 0)
+            return cohorts.map(c => (
+              <tr key={c.id}>
+                <Td bold>{c.cohort}</Td>
+                <Td align="right">{num(c.population)}</Td>
+                <Td align="right">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+                    <div style={{ width: 70, height: 6, background: C.line, borderRadius: 999, overflow: 'hidden' }}>
+                      <div style={{ width: `${(c.population / total) * 100}%`, height: '100%', background: C.gold }} />
+                    </div>
+                    <span style={{ fontVariantNumeric: 'tabular-nums', color: C.ink2 }}>{pct(c.population / total)}</span>
+                  </div>
+                </Td>
+                <Td>{c.why}</Td>
+              </tr>
+            ))
+          })()}
+        </Table>
+      </Card>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 16, marginBottom: 16 }}>
         {/* why */}
         <Card>
-          <Eyebrow>Participation insights · why</Eyebrow>
+          <Eyebrow>Root-cause insights · why</Eyebrow>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
             {INSIGHTS.map(i => (
               <div key={i.key} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
@@ -412,37 +466,47 @@ function Signals({ sponsor, onSelect, onSendToLab }) {
             ))}
           </div>
         </Card>
-        {/* analog */}
-        <Card style={{ background: C.amberBg, borderColor: `${C.gold}44` }}>
-          <Eyebrow>Analog · what worked in similar sponsors</Eyebrow>
-          <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink, marginBottom: 8 }}>Beacon Freight, FY24</div>
-          <div style={{ fontSize: 13, color: C.ink2, lineHeight: 1.6 }}>
-            Participation sat at <b>72%</b> vs an <b>82%</b> benchmark with a new-hire enrollment lag.
-            TwinX recommended <b>Auto Enrollment at 4% default + 1% escalation, 10% cap</b>.
+        {/* value at stake deep dive */}
+        <Card>
+          <Eyebrow>Value at stake · deep dive</Eyebrow>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
+            {[
+              { k: 'AUM opportunity if gap closes', v: money(s.valueOpp), tone: C.goldDk },
+              { k: 'Illustrative avg balance / participant', v: `$${(AVG_BALANCE / 1000).toFixed(0)}k`, tone: C.ink },
+              { k: 'Est. new assets at full participation', v: money(Math.round(s.nonParticipants * AVG_BALANCE / 1e6)), tone: C.green },
+              { k: 'Renewal risk', v: s.renewalRisk, tone: s.renewalRisk === 'High' ? C.red : s.renewalRisk === 'Medium' ? C.amber : C.green },
+            ].map(r => (
+              <div key={r.k} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: C.paper, borderRadius: T.radSm, border: T.rule }}>
+                <span style={{ fontSize: 12.5, color: C.ink2 }}>{r.k}</span>
+                <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: r.tone }}>{r.v}</span>
+              </div>
+            ))}
           </div>
-          <div style={{ marginTop: 12, padding: 12, background: C.card, borderRadius: T.radMd, border: T.rule }}>
-            <div style={{ fontSize: 11, color: C.muted }}>Realized outcome vs holdout</div>
-            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, color: C.green }}>+8.4% participation</div>
-          </div>
+          {INDUSTRY_KPI[s.industry] && (
+            <div style={{ marginTop: 12, fontSize: 11.5, color: C.muted, lineHeight: 1.5 }}>
+              Industry lens · <b style={{ color: C.ink2 }}>{INDUSTRY_KPI[s.industry].label}</b> is the highest-leverage metric for {s.industry} plans (response factor {INDUSTRY_KPI[s.industry].factor}×).
+            </div>
+          )}
         </Card>
       </div>
 
-      {/* candidate cells */}
-      <Card pad={0}>
-        <div style={{ padding: '16px 20px', borderBottom: T.rule, fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>
-          Candidate strategy cells
+      {/* analog */}
+      <Card style={{ background: C.amberBg, borderColor: `${C.gold}44` }}>
+        <Eyebrow>Analog · what worked in similar sponsors</Eyebrow>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: 16, alignItems: 'center' }}>
+          <div>
+            <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink, marginBottom: 8 }}>Beacon Freight, FY24</div>
+            <div style={{ fontSize: 13, color: C.ink2, lineHeight: 1.6 }}>
+              Participation sat at <b>72%</b> vs an <b>82%</b> benchmark with a new-hire enrollment lag —
+              a close analog to {s.name}'s profile. TwinX recommended <b>Auto Enrollment at 4% default + 1% escalation, 10% cap</b>.
+            </div>
+          </div>
+          <div style={{ padding: 14, background: C.card, borderRadius: T.radMd, border: T.rule, textAlign: 'center', minWidth: 150 }}>
+            <div style={{ fontSize: 11, color: C.muted }}>Realized vs holdout</div>
+            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 22, color: C.green }}>+8.4%</div>
+            <div style={{ fontSize: 11, color: C.muted }}>participation</div>
+          </div>
         </div>
-        <Table head={<><Th>Cohort / condition</Th><Th align="right">Population</Th><Th>Strategy</Th><Th>Primary KPI</Th><Th align="center">Holdout</Th></>}>
-          {STRATEGY_CELLS.map(c => (
-            <tr key={c.id}>
-              <Td bold>{c.cohort}</Td>
-              <Td align="right">{num(c.population)}</Td>
-              <Td><Pill tone="gold">{c.strategy}</Pill></Td>
-              <Td>{c.kpi}</Td>
-              <Td align="center">{c.holdout ? <IconCheck size={15} color={C.green} /> : <span style={{ color: C.faint }}>—</span>}</Td>
-            </tr>
-          ))}
-        </Table>
       </Card>
     </div>
   )
@@ -555,19 +619,18 @@ function TabObjective({ sponsor, lab, setLab, d }) {
       {/* objective */}
       <div>
         <Eyebrow>Objective · what are we optimizing?</Eyebrow>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 12, marginTop: 4 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: 10, marginTop: 4 }}>
           {OBJECTIVES.map(o => {
             const on = lab.objective === o.id
             return (
-              <Card key={o.id} onClick={() => setObj(o.id)} pad={16}
+              <Card key={o.id} onClick={() => setObj(o.id)} pad={12}
                 style={{ cursor: 'pointer', borderColor: on ? C.gold : undefined, borderWidth: on ? 2 : 1, borderStyle: 'solid',
                   background: on ? C.amberBg : C.card }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <span style={{ fontFamily: DISP, fontWeight: 600, fontSize: 14.5, color: C.ink }}>{o.label}</span>
-                  {o.rec && <Pill tone="gold">Recommended</Pill>}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 4 }}>
+                  <span style={{ fontFamily: DISP, fontWeight: 600, fontSize: 13, color: C.ink }}>{o.label}</span>
+                  {on ? <IconCheck size={14} color={C.green} style={{ flexShrink: 0 }} /> : o.rec && <Pill tone="gold">Rec</Pill>}
                 </div>
-                <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>{o.desc}</div>
-                {on && <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: C.green, fontWeight: 600 }}><IconCheck size={13} /> Selected</div>}
+                <div style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.45 }}>{o.desc}</div>
               </Card>
             )
           })}
