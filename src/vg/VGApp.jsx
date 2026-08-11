@@ -201,10 +201,13 @@ function Home({ onOpenSignals, memoryLog = [] }) {
   const avgLift = completed.length ? completed.reduce((a, d) => a + (d.impact?.participationLift || 0), 0) / completed.length : 0
   const liveRuns = memoryLog.filter(r => r.live)
   const liveAum = liveRuns.reduce((a, r) => a + (r.detail?.target?.aum || 0), 0)
+  // Funnel of the CURRENT book narrowing through the decision journey (not historical campaigns).
+  const inLab = SPONSORS.filter(s => s.gap > 0 && s.renewalRisk === 'High')
+  const inLabValue = inLab.reduce((a, s) => a + s.valueOpp, 0)
   const stages = [
-    { label: 'Opportunities identified', count: atRiskCount, value: oppValue, sub: 'at-risk sponsors', tone: C.red },
-    { label: 'Campaigns deployed', count: completed.length + liveRuns.length, value: realizedAum + liveAum, sub: `${liveRuns.length} live · ${completed.length} completed`, tone: C.brand },
-    { label: 'AUM realized', count: completed.length, value: realizedAum, sub: 'measured vs holdout', tone: C.green },
+    { label: 'Opportunity in book', count: atRiskCount, value: oppValue, sub: 'at-risk sponsors', tone: C.red },
+    { label: 'In Decision Lab', count: inLab.length, value: inLabValue, sub: 'high-priority, being modeled', tone: C.gold },
+    { label: 'Deployed & live', count: liveRuns.length, value: liveAum, sub: liveRuns.length ? 'launched this session' : 'none yet — deploy to advance', tone: C.green },
   ]
   const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()
   const signalCount = SPONSORS.filter(s => s.gap > 0).length + MARKET_SIGNALS.length
@@ -252,7 +255,7 @@ function Home({ onOpenSignals, memoryLog = [] }) {
 
       {/* Growth pipeline — opportunity → deployed → realized */}
       <Card style={{ marginBottom: 16 }}>
-        <Eyebrow>Growth pipeline · opportunity to realized AUM</Eyebrow>
+        <Eyebrow>Growth pipeline · book opportunity through the decision journey</Eyebrow>
         <div style={{ display: 'flex', alignItems: 'stretch', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
           {stages.map((st, i) => (
             <React.Fragment key={st.label}>
@@ -272,7 +275,7 @@ function Home({ onOpenSignals, memoryLog = [] }) {
           ))}
         </div>
         <div style={{ fontSize: 11.5, color: C.muted, marginTop: 10 }}>
-          {money(realizedAum)} realized across completed campaigns; {money(oppValue)} still in active opportunity across the book. Deploy campaigns in the Decision Lab to advance the pipeline.
+          Separately, {money(realizedAum)} has already been realized across {completed.length} prior campaigns (see the growth scorecard above). Deploy campaigns in the Decision Lab to move book opportunity down the funnel.
         </div>
       </Card>
 
