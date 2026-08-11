@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   IconHome, IconActivity, IconFlask, IconBrain, IconChevronRight, IconChevronLeft,
   IconArrowRight, IconArrowLeft, IconAlertTriangle, IconSun, IconMoon, IconCheck,
@@ -11,7 +11,7 @@ import {
 } from 'recharts'
 import { C, T, FONT, DISP, THEMES, applyTheme } from './theme'
 import {
-  BOOK, SPONSORS, INSIGHTS, STRATEGY_CELLS, LEVERS, ASSETS, COMPLIANCE,
+  BOOK, SPONSORS, INSIGHTS, STRATEGY_CELLS, STRATEGY_CONTENT, LEVERS, ASSETS, COMPLIANCE,
   MEMORY_DECISIONS, HOLDOUT_OUTCOMES, POLICIES,
   CONTENT_LIBRARY, DECISION_TABS,
   TODAYS_FOCUS, SIGNAL_KPIS, MARKET_SIGNALS,
@@ -549,7 +549,7 @@ function stepDone(lab, d, i) {
   ][i]
 }
 
-function DecisionLab({ sponsor, tab, setTab, lab, setLab }) {
+function DecisionLab({ sponsor, tab, setTab, lab, setLab, addMemory }) {
   if (!sponsor) {
     return <EmptyState icon={IconFlask} title="No sponsor selected"
       body="Open a company from Signals and send it to Decision Lab to configure a portfolio." />
@@ -588,11 +588,11 @@ function DecisionLab({ sponsor, tab, setTab, lab, setLab }) {
 
       {tab === 0 && <TabObjective sponsor={sponsor} lab={lab} setLab={setLab} d={d} />}
       {tab === 1 && <TabLevers lab={lab} setLab={setLab} d={d} />}
-      {tab === 2 && <TabSegments d={d} />}
+      {tab === 2 && <TabStrategy d={d} />}
       {tab === 3 && <TabContent lab={lab} setLab={setLab} d={d} />}
       {tab === 4 && <TabSimulation sponsor={sponsor} lab={lab} setLab={setLab} d={d} />}
       {tab === 5 && <TabApproval lab={lab} setLab={setLab} d={d} />}
-      {tab === 6 && <TabDeployment lab={lab} setLab={setLab} d={d} />}
+      {tab === 6 && <TabDeployment sponsor={sponsor} lab={lab} setLab={setLab} d={d} addMemory={addMemory} />}
 
       {/* footer nav */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20 }}>
@@ -705,10 +705,9 @@ function TabLevers({ lab, setLab, d }) {
         <IconShieldCheck size={15} color={C.green} /> Levers appear after recommendation. Only strategies in the portfolio are configurable.
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 14 }}>
-        {LEVERS.filter(l => activeIds.has(l.id) || l.id === 'hold').map(l => {
-          const active = activeIds.has(l.id) || l.id === 'hold'
+        {LEVERS.filter(l => activeIds.has(l.id)).map(l => {
           return (
-            <Card key={l.id} style={{ opacity: active ? 1 : 0.5 }}>
+            <Card key={l.id}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>{l.name}</div>
                 <Pill tone="ok">Ready</Pill>
@@ -724,12 +723,19 @@ function TabLevers({ lab, setLab, d }) {
                   <Stepper label="Annual increase" unit="%" value={L.escStep} set={v => setL('escStep', v)} min={1} max={3} />
                   <Stepper label="Cap" unit="%" value={L.escCap} set={v => setL('escCap', v)} min={8} max={15} />
                 </>}
-                {l.id === 'hold' && <Stepper label="Holdout" unit="%" value={L.holdoutPct} set={v => setL('holdoutPct', v)} min={5} max={25} step={5} />}
-                {['re', 'edu'].includes(l.id) && l.controls.slice(0, 3).map(ctrl => (
-                  <div key={ctrl} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', background: C.paper, borderRadius: T.radSm, border: T.rule }}>
-                    <span style={{ fontSize: 12.5, color: C.ink2 }}>{ctrl}</span><span style={{ fontSize: 11, color: C.faint }}>configure</span>
+                {l.id === 're' && <>
+                  <Stepper label="Sweep frequency (mo)" unit="" value={L.reFreq} set={v => setL('reFreq', v)} min={6} max={24} step={6} />
+                  <Stepper label="Notice window (days)" unit="" value={L.reNotice} set={v => setL('reNotice', v)} min={30} max={90} step={15} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', background: C.paper, borderRadius: T.radSm, border: T.rule }}>
+                    <span style={{ fontSize: 12.5, color: C.ink2 }}>Default investment</span><span style={{ fontSize: 12, color: C.faint }}>Plan QDIA</span>
                   </div>
-                ))}
+                </>}
+                {l.id === 'edu' && <>
+                  <Stepper label="Send cadence (wks)" unit="" value={L.eduCadence} set={v => setL('eduCadence', v)} min={1} max={8} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', background: C.paper, borderRadius: T.radSm, border: T.rule }}>
+                    <span style={{ fontSize: 12.5, color: C.ink2 }}>Message theme</span><span style={{ fontSize: 12, color: C.faint }}>Plan basics</span>
+                  </div>
+                </>}
               </div>
             </Card>
           )
@@ -739,74 +745,112 @@ function TabLevers({ lab, setLab, d }) {
   )
 }
 
-// Sample draft content per asset + segment (education-framed, no solicitation).
-function draftFor(asset, seg) {
-  const a = asset.toLowerCase()
-  const S = seg.strategy
-  if (a.includes('committee deck')) return { kind: 'Committee deck', body:
-    `PLAN-DESIGN RECOMMENDATION — ${seg.cohort}\n\n1. Objective: lift participation for this cohort\n2. Recommended lever: ${S}\n3. Population: ${seg.treated.toLocaleString()} treated · ${seg.holdout.toLocaleString()} holdout\n4. Primary KPI: ${seg.kpi}\n5. Rollout: tiered (10% → 40% → 100%) with holdout preserved\n6. Governance: disclosures auto-attached; fiduciary review required` }
-  if (a.includes('email') || a.includes('escalation')) return { kind: 'Participant email', body:
-    `Subject: A simple step for your retirement savings\n\nHi,\n\nYour plan now offers ${S.toLowerCase()}. This is an educational notice — it explains a change to help you stay on track. No action is required, and you can opt out or adjust anytime in your account.\n\n[View my options]\n\nRequired disclosures apply.` }
-  if (a.includes('portal')) return { kind: 'Portal copy', body:
-    `PORTAL BANNER — ${seg.cohort}\n\nHeadline: Your plan just got easier\nBody: ${S} is now active for eligible participants. See how it affects your contributions and what you can change.\nCTA: Review my plan\n\n(Education content class · no advice language)` }
-  if (a.includes('notice')) return { kind: 'Required notice', body:
-    `REQUIRED PARTICIPANT NOTICE\n\nRe: ${S}\n\nThis notice describes an automatic plan feature affecting your account. It includes your default contribution rate, your right to opt out or change your election, the default investment (QDIA), and the effective date. Please review before the effective date.` }
-  if (a.includes('faq')) return { kind: 'FAQ', body:
-    `FREQUENTLY ASKED QUESTIONS — ${S}\n\nQ: What is changing?\nA: An educational update for ${seg.cohort}.\nQ: Do I have to do anything?\nA: No — this is informational. You can adjust anytime.\nQ: Where can I learn more?\nA: Visit your plan portal.` }
-  if (a.includes('match explainer')) return { kind: 'Match explainer', body:
-    `MATCH EXPLAINER — ${seg.cohort}\n\nYour employer match may be worth more than you're capturing today. This educational summary shows how the match works and the deferral level needed to receive the full match. Educational only — not advice.` }
-  return { kind: asset, body: `Draft ${asset} for ${seg.cohort} (${S}).\n\nEducational content class · disclosures auto-attached.` }
-}
-
 function ContentModal({ item, status, onClose }) {
   if (!item) return null
-  const draft = draftFor(item.asset, item.seg)
+  const { piece, seg } = item
+  if (!piece) return null
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(10,15,25,.55)', zIndex: 50,
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: 'min(640px,100%)', maxHeight: '84vh', overflow: 'auto',
+      <div onClick={e => e.stopPropagation()} style={{ width: 'min(660px,100%)', maxHeight: '86vh', overflow: 'auto',
         background: C.card, border: T.rule, borderRadius: T.radLg, boxShadow: T.shadow3 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: T.rule }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, padding: '16px 20px', borderBottom: T.rule, position: 'sticky', top: 0, background: C.card }}>
           <div>
-            <div style={{ fontSize: 10.5, letterSpacing: '.16em', textTransform: 'uppercase', color: C.goldDk, fontWeight: 700 }}>{draft.kind}</div>
-            <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 16, color: C.ink }}>{item.seg.cohort}</div>
+            <div style={{ fontSize: 10.5, letterSpacing: '.16em', textTransform: 'uppercase', color: C.goldDk, fontWeight: 700 }}>{piece.asset} · {seg.strategy}</div>
+            <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 16, color: C.ink }}>{seg.cohort}</div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
             <Pill tone={status === 'locked' ? 'ok' : status === 'drafted' ? 'review' : 'neutral'}>
               {status === 'locked' ? 'Locked' : status === 'drafted' ? 'Draft' : 'Not generated'}
             </Pill>
             <button onClick={onClose} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: C.muted, fontSize: 20, lineHeight: 1 }}>×</button>
           </div>
         </div>
-        <pre style={{ margin: 0, padding: 20, whiteSpace: 'pre-wrap', fontFamily: FONT, fontSize: 13, lineHeight: 1.65, color: C.ink2 }}>{draft.body}</pre>
+        <div style={{ padding: 20 }}>
+          <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 14 }}>Format · {piece.format}</div>
+          {piece.subject && (
+            <div style={{ marginBottom: 12, padding: '10px 12px', background: C.paper, borderRadius: T.radSm, border: T.rule }}>
+              <span style={{ fontSize: 10.5, letterSpacing: '.06em', textTransform: 'uppercase', color: C.muted, fontWeight: 700 }}>Subject</span>
+              <div style={{ fontSize: 13.5, color: C.ink, fontWeight: 600, marginTop: 3 }}>{piece.subject}</div>
+            </div>
+          )}
+          <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 19, color: C.ink, lineHeight: 1.25 }}>{piece.headline}</div>
+          {piece.subhead && <div style={{ fontSize: 13.5, color: C.ink2, marginTop: 4 }}>{piece.subhead}</div>}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 14 }}>
+            {piece.body.map((para, i) => (
+              <p key={i} style={{ margin: 0, fontSize: 13.5, lineHeight: 1.65, color: C.ink2 }}>{para}</p>
+            ))}
+          </div>
+          <div style={{ marginTop: 16 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: T.radMd,
+              background: C.brand, color: '#fff', fontSize: 13, fontWeight: 600 }}>{piece.cta} <IconArrowRight size={15} /></span>
+          </div>
+          <div style={{ marginTop: 18, padding: '12px 14px', background: C.amberBg, borderRadius: T.radMd, border: `1px solid ${C.gold}44` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10.5, letterSpacing: '.08em', textTransform: 'uppercase', color: C.goldDk, fontWeight: 700, marginBottom: 5 }}>
+              <IconShieldCheck size={13} /> Compliance note
+            </div>
+            <div style={{ fontSize: 12.5, color: C.ink2, lineHeight: 1.55 }}>{piece.complianceNote}</div>
+          </div>
+        </div>
       </div>
     </div>
   )
 }
 
-function TabSegments({ d }) {
+function TabStrategy({ d }) {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 12.5, color: C.muted }}>
-        <IconChartBar size={15} color={C.gold} /> Recommended audience segments after lever selection — these carry into Content, generated per segment.
+        <IconChartBar size={15} color={C.gold} /> {d.perCell.length} recommended strategies — each pairs a target segment with the channels and content it carries into the next step.
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 14 }}>
-        {d.perCell.map(seg => (
-          <Card key={seg.id}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <Pill tone="gold">{seg.strategy}</Pill>
-              <span style={{ fontSize: 11, color: C.muted }}>{seg.kpi}</span>
-            </div>
-            <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>{seg.cohort}</div>
-            <div style={{ display: 'flex', gap: 16, marginTop: 12 }}>
-              <div><div style={{ fontSize: 10.5, color: C.muted }}>Treated</div><div style={{ fontFamily: DISP, fontWeight: 700, color: C.ink }}>{num(seg.treated)}</div></div>
-              <div><div style={{ fontSize: 10.5, color: C.muted }}>Holdout</div><div style={{ fontFamily: DISP, fontWeight: 700, color: C.goldDk }}>{seg.holdout ? num(seg.holdout) : '—'}</div></div>
-            </div>
-            <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px dashed ${C.line}`, fontSize: 12, color: C.muted }}>
-              Channels: {seg.content}
-            </div>
-          </Card>
-        ))}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {d.perCell.map((seg, i) => {
+          const pieces = STRATEGY_CONTENT[seg.id] || []
+          const cell = STRATEGY_CELLS.find(c => c.id === seg.id) || {}
+          return (
+            <Card key={seg.id} pad={0}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px', borderBottom: T.rule }}>
+                <span style={{ width: 26, height: 26, borderRadius: '50%', background: C.brand, color: '#fff',
+                  display: 'grid', placeItems: 'center', fontFamily: DISP, fontWeight: 700, fontSize: 13, flexShrink: 0 }}>{i + 1}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: C.ink }}>{seg.strategy}</div>
+                  <div style={{ fontSize: 12, color: C.muted }}>Why recommended · {cell.why}</div>
+                </div>
+                <Pill tone="gold">Recommended</Pill>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 0 }}>
+                {[
+                  { k: 'Target segment', v: seg.cohort },
+                  { k: 'Population', v: `${num(seg.treated)} treated · ${seg.holdout ? num(seg.holdout) : '—'} holdout` },
+                  { k: 'Primary KPI', v: seg.kpi },
+                ].map((f, j) => (
+                  <div key={f.k} style={{ padding: '13px 20px', borderTop: T.rule, borderLeft: j === 0 ? 'none' : T.rule }}>
+                    <div style={{ fontSize: 10.5, letterSpacing: '.06em', textTransform: 'uppercase', color: C.muted, fontWeight: 700 }}>{f.k}</div>
+                    <div style={{ fontSize: 13.5, color: C.ink, fontWeight: 600, marginTop: 4 }}>{f.v}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ padding: '14px 20px', borderTop: T.rule, display: 'flex', flexWrap: 'wrap', gap: 20 }}>
+                <div style={{ minWidth: 200 }}>
+                  <div style={{ fontSize: 10.5, letterSpacing: '.06em', textTransform: 'uppercase', color: C.muted, fontWeight: 700, marginBottom: 6 }}>Channels</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {(cell.channels || []).map(ch => <Pill key={ch} tone="neutral">{ch}</Pill>)}
+                  </div>
+                </div>
+                <div style={{ flex: 1, minWidth: 220 }}>
+                  <div style={{ fontSize: 10.5, letterSpacing: '.06em', textTransform: 'uppercase', color: C.muted, fontWeight: 700, marginBottom: 6 }}>Content types ({pieces.length})</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {pieces.map(p => (
+                      <span key={p.asset} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: C.ink2 }}>
+                        <IconFileText size={13} color={C.gold} /> {p.asset}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )
+        })}
       </div>
     </div>
   )
@@ -849,7 +893,7 @@ function TabContent({ lab, setLab, d }) {
           {!canLock && <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8 }}>Locking needs a completed simulation and no compliance blockers.</div>}
         </Card>
         {d.perCell.map(seg => {
-          const assets = seg.content.split(',').map(x => x.trim())
+          const pieces = STRATEGY_CONTENT[seg.id] || []
           return (
             <Card key={seg.id} pad={16}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -857,12 +901,11 @@ function TabContent({ lab, setLab, d }) {
                   <span style={{ fontFamily: DISP, fontWeight: 600, fontSize: 14, color: C.ink }}>{seg.cohort}</span>
                   <Pill tone="gold">{seg.strategy}</Pill>
                 </div>
-                <span style={{ fontSize: 11, color: C.muted }}>{num(seg.treated)} treated · click to preview</span>
+                <span style={{ fontSize: 11, color: C.muted }}>{num(seg.treated)} treated · {pieces.length} assets · click to preview</span>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                <AssetChip label="Committee deck" color={assetIcon} onClick={() => setPreview({ asset: 'Committee deck', seg })} />
-                {assets.map(a => (
-                  <AssetChip key={a} label={a} color={assetIcon} onClick={() => setPreview({ asset: a, seg })} />
+                {pieces.map(p => (
+                  <AssetChip key={p.asset} label={p.asset} color={assetIcon} onClick={() => setPreview({ piece: p, seg })} />
                 ))}
               </div>
             </Card>
@@ -893,15 +936,17 @@ function projections(sponsor, d) {
   const lift = d.lift
   const base = sponsor.participation
   const projected = Math.min(0.99, base + lift / 100)
+  const enroll = Math.round((lift / 100) * d.treated)
   const aum = (lift / 100) * d.treated * AVG_BALANCE / 1e6
   const cost = (lift / 100) * d.treated * 900 / 1e6
+  const roi = cost > 0 ? aum / cost : 0
   const stress = sponsor.employees / 50000 * 14.2
   const payback = cost > 0 ? stress / cost : 0
   const deferralLift = +(lift * 0.15).toFixed(1)
   const fidNew = Math.max(12, Math.round(38 - lift * 1.4))
   const adp = lift >= 5 ? 'Resolved' : 'At-risk'
   const ind = INDUSTRY_KPI[sponsor.industry]
-  return { lift, base, projected, aum, cost, stress, payback, deferralLift, fidNew, adp, ind }
+  return { lift, base, projected, enroll, aum, cost, roi, stress, payback, deferralLift, fidNew, adp, ind }
 }
 
 function KpiTile({ label, value, sub, tone }) {
@@ -914,19 +959,74 @@ function KpiTile({ label, value, sub, tone }) {
   )
 }
 
+const SIM_STEPS = [
+  'Loading baseline population & plan rules…',
+  'Applying lever parameters to each cohort…',
+  'Running 1,000 Monte-Carlo iterations…',
+  'Scoring ADP margin & fiduciary risk…',
+  'Aggregating outcomes vs holdout…',
+]
+
+function SimRunning({ d, progress }) {
+  const stepIdx = Math.min(SIM_STEPS.length - 1, Math.floor(progress / 100 * SIM_STEPS.length))
+  return (
+    <Card>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+        <IconActivity size={16} color={C.gold} />
+        <Eyebrow>Simulation running · live</Eyebrow>
+        <span style={{ marginLeft: 'auto', fontFamily: DISP, fontWeight: 700, fontSize: 15, color: C.ink }}>{Math.round(progress)}%</span>
+      </div>
+      <div style={{ height: 10, background: C.line, borderRadius: 5, overflow: 'hidden', marginBottom: 18 }}>
+        <div style={{ width: `${progress}%`, height: '100%', background: T.goldFoil, borderRadius: 5, transition: 'width .1s linear' }} />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {SIM_STEPS.map((s, i) => {
+          const done = i < stepIdx; const active = i === stepIdx
+          return (
+            <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 10, opacity: done || active ? 1 : 0.4 }}>
+              <span style={{ width: 20, height: 20, borderRadius: '50%', display: 'grid', placeItems: 'center', flexShrink: 0,
+                background: done ? C.green : active ? C.gold : C.line, color: done || active ? '#fff' : C.muted, fontSize: 11, fontWeight: 700 }}>
+                {done ? <IconCheck size={12} /> : i + 1}
+              </span>
+              <span style={{ fontSize: 13, color: C.ink2, fontWeight: active ? 600 : 400 }}>{s}</span>
+              {active && <span style={{ marginLeft: 'auto', fontSize: 11, color: C.muted }}>{num(d.treated)} treated · {num(d.holdout)} holdout</span>}
+            </div>
+          )
+        })}
+      </div>
+    </Card>
+  )
+}
+
 function TabSimulation({ sponsor, lab, setLab, d }) {
+  const [running, setRunning] = useState(false)
+  const [progress, setProgress] = useState(0)
+  useEffect(() => {
+    if (!running) return
+    const t0 = Date.now()
+    const iv = setInterval(() => {
+      const e = Math.min(100, ((Date.now() - t0) / 5000) * 100)
+      setProgress(e)
+      if (e >= 100) { clearInterval(iv); setRunning(false); setLab(l => ({ ...l, simulated: true })) }
+    }, 50)
+    return () => clearInterval(iv)
+  }, [running, setLab])
+  const startRun = () => { setProgress(0); setRunning(true) }
+
   const p = projections(sponsor, d)
   const attrib = d.treatCells.map(c => ({ name: c.strategy, w: STRAT_WEIGHT[c.id] || 0 })).sort((a, b) => b.w - a.w)
   const attTot = attrib.reduce((a, c) => a + c.w, 0) || 1
   const scen = [
-    { name: 'Do-nothing', part: p.base, cost: 0, conf: '—' },
-    { name: 'Recommended', part: p.projected, cost: +p.cost.toFixed(1), conf: 'High' },
-    { name: 'Cost-aware', part: p.base + p.lift * 0.66 / 100, cost: +(p.cost * 0.6).toFixed(1), conf: 'High' },
-    { name: 'Max-lift', part: Math.min(0.99, p.base + p.lift * 1.37 / 100), cost: +(p.cost * 1.5).toFixed(1), conf: 'Med' },
+    { name: 'Do-nothing', part: p.base, aum: 0, cost: 0, conf: '—' },
+    { name: 'Recommended', part: p.projected, aum: +p.aum.toFixed(0), cost: +p.cost.toFixed(1), conf: 'High' },
+    { name: 'Cost-aware', part: p.base + p.lift * 0.66 / 100, aum: +(p.aum * 0.66).toFixed(0), cost: +(p.cost * 0.6).toFixed(1), conf: 'High' },
+    { name: 'Max-lift', part: Math.min(0.99, p.base + p.lift * 1.37 / 100), aum: +(p.aum * 1.37).toFixed(0), cost: +(p.cost * 1.5).toFixed(1), conf: 'Med' },
   ]
   const bench = [
     { k: 'Current', v: p.base }, { k: 'Projected', v: p.projected }, { k: 'Sector benchmark', v: sponsor.benchmark },
   ]
+
+  if (running) return <SimRunning d={d} progress={progress} />
 
   if (!lab.simulated) {
     return (
@@ -936,7 +1036,7 @@ function TabSimulation({ sponsor, lab, setLab, d }) {
             <Eyebrow>Simulation · plan-design outcomes</Eyebrow>
             <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>Project the portfolio against the sponsor's plan</div>
           </div>
-          <Btn kind="gold" small onClick={() => setLab(l => ({ ...l, simulated: true }))}>Run 1,000-iteration simulation</Btn>
+          <Btn kind="gold" small onClick={startRun}>Run 1,000-iteration simulation</Btn>
         </div>
         <div style={{ display: 'grid', placeItems: 'center', height: 220, color: C.muted, fontSize: 13, textAlign: 'center' }}>
           <div><IconActivity size={30} color={C.faint} /><div style={{ marginTop: 8 }}>Runs baseline load → parameter application → outcome computation → ADP-margin & fiduciary scoring for {num(d.treated)} treated vs {num(d.holdout)} holdout.</div></div>
@@ -954,23 +1054,26 @@ function TabSimulation({ sponsor, lab, setLab, d }) {
             <Eyebrow>Recommended portfolio · why it wins</Eyebrow>
             <div style={{ fontSize: 14, color: C.ink2, lineHeight: 1.6, maxWidth: 640 }}>
               Projected participation rises to <b style={{ color: C.ink }}>{pct(p.projected)}</b> (from {pct(p.base)}),
-              the ADP test is <b style={{ color: p.adp === 'Resolved' ? C.green : C.red }}>{p.adp.toLowerCase()}</b>, at
-              <b style={{ color: C.ink }}> +${p.cost.toFixed(1)}M</b> incremental sponsor cost. <b style={{ color: C.ink }}>{attrib[0]?.name}</b> is
-              the dominant driver{attrib[1] ? `; ${attrib[1].name.toLowerCase()} compounds it` : ''}.
+              adding <b style={{ color: C.ink }}>{num(p.enroll)}</b> participants and <b style={{ color: C.goldDk }}>+${p.aum.toFixed(0)}M</b> in AUM
+              for <b style={{ color: C.ink }}>+${p.cost.toFixed(1)}M</b> incremental cost ({p.roi.toFixed(1)}× AUM-to-cost). The ADP test is
+              <b style={{ color: p.adp === 'Resolved' ? C.green : C.red }}> {p.adp.toLowerCase()}</b>; <b style={{ color: C.ink }}>{attrib[0]?.name}</b> is
+              the dominant driver{attrib[1] ? `, ${attrib[1].name.toLowerCase()} compounds it` : ''}.
             </div>
           </div>
-          <Btn kind="ghost" small onClick={() => setLab(l => ({ ...l, simulated: true }))}>Re-run</Btn>
+          <Btn kind="ghost" small onClick={startRun}>Re-run</Btn>
         </div>
       </Card>
 
-      {/* KPI grid — multiple primary KPIs */}
+      {/* KPI grid — all primary KPIs surfaced */}
       <Card>
         <Eyebrow>Projected KPIs · P50 · {sponsor.industry}</Eyebrow>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10, marginTop: 4 }}>
           <KpiTile label="Projected participation" value={pct(p.projected)} sub={`from ${pct(p.base)} · +${p.lift} pts`} tone={C.green} />
-          <KpiTile label="AUM impact" value={`+$${p.aum.toFixed(0)}M`} sub="retained + added" tone={C.goldDk} />
-          <KpiTile label="ADP test" value={p.adp} tone={p.adp === 'Resolved' ? C.green : C.red} sub="HCE–NHCE spread" />
+          <KpiTile label="Incremental enrollments" value={`+${num(p.enroll)}`} sub="newly participating" tone={C.green} />
+          <KpiTile label="Incremental AUM" value={`+$${p.aum.toFixed(0)}M`} sub="new assets added" tone={C.goldDk} />
           <KpiTile label="Incremental cost" value={`+$${p.cost.toFixed(1)}M`} sub="employer match" />
+          <KpiTile label="AUM-to-cost ratio" value={`${p.roi.toFixed(1)}×`} sub="incremental AUM ÷ cost" tone={C.goldDk} />
+          <KpiTile label="ADP test" value={p.adp} tone={p.adp === 'Resolved' ? C.green : C.red} sub="HCE–NHCE spread" />
           <KpiTile label="Deferral lift" value={`+${p.deferralLift} pts`} />
           <KpiTile label="Fiduciary risk" value={`${p.fidNew}/100`} sub="from 38" tone={C.green} />
           <KpiTile label="Workforce-stress" value={`−$${p.stress.toFixed(1)}M`} sub="per year" tone={C.green} />
@@ -1021,11 +1124,12 @@ function TabSimulation({ sponsor, lab, setLab, d }) {
       </div>
 
       {/* scenario comparison */}
-      <Table minWidth={560} head={<><Th>Scenario</Th><Th align="right">Projected participation</Th><Th align="right">Incremental cost</Th><Th>Confidence</Th></>}>
+      <Table minWidth={640} head={<><Th>Scenario</Th><Th align="right">Projected participation</Th><Th align="right">Incremental AUM</Th><Th align="right">Incremental cost</Th><Th>Confidence</Th></>}>
         {scen.map(s => (
           <tr key={s.name}>
             <Td bold>{s.name}</Td>
             <Td align="right">{pct(s.part)}</Td>
+            <Td align="right">{s.aum ? `+$${s.aum}M` : '—'}</Td>
             <Td align="right">{s.cost ? `+$${s.cost}M` : '—'}</Td>
             <Td>{s.conf !== '—' ? <Pill tone={s.conf === 'High' ? 'ok' : 'review'}>{s.conf}</Pill> : '—'}</Td>
           </tr>
@@ -1045,11 +1149,18 @@ function TabApproval({ lab, setLab, d }) {
   ]
   const gated = lab.content !== 'locked'
   const toggle = (k) => !gated && setLab(l => ({ ...l, approvals: { ...l.approvals, [k]: !l.approvals[k] } }))
+  const approveAll = () => !gated && setLab(l => ({ ...l, approvals: Object.fromEntries(items.map(it => [it.key, true])) }))
   return (
     <Card>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
         <Eyebrow>Approval · portfolio and each strategy cell</Eyebrow>
-        <Pill tone={d.allApproved ? 'ok' : 'review'}>{d.allApproved ? 'Sponsor-ready' : 'In progress'}</Pill>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Pill tone={d.allApproved ? 'ok' : 'review'}>{d.allApproved ? 'Sponsor-ready' : 'In progress'}</Pill>
+          <Btn kind={gated || d.allApproved ? 'quiet' : 'gold'} small onClick={approveAll}
+            style={{ opacity: gated || d.allApproved ? 0.5 : 1, cursor: gated || d.allApproved ? 'not-allowed' : 'pointer' }}>
+            <IconChecklist size={14} /> Approve all
+          </Btn>
+        </div>
       </div>
       {gated && <div style={{ fontSize: 12, color: C.amber, marginBottom: 10 }}>Lock content before approvals can be granted.</div>}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1071,17 +1182,35 @@ function TabApproval({ lab, setLab, d }) {
   )
 }
 
-function TabDeployment({ lab, setLab, d }) {
+function TabDeployment({ sponsor, lab, setLab, d, addMemory }) {
   const ready = d.allApproved
+  const allLive = d.perCell.length > 0 && d.perCell.every(l => lab.deployed[l.strategy])
   const launch = (lane) => ready && setLab(l => ({ ...l, deployed: { ...l.deployed, [lane]: true } }))
+  const runFull = () => {
+    if (!ready || allLive) return
+    const p = projections(sponsor, d)
+    setLab(l => ({ ...l, deployed: Object.fromEntries(d.perCell.map(c => [c.strategy, true])) }))
+    addMemory({
+      id: `${sponsor.id}-${Date.now()}`,
+      sponsor: sponsor.name,
+      signal: 'Participation gap',
+      portfolio: d.treatCells.map(c => c.strategy).join(' + '),
+      levers: `AE ${lab.levers.aeDefault}% +${lab.levers.aeEsc}%/yr · Stretch ${lab.levers.msTarget}% · Esc +${lab.levers.escStep}%/yr`,
+      approval: 'Deployed',
+      outcome: `Projected +${p.lift} pts participation · +$${p.aum.toFixed(0)}M AUM`,
+      isNew: true,
+    })
+  }
   return (
     <Card pad={0}>
-      <div style={{ padding: '14px 20px', borderBottom: T.rule, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ padding: '14px 20px', borderBottom: T.rule, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>Deployment lanes · holdouts preserved</div>
           <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>One lane per strategy · tiered rollout with suppression + rollback.</div>
         </div>
-        {!ready && <Pill tone="review">Approve all to enable launch</Pill>}
+        {!ready ? <Pill tone="review">Approve all to enable launch</Pill>
+          : allLive ? <Pill tone="ok"><IconCheck size={12} /> Full strategy live · logged to Memory</Pill>
+          : <Btn kind="gold" small onClick={runFull}><IconRocket size={14} /> Run full strategy</Btn>}
       </div>
       <Table minWidth={720} head={<><Th>Lane</Th><Th align="right">Treated</Th><Th align="right">Holdout</Th><Th>Channel</Th><Th align="right">Action</Th></>}>
         {d.perCell.map(l => {
@@ -1101,22 +1230,31 @@ function TabDeployment({ lab, setLab, d }) {
           )
         })}
       </Table>
+      {allLive && (
+        <div style={{ padding: '14px 20px', borderTop: T.rule, display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: C.ink2 }}>
+          <IconBrain size={15} color={C.gold} /> This deployment has been recorded in the <b>Memory</b> tab as a prior sponsor decision for future reuse.
+        </div>
+      )}
     </Card>
   )
 }
 
 /* ───────────────────────── MEMORY ───────────────────────── */
-function Memory() {
+function Memory({ memoryLog = [] }) {
+  const rows = [...memoryLog, ...MEMORY_DECISIONS]
   return (
     <div>
       <SectionTitle kicker="Memory · Institutional learning" title="What have we learned, and what can we reuse?"
         sub="Prior sponsor decisions, how holdout outcomes compared with prediction, and reusable decision policies." />
       <Card pad={0} style={{ marginBottom: 16 }}>
-        <div style={{ padding: '16px 20px', borderBottom: T.rule, fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>Prior sponsor decisions</div>
+        <div style={{ padding: '16px 20px', borderBottom: T.rule, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>Prior sponsor decisions</span>
+          {memoryLog.length > 0 && <Pill tone="gold">{memoryLog.length} deployed this session</Pill>}
+        </div>
         <Table minWidth={720} head={<><Th>Sponsor</Th><Th>Signal</Th><Th>Portfolio</Th><Th>Levers</Th><Th>Status</Th><Th>Outcome</Th></>}>
-          {MEMORY_DECISIONS.map(d => (
-            <tr key={d.sponsor}>
-              <Td bold>{d.sponsor}</Td><Td>{d.signal}</Td><Td>{d.portfolio}</Td><Td>{d.levers}</Td>
+          {rows.map((d, i) => (
+            <tr key={d.id || d.sponsor + i} style={d.isNew ? { background: C.amberBg } : undefined}>
+              <Td bold>{d.sponsor} {d.isNew && <Pill tone="gold">New</Pill>}</Td><Td>{d.signal}</Td><Td>{d.portfolio}</Td><Td>{d.levers}</Td>
               <Td><Pill tone="ok">{d.approval}</Pill></Td>
               <Td><span style={{ color: C.green, fontWeight: 600 }}>{d.outcome}</span></Td>
             </tr>
@@ -1182,14 +1320,16 @@ export default function VGApp() {
     objective: 'participation',
     channels: { Email: true, Portal: true, 'Required notices': true, 'Advisor brief': false, 'In-app nudge': false },
     timeline: { rolloutWeeks: 6, measureWeeks: 12 },
-    cells: { ae: true, ms: true, esc: true, re: true, edu: false, hold: true },
-    levers: { aeDefault: 4, aeEsc: 1, aeCap: 10, msTarget: 6, escStep: 1, escCap: 12, holdoutPct: 15 },
+    cells: { ae: true, ms: true, esc: true, re: false, edu: false, hold: true },
+    levers: { aeDefault: 4, aeEsc: 1, aeCap: 10, msTarget: 6, escStep: 1, escCap: 12, holdoutPct: 15, reFreq: 12, reNotice: 45, eduCadence: 2 },
     content: 'none',   // none | drafted | locked
     simulated: false,
     compFixed: {},     // compliance blockers resolved in-flow
     approvals: { portfolio: false, cell: false, compliance: false, fiduciary: false, payroll: false },
     deployed: {},
   }))
+  const [memoryLog, setMemoryLog] = useState([])
+  const addMemory = (record) => setMemoryLog(log => log.some(r => r.id === record.id) ? log : [record, ...log])
 
   const setThemeName = (n) => { applyTheme(n); setThemeNameRaw(n) }
   const sponsor = SPONSORS.find(s => s.id === sponsorId) || null
@@ -1207,8 +1347,8 @@ export default function VGApp() {
       <main style={{ flex: 1, minWidth: 0, maxWidth: 1180 }}>
         {menu === 'home' && <Home onOpenSignals={openSignals} />}
         {menu === 'signals' && <Signals sponsor={sponsor} onSelect={setSponsorId} onSendToLab={sendToLab} />}
-        {menu === 'decision' && <DecisionLab sponsor={sponsor} tab={tab} setTab={setTab} lab={lab} setLab={setLab} />}
-        {menu === 'memory' && <Memory />}
+        {menu === 'decision' && <DecisionLab sponsor={sponsor} tab={tab} setTab={setTab} lab={lab} setLab={setLab} addMemory={addMemory} />}
+        {menu === 'memory' && <Memory memoryLog={memoryLog} />}
       </main>
     </div>
   )

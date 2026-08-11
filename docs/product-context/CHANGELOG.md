@@ -5,6 +5,27 @@
 
 ---
 
+## Session 7 — Decision Lab overhaul: strategy view, live sim, deploy→memory — 2026-08-11
+
+### Build Status
+- `npm run build` — **PASSED** — 6,745 modules, 0 errors, built in 7.75s
+
+### Added / Changed — `src/vg/VGApp.jsx` + `src/vg/data.js`
+- **Lever Selection** — removed the **Holdout** lever card (holdout stays a fixed 15% carve in logic + deployment/segments, per fiduciary rules; just no longer a user knob). Fixed the meaningless "configure" placeholders in **Re-enrollment** and **Education-only** — now real controls (sweep frequency, notice window, QDIA default / send cadence, message theme).
+- **Recommended Strategy** (was "Recommended Segments") — new `TabStrategy` view: 3 numbered strategy cards, each showing target segment, population (treated/holdout), primary KPI, channels, content types, and the "why recommended" logic. Default portfolio now `ae + ms + esc` (exactly 3 strategies).
+- **Content & Compliance** — replaced the terse `draftFor` drafts with **exhaustive structured content** in `STRATEGY_CONTENT` (mirrors the default-branch demo shape: format, subject, headline, subhead, multi-paragraph body, CTA, compliance note), education-framed per fiduciary rules. `ContentModal` redesigned to render the full piece with a compliance-note callout.
+- **Simulation** — added an intermediate **live-run screen** (`SimRunning`) that animates a 5-second progress bar through 5 named phases before results appear. KPI grid now surfaces **all** KPIs including **Incremental enrollments**, **Incremental AUM**, and **AUM-to-cost ratio** alongside incremental cost; winner callout and scenario table updated with incremental AUM.
+- **Approval** — added an **Approve all** button.
+- **Deployment** — added a **Run full strategy** button that launches all lanes at once and records the decision to the **Memory** tab.
+- **Memory** — `Memory` now accepts a session `memoryLog`; deployed decisions appear at the top, highlighted with a "New" badge and a session counter.
+- **Data** — `STRATEGY_CELLS` gained `channels[]`; segment name `Legacy elections` → `Legacy-election holders`; `DECISION_TABS[2]` renamed to `Recommended Strategy`.
+
+### Watch List
+- `memoryLog` is session-only (in-memory) — resets on reload; no persistence layer wired.
+- Holdout carve is fixed at 15% now that the lever is removed; expose as an advanced setting if sponsors need to tune it.
+
+---
+
 ## Session 6 — Company Analysis deep-dive + Objective tile resize — 2026-08-11
 
 ### Build Status

@@ -97,13 +97,219 @@ export const INSIGHTS = [
 
 // Candidate strategy cells — the portfolio allocator model.
 export const STRATEGY_CELLS = [
-  { id: 'ae', cohort: 'Eligible non-participants', population: 10700, strategy: 'Auto Enrollment', why: 'Participation gap / default friction', kpi: 'Incremental enrollment', content: 'Email, portal, notices', holdout: true },
-  { id: 'ms', cohort: 'Below-match participants', population: 6200, strategy: 'Match Stretch + education', why: 'Match leakage', kpi: 'Deferral / match utilization', content: 'Match explainer, portal', holdout: true },
-  { id: 'esc', cohort: 'Stuck-at-default participants', population: 9400, strategy: 'Auto Escalation', why: 'Deferral inertia', kpi: 'Deferral lift', content: 'Escalation email', holdout: true },
-  { id: 're', cohort: 'Legacy elections', population: 4100, strategy: 'Re-enrollment', why: 'Outdated elections', kpi: 'Re-election / reset', content: 'Notices, portal confirm', holdout: true },
-  { id: 'edu', cohort: 'Low-readiness cohort', population: 3300, strategy: 'Education-only', why: 'Lower operational risk', kpi: 'Engagement', content: 'FAQ, email', holdout: false },
-  { id: 'hold', cohort: 'Control cells', population: 2000, strategy: 'Holdout', why: 'Causal proof', kpi: 'Incrementality', content: 'Suppression list', holdout: true },
+  { id: 'ae', cohort: 'Eligible non-participants', population: 10700, strategy: 'Auto Enrollment', why: 'Participation gap / default friction', kpi: 'Incremental enrollment', content: 'Email, portal, notices', channels: ['Participant email', 'Portal banner', 'Required notices'], holdout: true },
+  { id: 'ms', cohort: 'Below-match participants', population: 6200, strategy: 'Match Stretch + education', why: 'Match leakage', kpi: 'Deferral / match utilization', content: 'Match explainer, portal', channels: ['Match explainer', 'Participant email', 'Portal banner'], holdout: true },
+  { id: 'esc', cohort: 'Stuck-at-default participants', population: 9400, strategy: 'Auto Escalation', why: 'Deferral inertia', kpi: 'Deferral lift', content: 'Escalation email, portal', channels: ['Escalation email', 'Portal banner', 'Required notices'], holdout: true },
+  { id: 're', cohort: 'Legacy-election holders', population: 4100, strategy: 'Re-enrollment', why: 'Outdated elections', kpi: 'Re-election / reset', content: 'Notices, portal confirm', channels: ['Required notices', 'Portal confirm'], holdout: true },
+  { id: 'edu', cohort: 'Low-readiness cohort', population: 3300, strategy: 'Education-only', why: 'Lower operational risk', kpi: 'Engagement', content: 'FAQ, email', channels: ['FAQ', 'Participant email'], holdout: false },
+  { id: 'hold', cohort: 'Control cells', population: 2000, strategy: 'Holdout', why: 'Causal proof', kpi: 'Incrementality', content: 'Suppression list', channels: ['Suppression list'], holdout: true },
 ]
+
+// Exhaustive, education-framed content assets per strategy (Content & Compliance).
+// Each piece mirrors the demo structure: format, subject, headline, body, CTA, compliance note.
+export const STRATEGY_CONTENT = {
+  ae: [
+    {
+      asset: 'Committee deck', format: 'Sponsor committee deck — plan-design recommendation', subject: null,
+      headline: 'Auto Enrollment for eligible non-participants',
+      subhead: 'A plan-design change to close the participation gap.',
+      body: [
+        'Recommendation: adopt automatic enrollment for the 10,700 eligible employees who have not enrolled, at a 4% default deferral with 1%/yr auto-escalation to a 10% cap, invested in the plan\'s QDIA.',
+        'Rationale: 38% of hires in the last 12 months remain unenrolled after 90 days. Default friction — not affordability — is the dominant driver, based on cohort analysis and the Beacon Freight analog (+8.4% participation vs holdout).',
+        'Governance: a randomized holdout is preserved for causal measurement; required participant notices, opt-out windows, and QDIA disclosures attach automatically. Fiduciary review is required before launch.',
+      ],
+      cta: 'Approve for participant rollout',
+      complianceNote: 'Education-classified plan-design recommendation. Holdout preserved for incrementality. QDIA review status must clear before deploy.',
+    },
+    {
+      asset: 'Participant email', format: 'Participant email — pre-enrollment notice',
+      subject: 'An easier way to start saving for retirement',
+      headline: 'Your plan is adding automatic enrollment', subhead: null,
+      body: [
+        'Hi [First Name],',
+        'To make saving simpler, your employer\'s retirement plan will soon enroll eligible employees automatically at a 4% contribution rate, increasing 1% each year up to 10%. Your contributions go into the plan\'s default investment.',
+        'This is an educational notice, not advice. You are always in control: you can change your contribution rate, choose different investments, or opt out entirely at any time in your account before the effective date.',
+      ],
+      cta: 'Review my options',
+      complianceNote: 'Personalization token [First Name] must resolve; fallback "Hi there". Opt-out path and effective date required. "Not advice" footer auto-attaches.',
+    },
+    {
+      asset: 'Portal banner', format: 'Secure-site portal banner + guided flow', subject: null,
+      headline: 'Your plan just got easier',
+      subhead: 'Automatic enrollment is coming for eligible participants.',
+      body: [
+        'A short guided flow walks you through what automatic enrollment means for you: your default contribution rate, how auto-escalation works, where your money is invested, and every choice available to you.',
+        'Nothing here is a recommendation. It shows you what will happen by default and how to change it if you\'d prefer something else.',
+      ],
+      cta: 'Review my plan',
+      complianceNote: 'Education content class · no advice language. Change-election and opt-out links must be present on the banner.',
+    },
+    {
+      asset: 'Required notice', format: 'Required participant notice (ERISA)', subject: null,
+      headline: 'Automatic enrollment notice', subhead: null,
+      body: [
+        'This notice describes an automatic contribution arrangement that will affect your account unless you elect otherwise.',
+        'It includes: your default contribution rate (4%), the annual auto-escalation schedule (1%/yr to a 10% cap), the default investment (the plan\'s QDIA), your right to opt out or change your election, and the effective date. Please review before the effective date.',
+      ],
+      cta: 'Read the full notice',
+      complianceNote: 'Statutory notice. Notice variables must be complete before distribution. Timing must satisfy the pre-effective-date window.',
+    },
+  ],
+  ms: [
+    {
+      asset: 'Committee deck', format: 'Sponsor committee deck — plan-design recommendation', subject: null,
+      headline: 'Match Stretch for below-match participants',
+      subhead: 'Help 6,200 participants capture the full employer match.',
+      body: [
+        'Recommendation: restructure the match formula toward a stretch design (target 6%) so participants must defer more to receive the full match, paired with an education campaign. Modeled cost-neutral against current match spend.',
+        'Rationale: 6,200 participants contribute below the level needed to capture the full match — leaving employer dollars on the table. The Fernhollow Foods analog delivered +1.9% deferral and +2.1% match uptake, cost-neutral.',
+        'Governance: fairness and non-discrimination (ADP/ACP) impact is modeled; a holdout is preserved. Education content is classified as participant education, not advice.',
+      ],
+      cta: 'Approve cost-neutral stretch',
+      complianceNote: 'Cost-neutral toggle must be verified. Fairness impact (HCE/NHCE) reviewed. Education-classified.',
+    },
+    {
+      asset: 'Match explainer', format: 'Participant education — match explainer', subject: null,
+      headline: 'You may be leaving free money on the table',
+      subhead: 'How your employer match works — and the deferral needed to capture all of it.',
+      body: [
+        'Your employer matches part of what you contribute. If you contribute less than the match threshold, you receive less than the full match available to you.',
+        'This educational summary shows how the match formula works and the contribution level needed to receive the full match. It does not tell you what to do — the decision is yours.',
+      ],
+      cta: 'See how my match works',
+      complianceNote: 'Educational only — not advice. No projected-return claims. Match formula figures must match the plan document.',
+    },
+    {
+      asset: 'Participant email', format: 'Participant email — match awareness',
+      subject: 'A quick look at your employer match',
+      headline: 'Are you getting your full match?', subhead: null,
+      body: [
+        'Hi [First Name],',
+        'Your plan\'s employer match may be worth more than you\'re currently capturing. Many participants contribute just under the level needed to receive the full match.',
+        'This is an educational note, not advice. Take a look at how your match works and decide whether adjusting your contribution makes sense for you. You can change your election anytime.',
+      ],
+      cta: 'Check my match',
+      complianceNote: '[First Name] fallback required. "Not advice" footer. No individualized recommendation.',
+    },
+    {
+      asset: 'Portal banner', format: 'Secure-site portal banner', subject: null,
+      headline: 'Make the most of your match',
+      subhead: 'See the deferral level that captures your full employer match.',
+      body: [
+        'A short interactive view shows your current contribution, the match you\'re receiving today, and the match available at the full-capture deferral level.',
+        'It\'s a factual view of your own plan — not a recommendation to change anything.',
+      ],
+      cta: 'View my match detail',
+      complianceNote: 'Contribution-based, factual. No advice language. Disclosures apply.',
+    },
+  ],
+  esc: [
+    {
+      asset: 'Committee deck', format: 'Sponsor committee deck — plan-design recommendation', subject: null,
+      headline: 'Auto Escalation for stuck-at-default participants',
+      subhead: 'Move 9,400 participants off the 3% default over time.',
+      body: [
+        'Recommendation: apply automatic annual escalation of 1%/yr to a 12% cap for the 9,400 participants who have never changed from the 3% default, with a clear opt-out at each step.',
+        'Rationale: deferral inertia — not intent — keeps these participants at the default. The Vantage Media analog delivered +1.2% deferral vs holdout with escalation alone.',
+        'Governance: opt-out path is presented at each increase; holdout preserved for measurement; notices attach automatically.',
+      ],
+      cta: 'Approve escalation schedule',
+      complianceNote: 'Opt-out path required at each step. Payroll schedule alignment verified. Holdout preserved.',
+    },
+    {
+      asset: 'Escalation email', format: 'Participant email — escalation notice',
+      subject: 'A small step up in your retirement savings',
+      headline: 'Your contribution will increase by 1% next year', subhead: null,
+      body: [
+        'Hi [First Name],',
+        'To help you keep pace toward your retirement goals, your contribution rate is scheduled to increase by 1% next year, up to a 12% cap. Small, gradual increases can add up meaningfully over time.',
+        'This is an educational notice. No action is required — but you can pause the increase, change your rate, or opt out anytime before it takes effect.',
+      ],
+      cta: 'Manage my increase',
+      complianceNote: '[First Name] fallback. Opt-out/pause link required. Effective date and cap disclosed. "Not advice" footer.',
+    },
+    {
+      asset: 'Portal banner', format: 'Secure-site portal banner', subject: null,
+      headline: 'Your savings are set to grow',
+      subhead: 'See your upcoming automatic contribution increase.',
+      body: [
+        'A short view shows your current rate, next year\'s scheduled rate, the cap, and every option available to you — including pausing or opting out.',
+        'It explains what happens by default. What you do with it is up to you.',
+      ],
+      cta: 'Review my schedule',
+      complianceNote: 'Education class. Opt-out and change-election controls must be present. Disclosures apply.',
+    },
+    {
+      asset: 'Required notice', format: 'Required participant notice (ERISA)', subject: null,
+      headline: 'Automatic escalation notice', subhead: null,
+      body: [
+        'This notice describes an automatic contribution-increase arrangement that will affect your account unless you elect otherwise.',
+        'It includes the annual increase (1%/yr), the cap (12%), your right to opt out or change your election at any time, and the effective date of each increase. Please review before the effective date.',
+      ],
+      cta: 'Read the full notice',
+      complianceNote: 'Statutory notice. Variables complete before distribution. Pre-effective-date timing enforced.',
+    },
+  ],
+  re: [
+    {
+      asset: 'Committee deck', format: 'Sponsor committee deck — plan-design recommendation', subject: null,
+      headline: 'Re-enrollment for legacy-election holders',
+      subhead: 'Reset 4,100 participants on pre-2019 / non-QDIA elections.',
+      body: [
+        'Recommendation: a one-time re-enrollment sweep mapping legacy and non-QDIA elections into the plan\'s current default investment, with advance notice and a full opt-out window.',
+        'Rationale: 4,100 participants hold outdated elections that no longer reflect the plan\'s default lineup, creating fiduciary and suitability drift.',
+        'Governance: mapping is default-to-QDIA only; participants may retain existing elections by acting within the notice window; holdout preserved.',
+      ],
+      cta: 'Approve re-enrollment sweep',
+      complianceNote: 'QDIA mapping only. Advance-notice window and opt-out required. Fiduciary review required.',
+    },
+    {
+      asset: 'Required notice', format: 'Required participant notice (ERISA)', subject: null,
+      headline: 'Re-enrollment notice', subhead: null,
+      body: [
+        'This notice describes a re-enrollment of plan accounts into the plan\'s default investment unless you elect otherwise.',
+        'It includes the default investment (QDIA), the date your account will be mapped, your right to keep your current elections by acting before that date, and how to make changes. Please review before the effective date.',
+      ],
+      cta: 'Read the full notice',
+      complianceNote: 'Statutory notice. QDIA disclosure required. Opt-out window must precede mapping date.',
+    },
+    {
+      asset: 'Portal confirm', format: 'Secure-site portal confirmation flow', subject: null,
+      headline: 'Confirm or update your investment elections',
+      subhead: 'Your elections are being refreshed — review before the effective date.',
+      body: [
+        'A short confirmation flow shows your current elections, the default your account will map to, and the choice to keep, change, or confirm your investments.',
+        'It explains what will happen by default. Keeping your current elections takes just one step.',
+      ],
+      cta: 'Review my elections',
+      complianceNote: 'Education class. Keep/change/confirm paths must all be present. Disclosures apply.',
+    },
+  ],
+  edu: [
+    {
+      asset: 'FAQ', format: 'Participant education — FAQ', subject: null,
+      headline: 'Your retirement plan: common questions', subhead: null,
+      body: [
+        'This FAQ answers common questions about your plan: how contributions work, what the employer match is, how the default investment is chosen, and where to make changes.',
+        'It is informational only. Nothing here is a recommendation — it helps you understand the choices already available to you.',
+      ],
+      cta: 'Read the FAQ',
+      complianceNote: 'Education-classified. No advice or projected-return language. Disclosures apply.',
+    },
+    {
+      asset: 'Participant email', format: 'Participant email — education nudge',
+      subject: 'A few things worth knowing about your plan',
+      headline: 'Getting the most from your retirement plan', subhead: null,
+      body: [
+        'Hi [First Name],',
+        'Your retirement plan has several features designed to help you save — the employer match, automatic increases, and a default investment chosen for long-term savers.',
+        'This is an educational note, not advice. When you have a few minutes, it\'s worth understanding what\'s available so you can decide what fits your situation.',
+      ],
+      cta: 'Explore my plan',
+      complianceNote: '[First Name] fallback. Education-classified. No individualized recommendation.',
+    },
+  ],
+}
 
 // Decision Lab · Objective — what the run optimizes.
 export const OBJECTIVES = [
@@ -196,6 +402,6 @@ export const CONTENT_LIBRARY = [
 ]
 
 export const DECISION_TABS = [
-  'Objective', 'Lever Selection', 'Recommended Segments',
+  'Objective', 'Lever Selection', 'Recommended Strategy',
   'Content & Compliance', 'Simulation', 'Approval', 'Deployment',
 ]
