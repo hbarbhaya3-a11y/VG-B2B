@@ -1172,22 +1172,17 @@ function TabPolicyImpact({ sponsor, lab, setLab, d }) {
           ))}
         </div>
         <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 10 }}>Total incremental AUM +${p.aum.toFixed(0)}M · +{p.lift} pts participation · +{num(p.enroll)} enrollments, apportioned by lever contribution.</div>
-        <Table minWidth={640} head={<><Th>Lever</Th><Th align="right">Contribution</Th><Th align="right">AUM</Th><Th align="right">Participation</Th><Th align="right">Enrollments</Th><Th align="right"></Th></>}>
-          {attr.map(a => {
-            const on = a.id === selected
-            return (
-              <tr key={a.id} style={{ background: on ? C.amberBg : undefined }}>
-                <Td bold><span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: a.color }} />{a.strategy} {a.rec && <Pill tone="gold">Rec</Pill>}</span></Td>
-                <Td align="right">{pct(a.share)}</Td>
-                <Td align="right"><span style={{ color: C.goldDk, fontWeight: 600 }}>+${a.aum}M</span></Td>
-                <Td align="right"><span style={{ color: C.green }}>+{a.lift} pts</span></Td>
-                <Td align="right">+{num(a.enroll)}</Td>
-                <Td align="right">{on ? <Pill tone="gold">Selected</Pill> : <Btn kind="quiet" small onClick={() => pick(a.id)}>Select</Btn>}</Td>
-              </tr>
-            )
-          })}
+        <Table minWidth={560} head={<><Th>Lever</Th><Th align="right">Contribution</Th><Th align="right">AUM</Th><Th align="right">Participation</Th><Th align="right">Enrollments</Th></>}>
+          {attr.map(a => (
+            <tr key={a.id}>
+              <Td bold><span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: a.color }} />{a.strategy}</span></Td>
+              <Td align="right">{pct(a.share)}</Td>
+              <Td align="right"><span style={{ color: C.goldDk, fontWeight: 600 }}>+${a.aum}M</span></Td>
+              <Td align="right"><span style={{ color: C.green }}>+{a.lift} pts</span></Td>
+              <Td align="right">+{num(a.enroll)}</Td>
+            </tr>
+          ))}
         </Table>
-        <div style={{ padding: '10px 0 0', fontSize: 11.5, color: C.muted }}>The selected lever carries into Content.</div>
       </Card>
 
       {/* do nothing vs new policy — parameters */}
@@ -1301,7 +1296,7 @@ function projections(sponsor, d) {
   const base = sponsor.participation
   const projected = Math.min(0.99, base + lift / 100)
   const enroll = Math.round((lift / 100) * d.treated)
-  const aum = (lift / 100) * d.treated * AVG_BALANCE / 1e6
+  const aum = Math.min(53, (lift / 100) * d.treated * AVG_BALANCE / 1e6)   // realistic net-new AUM capture, capped at $53M
   const cost = (lift / 100) * d.treated * 900 / 1e6
   const roi = cost > 0 ? aum / cost : 0
   const stress = sponsor.employees / 50000 * 14.2
