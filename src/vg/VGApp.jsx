@@ -753,18 +753,16 @@ function TabLevers({ lab, setLab, d }) {
         <IconShieldCheck size={15} color={C.green} /> Levers appear after recommendation. Only strategies in the portfolio are configurable.
       </div>
 
-      {/* current configuration summary */}
-      <Card style={{ marginBottom: 14 }}>
-        <Eyebrow>Current plan configuration</Eyebrow>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 10, marginTop: 6 }}>
-          {LEVERS.filter(l => activeIds.has(l.id) && ['ae', 'ms', 'esc'].includes(l.id)).map(l => (
-            <div key={l.id} style={{ padding: '10px 12px', background: C.paper, border: T.rule, borderRadius: T.radMd }}>
-              <div style={{ fontSize: 11, color: C.muted, fontWeight: 600 }}>{l.name}</div>
-              <div style={{ fontSize: 13, color: C.ink, fontWeight: 600, marginTop: 3 }}>{leverSummary(l.id, L)}</div>
-            </div>
-          ))}
-        </div>
-      </Card>
+      {/* current configuration — compact one-line summary */}
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 14,
+        padding: '10px 14px', background: C.paper, border: T.rule, borderRadius: T.radMd }}>
+        <span style={{ fontSize: 10.5, letterSpacing: '.08em', textTransform: 'uppercase', color: C.goldDk, fontWeight: 700 }}>Current plan</span>
+        {LEVERS.filter(l => activeIds.has(l.id)).map(l => (
+          <span key={l.id} style={{ fontSize: 12, color: C.ink2 }}>
+            <b style={{ color: C.ink }}>{l.name}</b> {leverSummary(l.id, L)}
+          </span>
+        )).reduce((acc, el, i) => i === 0 ? [el] : [...acc, <span key={`s${i}`} style={{ color: C.faint }}>·</span>, el], [])}
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 14 }}>
         {LEVERS.filter(l => activeIds.has(l.id)).map(l => {
@@ -1077,8 +1075,7 @@ function TabStrategy({ lab, setLab, d }) {
                 {[
                   { k: 'Segment', v: cell.cohort },
                   { k: 'Audience size', v: `${num(seg.audience)} participants` },
-                  { k: 'Primary KPI', v: 'Participation' },
-                  { k: 'Secondary KPI', v: cell.kpi },
+                  { k: 'KPI', v: 'Participation' },
                 ].map((f, j) => (
                   <div key={f.k} style={{ padding: '13px 20px', borderTop: T.rule, borderLeft: j === 0 ? 'none' : T.rule }}>
                     <div style={{ fontSize: 10.5, letterSpacing: '.06em', textTransform: 'uppercase', color: C.muted, fontWeight: 700 }}>{f.k}</div>
@@ -1283,10 +1280,7 @@ function TabSimulation({ sponsor, lab, setLab, d }) {
     deferral: +(p.deferralLift * lf).toFixed(1),
   })
   const scen = [
-    { name: 'Do-nothing', part: p.base, lift: 0, enroll: 0, aum: 0, cost: 0, roi: 0, deferral: 0, conf: '—' },
-    mkScen('Conservative', 0.48, 0.35, 'High'),
     mkScen('Balanced', 1, 1, 'High'),
-    mkScen('Aggressive', 1.37, 1.5, 'Med'),
   ]
   const bench = [
     { k: 'Current', v: p.base }, { k: 'Projected', v: p.projected }, { k: 'Sector benchmark', v: sponsor.benchmark },

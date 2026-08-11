@@ -5,6 +5,21 @@
 
 ---
 
+## Session 12 — Compact current-plan line, single sim scenario, drop strategy secondary KPI — 2026-08-11
+
+### Build Status
+- `npm run build` — **PASSED** — 0 errors. Verified visually via Playwright (levers, simulation).
+
+### Changed — `src/vg/VGApp.jsx`
+- **Lever Selection** — the "Current plan" summary is now a single compact one-line strip (label + inline lever settings) instead of tiles that duplicated the lever cards below.
+- **Recommended Strategy** — removed the "Secondary KPI" field from segment cards; the single KPI is now labeled just "KPI" (Participation).
+- **Simulation results** — the scenario comparison now shows only the **Balanced** scenario (was Do-nothing / Conservative / Balanced / Aggressive).
+
+### Watch List
+- The do-nothing baseline still surfaces in the Participation hero ("from X%") and the benchmark bars, though it's no longer a row in the scenario table.
+
+---
+
 ## Session 11 — Step-ribbon completion fix, current-plan summary trim, KPI wording — 2026-08-11
 
 ### Build Status
