@@ -11,7 +11,7 @@ import {
 import { C, T, FONT, DISP, THEMES, applyTheme } from './theme'
 import {
   BOOK, SPONSORS, INSIGHTS, STRATEGY_CELLS, LEVERS, ASSETS, COMPLIANCE,
-  SCENARIOS, APPROVALS, LANES, MEMORY_DECISIONS, HOLDOUT_OUTCOMES, POLICIES,
+  MEMORY_DECISIONS, HOLDOUT_OUTCOMES, POLICIES,
   CONTENT_LIBRARY, DECISION_TABS,
 } from './data'
 
@@ -349,22 +349,30 @@ const STRAT_WEIGHT = { ae: 5.2, ms: 1.8, esc: 1.4, re: 0.9, edu: 0.4 }
 
 function labDerived(lab) {
   const included = STRATEGY_CELLS.filter(c => lab.cells[c.id])
-  const treatCells = included.filter(c => c.id !== 'hold')
-  const treatment = treatCells.reduce((a, c) => a + c.population, 0)
-  const holdout = lab.cells.hold ? Math.round(treatment * (lab.levers.holdoutPct / 100)) : 0
+  const treatCells = included.filter(c => c.id !== 'hold')     // cells that receive a strategy
+  const pct = lab.cells.hold ? lab.levers.holdoutPct / 100 : 0
+  // Holdout is carved FROM each holdout-eligible cohort (education-only has none).
+  const perCell = treatCells.map(c => {
+    const holdout = c.holdout ? Math.round(c.population * pct) : 0
+    return { ...c, holdout, treated: c.population - holdout }
+  })
+  const portfolioPop = perCell.reduce((a, c) => a + c.population, 0)   // total addressable
+  const holdout = perCell.reduce((a, c) => a + c.holdout, 0)          // control, not treated
+  const treated = portfolioPop - holdout                              // actually receive a strategy
   let lift = treatCells.reduce((a, c) => a + (STRAT_WEIGHT[c.id] || 0), 0)
   if (lab.cells.ae) lift += (lab.levers.aeDefault - 4) * 0.6
   if (lab.cells.esc) lift += (lab.levers.escStep - 1) * 0.4
   lift = Math.max(0, +lift.toFixed(1))
-  const complianceOk = COMPLIANCE.every(c => c.state !== 'blocked') // demo: one blocker until resolved
+  const compState = (c) => (lab.compFixed[c.label] ? 'ok' : c.state)
+  const complianceOk = COMPLIANCE.every(c => compState(c) !== 'blocked')
   const allApproved = Object.values(lab.approvals).every(Boolean)
-  return { included, treatCells, treatment, holdout, lift, complianceOk, allApproved }
+  return { included, treatCells, perCell, portfolioPop, treated, holdout, lift, complianceOk, allApproved, compState }
 }
 
 function stepDone(lab, d, i) {
   return [
     d.treatCells.length > 0,               // 0 recommendation
-    d.treatment > 0,                       // 1 levers
+    d.portfolioPop > 0,                    // 1 levers
     lab.content !== 'none',                // 2 content
     lab.simulated,                         // 3 simulation
     d.allApproved,                         // 4 approval
@@ -386,8 +394,8 @@ function DecisionLab({ sponsor, tab, setTab, lab, setLab }) {
       <SectionTitle kicker="Decision Lab · Portfolio workbench" title={`${sponsor.name} — decision portfolio`}
         sub="A portfolio allocation across cohort strategy cells — recommend, configure, prove, and launch."
         right={<div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 11, color: C.muted }}>In treatment</div>
-          <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, color: C.ink }}>{num(d.treatment)}</div>
+          <div style={{ fontSize: 11, color: C.muted }}>In portfolio</div>
+          <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, color: C.ink }}>{num(d.portfolioPop)}</div>
         </div>} />
 
       {/* step strip */}
@@ -433,8 +441,9 @@ function TabRecommendation({ lab, setLab, d }) {
     <div>
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
         <Stat label="Cells in portfolio" value={d.treatCells.length} sub={`of ${STRATEGY_CELLS.length - 1} candidates`} />
-        <Stat label="Treatment population" value={num(d.treatment)} />
-        <Stat label="Holdout" value={num(d.holdout)} sub={`${lab.levers.holdoutPct}% · causal proof`} tone={C.goldDk} />
+        <Stat label="Portfolio population" value={num(d.portfolioPop)} sub="total addressable" />
+        <Stat label="Treated" value={num(d.treated)} sub="receive a strategy" />
+        <Stat label="Holdout" value={num(d.holdout)} sub={`${lab.levers.holdoutPct}% · causal control`} tone={C.goldDk} />
       </div>
       <Card pad={0}>
         <div style={{ padding: '14px 20px', borderBottom: T.rule }}>
@@ -554,12 +563,17 @@ function TabContent({ lab, setLab, d }) {
       <Card>
         <Eyebrow>Compliance checks · blockers surface here</Eyebrow>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 6 }}>
-          {COMPLIANCE.map(c => (
-            <div key={c.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-              <span style={{ fontSize: 12.5, color: C.ink2 }}>{c.label}</span>
-              <Pill tone={c.state}>{c.state === 'ok' ? 'Approved' : c.state === 'review' ? 'In review' : 'Blocked'}</Pill>
-            </div>
-          ))}
+          {COMPLIANCE.map(c => {
+            const st = d.compState(c)
+            return (
+              <div key={c.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <span style={{ fontSize: 12.5, color: C.ink2 }}>{c.label}</span>
+                {st === 'blocked'
+                  ? <Btn kind="primary" small onClick={() => setLab(l => ({ ...l, compFixed: { ...l.compFixed, [c.label]: true } }))}>Resolve</Btn>
+                  : <Pill tone={st}>{st === 'ok' ? 'Approved' : 'In review'}</Pill>}
+              </div>
+            )
+          })}
         </div>
       </Card>
     </div>
@@ -602,7 +616,7 @@ function TabSimulation({ lab, setLab, d }) {
               </ResponsiveContainer>
             </div>
             <div style={{ fontSize: 12, color: C.muted, marginTop: 8 }}>
-              Recommended: <b style={{ color: C.ink }}>+{lift}% participation</b> (P5 +{(lift * 0.7).toFixed(1)} · P50 +{lift} · P95 +{(lift * 1.3).toFixed(1)}) across {num(d.treatment)} in treatment vs {num(d.holdout)} holdout.
+              Recommended: <b style={{ color: C.ink }}>+{lift}% participation</b> (P5 +{(lift * 0.7).toFixed(1)} · P50 +{lift} · P95 +{(lift * 1.3).toFixed(1)}) across {num(d.treated)} treated vs {num(d.holdout)} holdout (portfolio {num(d.portfolioPop)}).
             </div>
           </>
         ) : (
@@ -676,18 +690,18 @@ function TabDeployment({ lab, setLab, d }) {
         </div>
         {!ready && <Pill tone="review">Approve all to enable launch</Pill>}
       </div>
-      <Table minWidth={720} head={<><Th>Lane</Th><Th align="right">Treatment</Th><Th align="right">Holdout</Th><Th>Channel</Th><Th align="right">Action</Th></>}>
-        {LANES.map(l => {
-          const live = lab.deployed[l.lane]
+      <Table minWidth={720} head={<><Th>Lane</Th><Th align="right">Treated</Th><Th align="right">Holdout</Th><Th>Channel</Th><Th align="right">Action</Th></>}>
+        {d.perCell.map(l => {
+          const live = lab.deployed[l.strategy]
           return (
-            <tr key={l.lane}>
-              <Td bold>{l.lane}</Td>
-              <Td align="right">{num(l.treatment)}</Td>
+            <tr key={l.id}>
+              <Td bold>{l.strategy}</Td>
+              <Td align="right">{num(l.treated)}</Td>
               <Td align="right">{l.holdout ? num(l.holdout) : '—'}</Td>
-              <Td>{l.channel}</Td>
+              <Td>{l.content}</Td>
               <Td align="right">
                 {live ? <Pill tone="ok"><IconRocket size={12} /> Launched</Pill>
-                  : <Btn kind={ready ? 'gold' : 'quiet'} small onClick={() => launch(l.lane)}
+                  : <Btn kind={ready ? 'gold' : 'quiet'} small onClick={() => launch(l.strategy)}
                       style={{ opacity: ready ? 1 : 0.5, cursor: ready ? 'pointer' : 'not-allowed' }}>Launch</Btn>}
               </Td>
             </tr>
@@ -776,6 +790,7 @@ export default function VGApp() {
     levers: { aeDefault: 4, aeEsc: 1, aeCap: 10, msTarget: 6, escStep: 1, escCap: 12, holdoutPct: 15 },
     content: 'none',   // none | drafted | locked
     simulated: false,
+    compFixed: {},     // compliance blockers resolved in-flow
     approvals: { portfolio: false, cell: false, compliance: false, fiduciary: false, payroll: false },
     deployed: {},
   }))
