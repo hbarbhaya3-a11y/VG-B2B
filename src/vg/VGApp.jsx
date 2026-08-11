@@ -767,7 +767,7 @@ const sBtn = { width: 24, height: 24, borderRadius: 6, border: '1px solid rgba(1
 
 function leverSummary(id, L) {
   switch (id) {
-    case 'ae': return `${L.aeDefault}% default · +${L.aeEsc}%/yr · cap ${L.aeCap}%`
+    case 'ae': return `${L.aeDefault}% default`
     case 'ms': return `stretch target ${L.msTarget}%`
     case 'esc': return `+${L.escStep}%/yr · cap ${L.escCap}%`
     case 're': return `sweep every ${L.reFreq} mo · ${L.reNotice}-day notice · QDIA`
@@ -794,11 +794,7 @@ function TabLevers({ lab, setLab, d }) {
                 <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>{l.name}</div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {l.id === 'ae' && <>
-                  <Stepper label="Initial default rate" unit="%" value={L.aeDefault} set={v => setL('aeDefault', v)} min={2} max={10} />
-                  <Stepper label="Auto-escalation" unit="%/yr" value={L.aeEsc} set={v => setL('aeEsc', v)} min={0} max={3} />
-                  <Stepper label="Escalation cap" unit="%" value={L.aeCap} set={v => setL('aeCap', v)} min={6} max={15} />
-                </>}
+                {l.id === 'ae' && <Stepper label="Initial default rate" unit="%" value={L.aeDefault} set={v => setL('aeDefault', v)} min={2} max={10} />}
                 {l.id === 'ms' && <Stepper label="Stretch match target" unit="%" value={L.msTarget} set={v => setL('msTarget', v)} min={3} max={8} />}
                 {l.id === 'esc' && <>
                   <Stepper label="Annual increase" unit="%" value={L.escStep} set={v => setL('escStep', v)} min={1} max={3} />
@@ -1142,7 +1138,7 @@ function TabPolicyImpact({ sponsor, lab, setLab, d }) {
   // Old vs new policy parameters for each active lever.
   const L = lab.levers
   const paramMap = {
-    ae: { name: 'Auto Enrollment', cur: '3% default · opt-in · no escalation', neu: `${L.aeDefault}% auto-enroll · +${L.aeEsc}%/yr → ${L.aeCap}% cap · QDIA` },
+    ae: { name: 'Auto Enrollment', cur: '3% default · opt-in', neu: `${L.aeDefault}% auto-enroll · QDIA` },
     ms: { name: 'Match Stretch', cur: 'Standard match formula', neu: `Stretch match to ${L.msTarget}% (cost-neutral)` },
     esc: { name: 'Auto Escalation', cur: 'None for stuck-at-default', neu: `+${L.escStep}%/yr → ${L.escCap}% cap` },
     re: { name: 'Re-enrollment', cur: 'Legacy / non-QDIA elections', neu: `Sweep every ${L.reFreq} mo → QDIA · ${L.reNotice}-day notice` },
@@ -1253,7 +1249,7 @@ function TabContent({ sponsor, lab, setLab, d, goTo }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <Card>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-            <Eyebrow>Content · selected strategy: {seg.strategy}</Eyebrow>
+            <Eyebrow>Content</Eyebrow>
             <Pill tone={status === 'locked' ? 'ok' : status === 'drafted' ? 'review' : 'neutral'}>
               {status === 'locked' ? 'Locked' : status === 'drafted' ? 'Draft' : 'Not started'}
             </Pill>
@@ -1575,7 +1571,7 @@ function TabDeployment({ sponsor, lab, setLab, d, addMemory }) {
       sponsor: sponsor.name,
       signal: 'Participation gap',
       portfolio: d.treatCells.map(c => c.strategy).join(' + '),
-      levers: `AE ${lab.levers.aeDefault}% +${lab.levers.aeEsc}%/yr · Stretch ${lab.levers.msTarget}% · Esc +${lab.levers.escStep}%/yr`,
+      levers: `AE ${lab.levers.aeDefault}% · Stretch ${lab.levers.msTarget}% · Esc +${lab.levers.escStep}%/yr → ${lab.levers.escCap}% cap`,
       approval: 'Deployed',
       status: 'Live',
       live: true,
@@ -1958,7 +1954,7 @@ export default function VGApp() {
   const [tab, setTab] = useState(0)
   const [lab, setLab] = useState(() => ({
     objective: 'participation',
-    channels: { Email: true, Portal: true, Notices: true, 'Advisor brief': false, 'In-app nudge': false },
+    channels: { Email: true, Portal: true, 'Advisor brief': false, 'In-app nudge': false },
     timeline: { rolloutWeeks: 6, measureWeeks: 12 },
     posture: 'balanced',
     maxTab: 0,
@@ -1967,7 +1963,7 @@ export default function VGApp() {
     contentReady: false,      // step 4 live-run gate
     complianceDone: false,    // step 5 compliance-run gate
     cells: { ae: true, ms: true, esc: true, re: true, edu: false, hold: true },
-    levers: { aeDefault: 4, aeEsc: 1, aeCap: 10, msTarget: 6, escStep: 1, escCap: 12, holdoutPct: 15, reFreq: 12, reNotice: 45, eduCadence: 2 },
+    levers: { aeDefault: 4, msTarget: 6, escStep: 1, escCap: 12, holdoutPct: 15, reFreq: 12, reNotice: 45, eduCadence: 2 },
     content: 'none',   // none | drafted | locked
     simulated: false,
     compFixed: {},     // compliance blockers resolved in-flow

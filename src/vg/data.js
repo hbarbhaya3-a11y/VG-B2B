@@ -385,7 +385,7 @@ export const OBJECTIVES = [
 ]
 
 // Decision Lab · Objective — delivery channels for the run.
-export const CHANNELS = ['Email', 'Portal', 'Notices', 'Advisor brief', 'In-app nudge']
+export const CHANNELS = ['Email', 'Portal', 'Advisor brief', 'In-app nudge']
 
 // Illustrative average participant balance, used to translate lift → AUM.
 export const AVG_BALANCE = 42000
@@ -532,5 +532,5 @@ export const CONTENT_LIBRARY = [
 
 export const DECISION_TABS = [
   'Objective', 'Lever Selection', 'Simulated Policy Impact',
-  'Content & Compliance', 'Compliance', 'Approval', 'Deployment',
+  'Content', 'Compliance', 'Approval', 'Deployment',
 ]
