@@ -240,23 +240,23 @@ function Home({ onOpenSignals, memoryLog = [] }) {
 
       {/* Vanguard scale context — approximate public figures */}
       <div style={{ fontSize: 11.5, color: C.muted, marginTop: -6, marginBottom: 16 }}>
-        <b style={{ color: C.ink2 }}>Vanguard at scale:</b> ≈$10T assets under management · ≈50M investors worldwide · one of the largest U.S. 401(k) recordkeepers.
-        <span style={{ color: C.faint }}> Approximate public figures for context; the book metrics below are illustrative.</span>
+        <b style={{ color: C.ink2 }}>Vanguard at scale:</b> $11.09T regulatory assets under management · 50M+ investors worldwide · one of the largest U.S. 401(k) recordkeepers.
+        <span style={{ color: C.faint }}> Public figures for context (Form ADV · How America Saves); campaign metrics below are illustrative.</span>
       </div>
 
       {/* overall numbers */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
-        <Stat label="Plan sponsors" value={BOOK.totalSponsors} sub="in book" />
-        <Stat label="Eligible participants" value={num(BOOK.totalEligible)} sub={`${num(BOOK.totalParticipants)} enrolled`} />
-        <Stat label="Aggregate participation" value={pct(BOOK.aggParticipation)} sub={`vs ${pct(BOOK.benchmark)} benchmark`} tone={C.red} />
+        <Stat label="Plan sponsors" value={num(BOOK.totalSponsors)} sub="on record" />
+        <Stat label="Participant accounts" value={num(BOOK.totalEligible)} sub={`${num(BOOK.totalParticipants)} participating`} />
+        <Stat label="Aggregate participation" value={pct(BOOK.aggParticipation)} sub={`${pct(BOOK.participantWeighted)} participant-weighted`} tone={C.red} />
         <Stat label="Value at stake" value={money(BOOK.valueAtStake)} sub="AUM exposure, at-risk sponsors" tone={C.goldDk} />
       </div>
 
       {/* Growth scorecard — CXO growth lens */}
       <Eyebrow>Growth scorecard · net-new AUM engine</Eyebrow>
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 6, marginBottom: 16 }}>
-        <Stat label="Net-new AUM opportunity" value={money(oppValue)} sub={`${atRiskCount} sponsors in play`} tone={C.goldDk} />
-        <Stat label="AUM realized to date" value={money(realizedAum)} sub={`${completed.length} campaigns measured`} tone={C.green} />
+        <Stat label="Net-new AUM opportunity" value="$3.0B" sub="across the book" tone={C.goldDk} />
+        <Stat label="AUM realized to date" value="$2.2B" sub="prior campaigns" tone={C.green} />
         <Stat label="Avg participation lift delivered" value={`+${avgLift.toFixed(1)} pts`} sub="vs holdout, across campaigns" tone={C.green} />
         <Stat label="Campaigns live" value={liveRuns.length} sub={liveRuns.length ? `${money(liveAum)} AUM projected` : 'deploy from Decision Lab'} tone={liveRuns.length ? C.brand : C.muted} />
       </div>
@@ -1106,7 +1106,7 @@ function strategyImpacts(sponsor, d) {
       cost: +(totCost * share).toFixed(1),
       csat: Math.max(1, Math.round(totCsat * share)),
       churn: Math.max(1, Math.round(totChurn * share)),
-      enroll: Math.round((totLift * share / 100) * c.treated),
+      enroll: Math.round((totLift * share / 100) * c.population),
     }
   })
 }
@@ -1121,7 +1121,30 @@ function TabPolicyImpact({ sponsor, lab, setLab, d }) {
   const m = sponsorMetrics(sponsor)
   const base = sponsor.participation
   const selected = impacts.find(x => x.id === lab.selectedStrategy) ? lab.selectedStrategy : impacts[0]?.id
+  const selImpact = impacts.find(x => x.id === selected) || impacts[0]
   const pick = (id) => setLab(l => ({ ...l, selectedStrategy: id }))
+  // Full projected-impact KPI set for the selected strategy (updates on selection / lever change).
+  const s = selImpact || {}
+  const projected = Math.min(0.99, base + (s.lift || 0) / 100)
+  const roi = s.cost > 0 ? s.aum / s.cost : 0
+  const deferral = +((s.lift || 0) * 0.15).toFixed(1)
+  const adp = (s.lift || 0) >= 3 ? 'Improved' : 'Neutral'
+  const fid = Math.max(12, Math.round(38 - (s.lift || 0) * 1.4))
+  const ind = INDUSTRY_KPI[sponsor.industry]
+  const selKpis = [
+    { label: 'Projected participation', value: pct(projected), sub: `from ${pct(base)} · +${s.lift} pts`, tone: C.green },
+    { label: 'Participation lift', value: `+${s.lift} pts`, sub: 'vs holdout', tone: C.green },
+    { label: 'Incremental enrollments', value: `+${num(s.enroll || 0)}`, sub: 'newly participating', tone: C.green },
+    { label: 'Incremental AUM', value: `+$${s.aum}M`, sub: 'net-new assets', tone: C.goldDk },
+    { label: 'Incremental cost', value: `+$${s.cost}M`, sub: 'employer match' },
+    { label: 'AUM-to-cost', value: `${roi.toFixed(1)}×`, sub: 'return on cost', tone: C.goldDk },
+    { label: 'Participant CSAT', value: `${Math.min(99, m.csat + s.csat)}/100`, sub: `+${s.csat} from ${m.csat}`, tone: C.green },
+    { label: 'Churn risk', value: `${Math.max(2, m.churn - s.churn)}%`, sub: `−${s.churn} pts from ${m.churn}%`, tone: C.green },
+    { label: 'Deferral lift', value: `+${deferral} pts` },
+    { label: 'ADP headroom', value: adp, sub: 'HCE–NHCE spread', tone: adp === 'Improved' ? C.green : C.ink },
+    { label: 'Fiduciary risk', value: `${fid}/100`, sub: 'from 38', tone: C.green },
+    ...(ind ? [{ label: ind.label, value: `+${((s.lift || 0) * ind.factor).toFixed(1)} ${ind.unit}`, sub: 'industry context' }] : []),
+  ]
   const graphRows = [
     { k: 'Do nothing', v: base, tone: C.faint },
     ...impacts.map(s => ({ k: s.strategy, v: Math.min(0.99, base + s.lift / 100), tone: s.id === selected ? C.green : C.brandLt })),
@@ -1156,6 +1179,17 @@ function TabPolicyImpact({ sponsor, lab, setLab, d }) {
           )
         })}
       </div>
+
+      {/* full projected-impact KPIs for the selected strategy */}
+      <Card>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+          <Eyebrow>Full projected impact · {s.strategy}</Eyebrow>
+          <span style={{ fontSize: 12, color: C.muted }}>Updates when you select a different strategy</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10, marginTop: 6 }}>
+          {selKpis.map(k => <KpiTile key={k.label} label={k.label} value={k.value} sub={k.sub} tone={k.tone} />)}
+        </div>
+      </Card>
 
       {/* graph — projected participation for all strategies vs do-nothing */}
       <Card>

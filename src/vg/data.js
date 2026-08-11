@@ -3,10 +3,11 @@
 // Signals = a company's participation gap + insights, Decision Lab = portfolio.
 
 export const BOOK = {
-  totalSponsors: 24,
-  totalEligible: 486000,
-  totalParticipants: 379080,
-  aggParticipation: 0.78,
+  totalSponsors: 21261,       // VRPA plan sponsors, year-end 2024
+  totalEligible: 1020108,     // VRPA participant accounts, year-end 2024
+  totalParticipants: 601864,  // ≈59% participant-weighted participation
+  aggParticipation: 0.73,     // VRPA plan-weighted participation
+  participantWeighted: 0.59,  // VRPA participant-weighted participation
   benchmark: 0.86,
   valueAtStake: 412, // $M AUM exposure across at-risk sponsors
   participationTrend: [
