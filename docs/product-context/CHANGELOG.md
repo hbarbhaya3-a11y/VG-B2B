@@ -5,6 +5,20 @@
 
 ---
 
+## Session 16 — Step-3 horizontal strip + all-strategy graph; Match Stretch rename; AUM ≥ $30M — 2026-08-11
+
+### Build Status
+- `npm run build` — **PASSED** — 0 errors. Verified via Playwright (step 3 + step 4).
+
+### Changed — `src/vg/VGApp.jsx` + `src/vg/data.js`
+- **Match Stretch** label no longer shows "+ education" (STRATEGY_CELLS `ms` strategy renamed).
+- **Step 3 layout** — 4 strategies now in a **horizontal strip**, each with its **KPI tiles below** (Participation, AUM, CSAT, Churn). **Auto Enrollment flagged Recommended**. The **Do-nothing comparison table is last**.
+- **All-strategy graph** — replaced the single selected-strategy benchmark bars with a **projected-participation graph across all 4 strategies** (plus Do-nothing and Sector benchmark).
+- **Per-strategy AUM** now clears **$30M for every strategy** (band $32–52M, capped at $55M) instead of small weight-shares.
+- **Step 4 footer button** changed from "Next: Compliance" to **"Run compliance check"** (jumps to and runs step 5).
+
+---
+
 ## Session 15 — Decision Lab restructure: policy-impact sim, board/customer content, compliance step — 2026-08-11
 
 ### Build Status

@@ -98,7 +98,7 @@ export const INSIGHTS = [
 // Candidate strategy cells — the portfolio allocator model.
 export const STRATEGY_CELLS = [
   { id: 'ae', cohort: 'Eligible non-participants', population: 10700, strategy: 'Auto Enrollment', why: 'Participation gap / default friction', kpi: 'Incremental enrollment', content: 'Email, portal, notices', channels: ['Participant email', 'Portal banner', 'Notices'], holdout: true },
-  { id: 'ms', cohort: 'Below-match participants', population: 6200, strategy: 'Match Stretch + education', why: 'Match leakage', kpi: 'Deferral / match utilization', content: 'Match explainer, portal', channels: ['Match explainer', 'Participant email', 'Portal banner'], holdout: true },
+  { id: 'ms', cohort: 'Below-match participants', population: 6200, strategy: 'Match Stretch', why: 'Match leakage', kpi: 'Deferral / match utilization', content: 'Match explainer, portal', channels: ['Match explainer', 'Participant email', 'Portal banner'], holdout: true },
   { id: 'esc', cohort: 'Stuck-at-default participants', population: 9400, strategy: 'Auto Escalation', why: 'Deferral inertia', kpi: 'Deferral lift', content: 'Escalation email, portal', channels: ['Escalation email', 'Portal banner', 'Notices'], holdout: true },
   { id: 're', cohort: 'Legacy-election holders', population: 4100, strategy: 'Re-enrollment', why: 'Outdated elections', kpi: 'Re-election / reset', content: 'Notices, portal confirm', channels: ['Notices', 'Portal confirm'], holdout: true },
   { id: 'edu', cohort: 'Low-readiness cohort', population: 3300, strategy: 'Education-only', why: 'Lower operational risk', kpi: 'Engagement', content: 'FAQ, email', channels: ['FAQ', 'Participant email'], holdout: false },

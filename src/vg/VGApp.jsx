@@ -673,9 +673,13 @@ function DecisionLab({ sponsor, tab, setTab, lab, setLab, addMemory }) {
         <Btn kind="quiet" onClick={() => setTab(Math.max(0, tab - 1))} style={{ visibility: tab === 0 ? 'hidden' : 'visible' }}>
           <IconArrowLeft size={15} /> Back
         </Btn>
-        {tab < DECISION_TABS.length - 1 && <Btn kind="primary" onClick={() => setTab(tab + 1)}>
-          {tab === 1 ? 'Simulate strategies' : `Next: ${DECISION_TABS[tab + 1]}`} <IconArrowRight size={15} />
-        </Btn>}
+        {tab < DECISION_TABS.length - 1 && (
+          tab === 3
+            ? <Btn kind="primary" onClick={() => { setLab(l => ({ ...l, complianceDone: false })); setTab(4) }}><IconShieldCheck size={15} /> Run compliance check</Btn>
+            : <Btn kind="primary" onClick={() => setTab(tab + 1)}>
+                {tab === 1 ? 'Simulate strategies' : `Next: ${DECISION_TABS[tab + 1]}`} <IconArrowRight size={15} />
+              </Btn>
+        )}
       </div>
     </div>
   )
@@ -1086,16 +1090,18 @@ function LiveRunLoader({ title, steps, seconds = 5, onDone }) {
 function strategyImpacts(sponsor, d) {
   const cells = d.treatCells
   const totW = cells.reduce((a, c) => a + (STRAT_WEIGHT[c.id] || 0), 0) || 1
-  const opp = sponsor.valueOpp
+  const maxW = Math.max(...cells.map(c => STRAT_WEIGHT[c.id] || 0), 1)
   const totLift = d.lift
   const totCsat = Math.max(1, Math.round(totLift * 0.8))
   const totChurn = Math.max(1, Math.round(totLift * 0.5))
   const totCost = (totLift / 100) * d.treated * 900 / 1e6
   return cells.map(c => {
     const share = (STRAT_WEIGHT[c.id] || 0) / totW
+    const w = (STRAT_WEIGHT[c.id] || 0) / maxW
     return {
       id: c.id, strategy: c.strategy, cohort: c.cohort, audience: c.population, treated: c.treated, why: c.why,
-      aum: Math.min(55, Math.round(opp * share)),
+      rec: c.id === 'ae',
+      aum: Math.min(55, Math.round(32 + w * 20)),   // every strategy clears $30M; capped at $55M
       lift: +(totLift * share).toFixed(1),
       cost: +(totCost * share).toFixed(1),
       csat: Math.max(1, Math.round(totCsat * share)),
@@ -1115,8 +1121,12 @@ function TabPolicyImpact({ sponsor, lab, setLab, d }) {
   const m = sponsorMetrics(sponsor)
   const base = sponsor.participation
   const selected = impacts.find(x => x.id === lab.selectedStrategy) ? lab.selectedStrategy : impacts[0]?.id
-  const selImpact = impacts.find(x => x.id === selected)
   const pick = (id) => setLab(l => ({ ...l, selectedStrategy: id }))
+  const graphRows = [
+    { k: 'Do nothing', v: base, tone: C.faint },
+    ...impacts.map(s => ({ k: s.strategy, v: Math.min(0.99, base + s.lift / 100), tone: s.id === selected ? C.green : C.brandLt })),
+    { k: 'Sector benchmark', v: sponsor.benchmark, tone: C.goldDk },
+  ]
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: C.muted, flexWrap: 'wrap' }}>
@@ -1124,7 +1134,46 @@ function TabPolicyImpact({ sponsor, lab, setLab, d }) {
         <Btn kind="ghost" small onClick={() => setLab(l => ({ ...l, policySimulated: false }))} style={{ marginLeft: 'auto' }}>Re-simulate</Btn>
       </div>
 
-      {/* overall table — do-nothing vs each strategy */}
+      {/* 4 strategies in a horizontal strip, KPIs below each */}
+      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
+        {impacts.map(s => {
+          const on = s.id === selected
+          return (
+            <Card key={s.id} onClick={() => pick(s.id)} pad={14}
+              style={{ flex: '1 1 0', minWidth: 236, cursor: 'pointer', borderColor: on ? C.gold : undefined, borderWidth: on ? 2 : 1, borderStyle: 'solid', background: on ? C.amberBg : C.card }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 2 }}>
+                <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14.5, color: C.ink }}>{s.strategy}</span>
+                {s.rec ? <Pill tone="gold">Recommended</Pill> : on ? <IconCheck size={15} color={C.green} /> : <IconChevronRight size={15} color={C.faint} />}
+              </div>
+              <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 10 }}>{s.cohort} · {num(s.audience)}{on ? ' · selected' : ''}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <KpiTile label="Participation" value={`+${s.lift} pts`} tone={C.green} />
+                <KpiTile label="AUM impact" value={`+$${s.aum}M`} tone={C.goldDk} />
+                <KpiTile label="CSAT" value={`+${s.csat}`} sub={`to ${Math.min(99, m.csat + s.csat)}/100`} tone={C.green} />
+                <KpiTile label="Churn" value={`−${s.churn} pts`} sub={`to ${Math.max(2, m.churn - s.churn)}%`} tone={C.green} />
+              </div>
+            </Card>
+          )
+        })}
+      </div>
+
+      {/* graph — projected participation for all strategies vs do-nothing */}
+      <Card>
+        <Eyebrow>Projected participation · all strategies vs do-nothing</Eyebrow>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
+          {graphRows.map(b => (
+            <div key={b.k} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 12, color: C.ink2, width: 150, flexShrink: 0 }}>{b.k}</span>
+              <div style={{ flex: 1, height: 14, background: C.line, borderRadius: 999, overflow: 'hidden' }}>
+                <div style={{ width: pct(b.v), height: '100%', background: b.tone, borderRadius: 999 }} />
+              </div>
+              <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 13, color: b.tone, width: 46, textAlign: 'right' }}>{pct(b.v)}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* comparison table (last) — do-nothing vs each strategy */}
       <Card pad={0}>
         <div style={{ padding: '14px 20px', borderBottom: T.rule, fontFamily: DISP, fontWeight: 600, fontSize: 15, color: C.ink }}>Do-nothing vs strategy — simulated impact</div>
         <Table minWidth={780} head={<><Th>Policy</Th><Th align="right">Participation</Th><Th align="right">AUM impact</Th><Th align="right">CSAT</Th><Th align="right">Churn</Th><Th align="right">Cost</Th><Th align="right"></Th></>}>
@@ -1141,7 +1190,7 @@ function TabPolicyImpact({ sponsor, lab, setLab, d }) {
             const on = s.id === selected
             return (
               <tr key={s.id} style={{ background: on ? C.amberBg : undefined }}>
-                <Td bold>{s.strategy}</Td>
+                <Td bold>{s.strategy} {s.rec && <Pill tone="gold">Rec</Pill>}</Td>
                 <Td align="right">{pct(base + s.lift / 100)} <span style={{ color: C.green, fontWeight: 600 }}>(+{s.lift})</span></Td>
                 <Td align="right"><span style={{ color: C.goldDk, fontWeight: 600 }}>+${s.aum}M</span></Td>
                 <Td align="right"><span style={{ color: C.green }}>+{s.csat}</span></Td>
@@ -1152,51 +1201,7 @@ function TabPolicyImpact({ sponsor, lab, setLab, d }) {
             )
           })}
         </Table>
-        <div style={{ padding: '10px 20px', fontSize: 11.5, color: C.muted }}>Each strategy's AUM impact is a share of the {money(sponsor.valueOpp)} opportunity (capped at $55M per strategy). The selected strategy carries into Content.</div>
-      </Card>
-
-      {/* per-strategy KPI cards — CSAT, AUM, Churn, participation */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 14 }}>
-        {impacts.map(s => {
-          const on = s.id === selected
-          return (
-            <Card key={s.id} onClick={() => pick(s.id)} style={{ cursor: 'pointer', borderColor: on ? C.gold : undefined, borderWidth: on ? 2 : 1, borderStyle: 'solid', background: on ? C.amberBg : C.card }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 2 }}>
-                <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: C.ink }}>{s.strategy}</span>
-                {on ? <Pill tone="gold">Selected</Pill> : <IconChevronRight size={15} color={C.faint} />}
-              </div>
-              <div style={{ fontSize: 12, color: C.muted, marginBottom: 10 }}>{s.cohort} · {num(s.audience)} in audience</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                <KpiTile label="Participation" value={`+${s.lift} pts`} tone={C.green} />
-                <KpiTile label="AUM impact" value={`+$${s.aum}M`} tone={C.goldDk} />
-                <KpiTile label="CSAT" value={`+${s.csat}`} sub={`to ${Math.min(99, m.csat + s.csat)}/100`} tone={C.green} />
-                <KpiTile label="Churn" value={`−${s.churn} pts`} sub={`to ${Math.max(2, m.churn - s.churn)}%`} tone={C.green} />
-              </div>
-            </Card>
-          )
-        })}
-      </div>
-
-      {/* participation vs benchmark (carried from Simulation) */}
-      <Card>
-        <Eyebrow>Participation vs sector benchmark · selected strategy</Eyebrow>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
-          {[
-            { k: 'Current', v: base, tone: C.faint },
-            { k: `Selected · ${selImpact?.strategy || ''}`, v: Math.min(0.99, base + (selImpact?.lift || 0) / 100), tone: C.green },
-            { k: 'Sector benchmark', v: sponsor.benchmark, tone: C.goldDk },
-          ].map(b => (
-            <div key={b.k}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 4 }}>
-                <span style={{ color: C.ink2 }}>{b.k}</span>
-                <span style={{ fontFamily: DISP, fontWeight: 700, color: C.ink }}>{pct(b.v)}</span>
-              </div>
-              <div style={{ height: 10, background: C.line, borderRadius: 5, overflow: 'hidden' }}>
-                <div style={{ width: `${b.v * 100}%`, height: '100%', background: b.tone, borderRadius: 5 }} />
-              </div>
-            </div>
-          ))}
-        </div>
+        <div style={{ padding: '10px 20px', fontSize: 11.5, color: C.muted }}>Every strategy clears $30M in net-new AUM (capped at $55M each). The selected strategy carries into Content.</div>
       </Card>
     </div>
   )
@@ -1265,9 +1270,6 @@ function TabContent({ sponsor, lab, setLab, d, goTo }) {
             <Btn kind="ghost" small onClick={() => setLab(l => ({ ...l, contentReady: false }))}>Regenerate</Btn>
             <Btn kind={canLock ? 'primary' : 'quiet'} small onClick={() => canLock && setLab(l => ({ ...l, content: 'locked' }))}
               style={{ opacity: canLock ? 1 : 0.5, cursor: canLock ? 'pointer' : 'not-allowed' }}>Lock content</Btn>
-            <Btn kind="gold" small onClick={() => { setLab(l => ({ ...l, complianceDone: false })); goTo && goTo(4) }}>
-              <IconShieldCheck size={14} /> Run compliance check
-            </Btn>
           </div>
         </Card>
 
