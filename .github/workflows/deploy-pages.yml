@@ -2,7 +2,8 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [claude/blissful-shannon-2d5q9b, main]
+    branches: [claude/cmo-app-vg-b2b-redesign-eor9cf, claude/blissful-shannon-2d5q9b, main]
+  workflow_dispatch:
 
 permissions:
   contents: read
