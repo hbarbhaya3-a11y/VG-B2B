@@ -753,17 +753,6 @@ function TabLevers({ lab, setLab, d }) {
         <IconShieldCheck size={15} color={C.green} /> Levers appear after recommendation. Only strategies in the portfolio are configurable.
       </div>
 
-      {/* current configuration — compact one-line summary */}
-      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 14,
-        padding: '10px 14px', background: C.paper, border: T.rule, borderRadius: T.radMd }}>
-        <span style={{ fontSize: 10.5, letterSpacing: '.08em', textTransform: 'uppercase', color: C.goldDk, fontWeight: 700 }}>Current plan</span>
-        {LEVERS.filter(l => activeIds.has(l.id)).map(l => (
-          <span key={l.id} style={{ fontSize: 12, color: C.ink2 }}>
-            <b style={{ color: C.ink }}>{l.name}</b> {leverSummary(l.id, L)}
-          </span>
-        )).reduce((acc, el, i) => i === 0 ? [el] : [...acc, <span key={`s${i}`} style={{ color: C.faint }}>·</span>, el], [])}
-      </div>
-
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 14 }}>
         {LEVERS.filter(l => activeIds.has(l.id)).map(l => {
           return (
